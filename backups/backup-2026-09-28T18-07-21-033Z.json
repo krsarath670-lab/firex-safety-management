@@ -1,0 +1,1282 @@
+{
+  "company_settings": {
+    "company_name": "Supervisor Change",
+    "arabic_name": "شركة فايركس لأدوات السلامه",
+    "logo_url": "/logo.png",
+    "letterhead_url": "/letterhead.png",
+    "use_custom_letterhead": true,
+    "cr_number": "96850 1",
+    "cr_no": "96850 1",
+    "vat_number": "220006271900002",
+    "vat_no": "220006271900002",
+    "cr_vat_number": "CR No.: 96850 1 | VAT No.: 220006271900002",
+    "address_line_1": "Villa 13, Building 2373",
+    "address_line_2": "Road 2831, Al Seef",
+    "address_line_3": "Block 428, Bahrain",
+    "address": "Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain",
+    "phone": "+973 1716 2240",
+    "email": "service@firexbahrain.com",
+    "report_footer": "FIREX • Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain • CR No.: 96850 1 • VAT No.: 220006271900002",
+    "report_number_prefix": "RPT",
+    "reminder_days": [
+      90,
+      60,
+      30,
+      7
+    ],
+    "amc_frequencies": {
+      "Fire Alarm": {
+        "interval_months": 3,
+        "visits_per_year": 4
+      },
+      "Fire Fighting": {
+        "interval_months": 3,
+        "visits_per_year": 4
+      },
+      "Fire Extinguishers": {
+        "interval_months": 6,
+        "visits_per_year": 2
+      }
+    }
+  },
+  "users": [
+    {
+      "name": "Sarath Kr",
+      "email": "maintenance2@firexbahrain.com",
+      "role": "Supervisor",
+      "phone": "+973 3511 2233",
+      "designation": "Senior Field Supervisor",
+      "avatar": "SK",
+      "id": "use-1790537968005-924",
+      "created_at": "2026-09-27T19:39:28.005Z",
+      "pin": "1234",
+      "status": "Active",
+      "notes": "",
+      "updated_at": "2026-09-28T17:25:03.095Z",
+      "password": "1234"
+    },
+    {
+      "id": "usr-gm",
+      "name": "Eng. Mohamed Hweidi",
+      "email": "hweidi@firexbahrain.com",
+      "role": "GM",
+      "phone": "+973 66660634",
+      "designation": "General Manager",
+      "avatar": "AM",
+      "pin": "1234",
+      "password": "1234",
+      "status": "Active",
+      "notes": "",
+      "updated_at": "2026-09-28T13:25:50.210Z"
+    },
+    {
+      "id": "usr-tech",
+      "name": "Abdul majeed",
+      "email": "",
+      "role": "Technician",
+      "phone": "+973 3500 9900",
+      "designation": "Certified Fire Alarm Specialist",
+      "avatar": "RK",
+      "pin": "1234",
+      "password": "1234",
+      "updated_at": "2026-09-28T17:23:01.526Z",
+      "status": "Active",
+      "notes": ""
+    },
+    {
+      "id": "usr-sales-1",
+      "name": "Abdulsattar Saiyed",
+      "email": "sales1@firexbahrain.com",
+      "role": "Sales",
+      "phone": "+973 33952627",
+      "designation": "Commercial Sales Executive",
+      "avatar": "HA",
+      "created_at": "2026-09-28T07:28:47.113Z",
+      "pin": "1234",
+      "password": "1234",
+      "status": "Active",
+      "notes": "",
+      "updated_at": "2026-09-28T13:28:19.183Z"
+    },
+    {
+      "id": "usr-sales-2",
+      "name": "Mohammed Alawadhi",
+      "email": "noor.sales@firexbahrain.com",
+      "role": "Sales",
+      "phone": "+973 37660626",
+      "designation": "Sales Engineer",
+      "avatar": "NQ",
+      "created_at": "2026-09-28T07:28:47.114Z",
+      "pin": "1234",
+      "password": "1234",
+      "status": "Active",
+      "notes": "",
+      "updated_at": "2026-09-28T17:18:42.088Z"
+    }
+  ],
+  "customers": [],
+  "sites": [],
+  "amc_contracts": [],
+  "amc_visits": [],
+  "jobs": [],
+  "faults": [],
+  "materials": [
+    {
+      "id": "mat-1",
+      "code": "DET-SMK-01",
+      "name": "Optical Smoke Detector (UL Listed)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 85,
+      "unit_cost": 42
+    },
+    {
+      "id": "mat-2",
+      "code": "DET-HT-01",
+      "name": "Rate of Rise Heat Detector (UL)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 40,
+      "unit_cost": 38
+    },
+    {
+      "id": "mat-3",
+      "code": "DET-MULTI-01",
+      "name": "Multi-Sensor Smoke & Heat Detector",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 24,
+      "unit_cost": 65
+    },
+    {
+      "id": "mat-4",
+      "code": "MCP-WP-01",
+      "name": "Manual Call Point (Weatherproof IP66)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 32,
+      "unit_cost": 48
+    },
+    {
+      "id": "mat-5",
+      "code": "SND-STR-01",
+      "name": "Electronic Sounder Strobe 24V Red",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 50,
+      "unit_cost": 55
+    },
+    {
+      "id": "mat-6",
+      "code": "BAT-12V-17AH",
+      "name": "12V 17Ah Sealed Lead Acid Battery",
+      "category": "Accessories",
+      "unit": "Pcs",
+      "stock": 18,
+      "unit_cost": 68
+    },
+    {
+      "id": "mat-7",
+      "code": "BAT-12V-26AH",
+      "name": "12V 26Ah Sealed Lead Acid Battery",
+      "category": "Accessories",
+      "unit": "Pcs",
+      "stock": 12,
+      "unit_cost": 95
+    },
+    {
+      "id": "mat-8",
+      "code": "MOD-MON-01",
+      "name": "Single Input Monitor Module",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 30,
+      "unit_cost": 52
+    },
+    {
+      "id": "mat-9",
+      "code": "MOD-REL-01",
+      "name": "Dual Relay Control Module 240V/24V",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 25,
+      "unit_cost": 58
+    },
+    {
+      "id": "mat-10",
+      "code": "SPR-PEN-68",
+      "name": "Pendent Sprinkler Head 68°C 1/2\" QR",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 150,
+      "unit_cost": 12.5
+    },
+    {
+      "id": "mat-11",
+      "code": "HOS-RUB-30M",
+      "name": "1\" High-Pressure Rubber Fire Hose 30m",
+      "category": "Firefighting",
+      "unit": "Roll",
+      "stock": 14,
+      "unit_cost": 110
+    },
+    {
+      "id": "mat-12",
+      "code": "EXT-DCP-6KG",
+      "name": "6kg ABC Dry Powder Fire Extinguisher",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 65,
+      "unit_cost": 34
+    },
+    {
+      "id": "mat-13",
+      "code": "EXT-CO2-5KG",
+      "name": "5kg Carbon Dioxide (CO2) Extinguisher",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 38,
+      "unit_cost": 72
+    },
+    {
+      "id": "mat-14",
+      "code": "CBL-FP200-2C",
+      "name": "Fire Resistant Cable 2C x 1.5mm FP200 (100m)",
+      "category": "Cable",
+      "unit": "Drum",
+      "stock": 9,
+      "unit_cost": 145
+    }
+  ],
+  "reports": [],
+  "notifications": [],
+  "quotations": [],
+  "audit_logs": [
+    {
+      "id": "aud-1790616399372",
+      "user_id": "usr-gm",
+      "action": "DELETE_USER",
+      "entity": "users",
+      "entity_id": "usr-eng",
+      "details": "Deleted user Eng. Chandiramohan Karunanithi",
+      "timestamp": "2026-09-28T17:26:39.372Z"
+    },
+    {
+      "id": "aud-1790616303137",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790537968005-924",
+      "details": "Updated user details for Sarath Kr",
+      "timestamp": "2026-09-28T17:25:03.137Z"
+    },
+    {
+      "id": "aud-1790616181580",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "usr-tech",
+      "details": "Updated user details for Rajesh Kumar",
+      "timestamp": "2026-09-28T17:23:01.580Z"
+    },
+    {
+      "id": "aud-1790616116653",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "usr-eng",
+      "details": "Updated user details for David Chen, PE",
+      "timestamp": "2026-09-28T17:21:56.653Z"
+    },
+    {
+      "id": "aud-1790615922125",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "usr-sales-2",
+      "details": "Updated user details for Noor Al-Qassim",
+      "timestamp": "2026-09-28T17:18:42.125Z"
+    },
+    {
+      "id": "aud-1790615631772",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Eng. Mohamed Hweidi logged in successfully",
+      "timestamp": "2026-09-28T17:13:51.772Z"
+    },
+    {
+      "id": "aud-1790615511337",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Eng. Mohamed Hweidi logged in successfully",
+      "timestamp": "2026-09-28T17:11:51.337Z"
+    },
+    {
+      "id": "aud-1790602187240",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Eng. Mohamed Hweidi logged in successfully",
+      "timestamp": "2026-09-28T13:29:47.240Z"
+    },
+    {
+      "id": "aud-1790602099225",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "usr-sales-1",
+      "details": "Updated user details for Hussain Al-Saeed",
+      "timestamp": "2026-09-28T13:28:19.225Z"
+    },
+    {
+      "id": "aud-1790601970285",
+      "user_id": "usr-gm",
+      "action": "DELETE_USER",
+      "entity": "users",
+      "entity_id": "usr-sup",
+      "details": "Deleted user Tariq Mahmoud",
+      "timestamp": "2026-09-28T13:26:10.285Z"
+    },
+    {
+      "id": "aud-1790601950256",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "Updated user details for Ahmed Al-Mansoor",
+      "timestamp": "2026-09-28T13:25:50.256Z"
+    },
+    {
+      "id": "aud-1790601754518",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Ahmed Al-Mansoor logged in successfully",
+      "timestamp": "2026-09-28T13:22:34.518Z"
+    },
+    {
+      "id": "aud-1790601303074",
+      "user_id": "use-1790537968005-924",
+      "action": "UPDATE_SETTINGS",
+      "entity": "company_settings",
+      "entity_id": "main",
+      "details": "Updated company settings",
+      "timestamp": "2026-09-28T13:15:03.074Z"
+    },
+    {
+      "id": "aud-1790601303028",
+      "user_id": "use-1790537968005-924",
+      "action": "UPDATE_SETTINGS",
+      "entity": "company_settings",
+      "entity_id": "main",
+      "details": "Updated company settings",
+      "timestamp": "2026-09-28T13:15:03.028Z"
+    },
+    {
+      "id": "aud-1790599672853",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Ahmed Al-Mansoor logged in successfully",
+      "timestamp": "2026-09-28T12:47:52.853Z"
+    },
+    {
+      "id": "aud-1790598971437",
+      "user_id": "usr-sup",
+      "action": "DELETE_USER",
+      "entity": "users",
+      "entity_id": "use-1790598969818-956",
+      "details": "Deleted user Ali Technician Test",
+      "timestamp": "2026-09-28T12:36:11.437Z"
+    },
+    {
+      "id": "aud-1790598971115",
+      "user_id": "use-1790598969818-956",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1790598969818-956",
+      "details": "User Ali Technician Test logged in successfully",
+      "timestamp": "2026-09-28T12:36:11.115Z"
+    },
+    {
+      "id": "aud-1790598970488",
+      "user_id": "usr-eng",
+      "action": "SET_PASSWORD",
+      "entity": "users",
+      "entity_id": "use-1790598969818-956",
+      "details": "Password / PIN updated for Ali Technician Test (Technician)",
+      "timestamp": "2026-09-28T12:36:10.488Z"
+    },
+    {
+      "id": "aud-1790598970140",
+      "user_id": "use-1790598969818-956",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1790598969818-956",
+      "details": "User Ali Technician Test logged in successfully",
+      "timestamp": "2026-09-28T12:36:10.140Z"
+    },
+    {
+      "id": "aud-1790598969836",
+      "user_id": "usr-sup",
+      "action": "CREATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790598969818-956",
+      "details": "Created user Ali Technician Test with role Technician (password/PIN configured)",
+      "timestamp": "2026-09-28T12:36:09.836Z"
+    },
+    {
+      "id": "aud-1790598968965",
+      "user_id": "usr-sup",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-sup",
+      "details": "User Tariq Mahmoud logged in successfully",
+      "timestamp": "2026-09-28T12:36:08.965Z"
+    },
+    {
+      "id": "aud-1790598587654",
+      "user_id": "usr-gm",
+      "action": "SET_PASSWORD",
+      "entity": "users",
+      "entity_id": "usr-tech",
+      "details": "Password / PIN updated for Rajesh Kumar (Technician)",
+      "timestamp": "2026-09-28T12:29:47.654Z"
+    },
+    {
+      "id": "aud-1790598587026",
+      "user_id": "usr-tech",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-tech",
+      "details": "User Rajesh Kumar logged in successfully",
+      "timestamp": "2026-09-28T12:29:47.026Z"
+    },
+    {
+      "id": "aud-1790598586699",
+      "user_id": "usr-sup",
+      "action": "SET_PASSWORD",
+      "entity": "users",
+      "entity_id": "usr-tech",
+      "details": "Password / PIN updated for Rajesh Kumar (Technician)",
+      "timestamp": "2026-09-28T12:29:46.699Z"
+    },
+    {
+      "id": "aud-1790598573249",
+      "user_id": "usr-gm",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm",
+      "details": "User Ahmed Al-Mansoor logged in successfully",
+      "timestamp": "2026-09-28T12:29:33.249Z"
+    },
+    {
+      "id": "aud-1790598572601",
+      "user_id": "usr-tech",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-tech",
+      "details": "User Rajesh Kumar logged in successfully",
+      "timestamp": "2026-09-28T12:29:32.601Z"
+    },
+    {
+      "id": "aud-1790596666467",
+      "user_id": "usr-gm",
+      "action": "DELETE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790596181740-839",
+      "details": "Deleted AMC contract DRAFT-2026-4052",
+      "timestamp": "2026-09-28T11:57:46.467Z"
+    },
+    {
+      "id": "aud-1790596656773",
+      "user_id": "usr-gm",
+      "action": "DELETE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790596319226-263",
+      "details": "Deleted AMC contract DRAFT-2026-7915",
+      "timestamp": "2026-09-28T11:57:36.773Z"
+    },
+    {
+      "id": "aud-1790596319249",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790596319226-263",
+      "details": "Created AMC contract DRAFT-2026-7915 (Status: Draft) with 0 system visits",
+      "timestamp": "2026-09-28T11:51:59.249Z"
+    },
+    {
+      "id": "aud-1790596318413",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cus-1790596318394-867",
+      "details": "Created customer Test Tower 8110 (CUST-TEST-8110) with CR: CR-8110, VAT: VAT-8110",
+      "timestamp": "2026-09-28T11:51:58.413Z"
+    },
+    {
+      "id": "aud-1790596181767",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790596181740-839",
+      "details": "Created AMC contract DRAFT-2026-4052 (Status: Draft) with 0 system visits",
+      "timestamp": "2026-09-28T11:49:41.767Z"
+    },
+    {
+      "id": "aud-1790596180939",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cus-1790596180924-684",
+      "details": "Created customer Test Tower 0298 (CUST-TEST-0298) with CR: CR-0298, VAT: VAT-0298",
+      "timestamp": "2026-09-28T11:49:40.939Z"
+    },
+    {
+      "id": "aud-1790594957506",
+      "user_id": "usr-gm",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790537968005-924",
+      "details": "Updated user details for Sarath Kr",
+      "timestamp": "2026-09-28T11:29:17.506Z"
+    },
+    {
+      "id": "aud-1790594814644",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790594814630-534",
+      "details": "Created undefined RPT-RPT-2026-037",
+      "timestamp": "2026-09-28T11:26:54.644Z"
+    },
+    {
+      "id": "aud-1790594814601",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790594814586-89",
+      "details": "Created undefined RPT-RPT-2026-036",
+      "timestamp": "2026-09-28T11:26:54.601Z"
+    },
+    {
+      "id": "aud-1790594814558",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790594814543-362",
+      "details": "Created undefined RPT-RPT-2026-035",
+      "timestamp": "2026-09-28T11:26:54.558Z"
+    },
+    {
+      "id": "aud-1790594814515",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790594814499-804",
+      "details": "Created undefined RPT-RPT-2026-034",
+      "timestamp": "2026-09-28T11:26:54.515Z"
+    },
+    {
+      "id": "aud-1790594814466",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790594814450-455",
+      "details": "Created undefined RPT-RPT-2026-033",
+      "timestamp": "2026-09-28T11:26:54.466Z"
+    },
+    {
+      "id": "aud-1790594804979",
+      "user_id": "usr-eng",
+      "action": "DELETE_USER",
+      "entity": "users",
+      "entity_id": "use-1790594804870-813",
+      "details": "Deleted user Maryam Ebrahim",
+      "timestamp": "2026-09-28T11:26:44.979Z"
+    },
+    {
+      "id": "aud-1790594804947",
+      "user_id": "usr-sup",
+      "action": "DELETE_USER",
+      "entity": "users",
+      "entity_id": "use-1790594804833-62",
+      "details": "Deleted user Ali Al-Hassan",
+      "timestamp": "2026-09-28T11:26:44.947Z"
+    },
+    {
+      "id": "aud-1790594804917",
+      "user_id": "usr-sup",
+      "action": "UPDATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790594804833-62",
+      "details": "Updated user details for Ali Al-Hassan",
+      "timestamp": "2026-09-28T11:26:44.917Z"
+    },
+    {
+      "id": "aud-1790594804884",
+      "user_id": "usr-eng",
+      "action": "CREATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790594804870-813",
+      "details": "Created user Maryam Ebrahim with role Sales",
+      "timestamp": "2026-09-28T11:26:44.884Z"
+    },
+    {
+      "id": "aud-1790594804852",
+      "user_id": "usr-sup",
+      "action": "CREATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790594804833-62",
+      "details": "Created user Ali Al-Hassan with role Technician",
+      "timestamp": "2026-09-28T11:26:44.852Z"
+    },
+    {
+      "id": "aud-1790593892273",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593892237-544",
+      "details": "Created AMC Service Report RPT-AMC-2026-032",
+      "timestamp": "2026-09-28T11:11:32.273Z"
+    },
+    {
+      "id": "aud-1790593815746",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593815731-362",
+      "details": "Created undefined RPT-RPT-2026-031",
+      "timestamp": "2026-09-28T11:10:15.746Z"
+    },
+    {
+      "id": "aud-1790593815702",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593815687-911",
+      "details": "Created undefined RPT-RPT-2026-030",
+      "timestamp": "2026-09-28T11:10:15.702Z"
+    },
+    {
+      "id": "aud-1790593815658",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593815645-199",
+      "details": "Created undefined RPT-RPT-2026-029",
+      "timestamp": "2026-09-28T11:10:15.658Z"
+    },
+    {
+      "id": "aud-1790593815615",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593815594-636",
+      "details": "Created undefined RPT-RPT-2026-028",
+      "timestamp": "2026-09-28T11:10:15.615Z"
+    },
+    {
+      "id": "aud-1790593815546",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593815532-101",
+      "details": "Created undefined RPT-RPT-2026-027",
+      "timestamp": "2026-09-28T11:10:15.546Z"
+    },
+    {
+      "id": "aud-1790593258432",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593258363-554",
+      "details": "Created AMC Service Report RPT-AMC-2026-026",
+      "timestamp": "2026-09-28T11:00:58.432Z"
+    },
+    {
+      "id": "aud-1790593215188",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593215171-254",
+      "details": "Created undefined RPT-RPT-2026-025",
+      "timestamp": "2026-09-28T11:00:15.188Z"
+    },
+    {
+      "id": "aud-1790593215147",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593215133-186",
+      "details": "Created undefined RPT-RPT-2026-024",
+      "timestamp": "2026-09-28T11:00:15.147Z"
+    },
+    {
+      "id": "aud-1790593215104",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593215090-37",
+      "details": "Created undefined RPT-RPT-2026-023",
+      "timestamp": "2026-09-28T11:00:15.104Z"
+    },
+    {
+      "id": "aud-1790593215064",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593215044-976",
+      "details": "Created undefined RPT-RPT-2026-022",
+      "timestamp": "2026-09-28T11:00:15.064Z"
+    },
+    {
+      "id": "aud-1790593215012",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593214968-717",
+      "details": "Created undefined RPT-RPT-2026-021",
+      "timestamp": "2026-09-28T11:00:15.012Z"
+    },
+    {
+      "id": "aud-1790593185137",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593185124-680",
+      "details": "Created undefined RPT-RPT-2026-020",
+      "timestamp": "2026-09-28T10:59:45.137Z"
+    },
+    {
+      "id": "aud-1790593185091",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593185053-408",
+      "details": "Created undefined RPT-RPT-2026-019",
+      "timestamp": "2026-09-28T10:59:45.091Z"
+    },
+    {
+      "id": "aud-1790593185029",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593185015-28",
+      "details": "Created undefined RPT-RPT-2026-018",
+      "timestamp": "2026-09-28T10:59:45.029Z"
+    },
+    {
+      "id": "aud-1790593184991",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593184975-707",
+      "details": "Created undefined RPT-RPT-2026-017",
+      "timestamp": "2026-09-28T10:59:44.991Z"
+    },
+    {
+      "id": "aud-1790593184946",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790593184923-811",
+      "details": "Created undefined RPT-RPT-2026-016",
+      "timestamp": "2026-09-28T10:59:44.946Z"
+    },
+    {
+      "id": "aud-1790590728389",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590723191-233",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-28T10:18:48.389Z"
+    },
+    {
+      "id": "aud-1790590726444",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590723191-233",
+      "details": "Updated report to Reviewed",
+      "timestamp": "2026-09-28T10:18:46.444Z"
+    },
+    {
+      "id": "aud-1790590723215",
+      "user_id": "usr-gm",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590723191-233",
+      "details": "Created AMC Service Report RPT-AMC-2026-015",
+      "timestamp": "2026-09-28T10:18:43.215Z"
+    },
+    {
+      "id": "aud-1790590596101",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590596089-325",
+      "details": "Created undefined RPT-RPT-2026-014",
+      "timestamp": "2026-09-28T10:16:36.101Z"
+    },
+    {
+      "id": "aud-1790590596067",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590596055-796",
+      "details": "Created undefined RPT-RPT-2026-013",
+      "timestamp": "2026-09-28T10:16:36.067Z"
+    },
+    {
+      "id": "aud-1790590596033",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590596022-167",
+      "details": "Created undefined RPT-RPT-2026-012",
+      "timestamp": "2026-09-28T10:16:36.033Z"
+    },
+    {
+      "id": "aud-1790590595997",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590595986-536",
+      "details": "Created undefined RPT-RPT-2026-011",
+      "timestamp": "2026-09-28T10:16:35.997Z"
+    },
+    {
+      "id": "aud-1790590595954",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790590595931-69",
+      "details": "Created undefined RPT-RPT-2026-010",
+      "timestamp": "2026-09-28T10:16:35.954Z"
+    },
+    {
+      "id": "aud-1790588982016",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790588974071-707",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-28T09:49:42.016Z"
+    },
+    {
+      "id": "aud-1790588974093",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790588974071-707",
+      "details": "Created AMC Service Report RPT-AMC-2026-009",
+      "timestamp": "2026-09-28T09:49:34.093Z"
+    },
+    {
+      "id": "aud-1790588666988",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cus-1790588666969-780",
+      "details": "Created customer Bahrain Petrochemical Towers 6963 (CUST-BH-007) with CR: 77889 6963, VAT: 20009988770006963",
+      "timestamp": "2026-09-28T09:44:26.988Z"
+    },
+    {
+      "id": "aud-1790588666937",
+      "user_id": "usr-sup",
+      "action": "UPDATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cust-seef-1",
+      "details": "Updated customer Al Seef Fire & Safety Commercial Co. W.L.L",
+      "timestamp": "2026-09-28T09:44:26.937Z"
+    },
+    {
+      "id": "aud-1790588510026",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cus-1790588510016-544",
+      "details": "Created customer Bahrain Petrochemical Towers 0010 (CUST-BH-006) with CR: 77889 0010, VAT: 20009988770000010",
+      "timestamp": "2026-09-28T09:41:50.026Z"
+    },
+    {
+      "id": "aud-1790588509986",
+      "user_id": "usr-sup",
+      "action": "UPDATE_CUSTOMER",
+      "entity": "customers",
+      "entity_id": "cust-seef-1",
+      "details": "Updated customer Al Seef Fire & Safety Commercial Co. W.L.L",
+      "timestamp": "2026-09-28T09:41:49.986Z"
+    },
+    {
+      "id": "aud-1790587167703",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790578914440-334",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-28T09:19:27.703Z"
+    },
+    {
+      "id": "aud-1790587155559",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790587145434-315",
+      "details": "Updated report to Reviewed",
+      "timestamp": "2026-09-28T09:19:15.560Z"
+    },
+    {
+      "id": "aud-1790587153155",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790587145434-315",
+      "details": "Updated report to Submitted",
+      "timestamp": "2026-09-28T09:19:13.155Z"
+    },
+    {
+      "id": "aud-1790587145457",
+      "user_id": "usr-gm",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790587145434-315",
+      "details": "Created AMC Service Report RPT-AMC-2026-008",
+      "timestamp": "2026-09-28T09:19:05.457Z"
+    },
+    {
+      "id": "aud-1790587103044",
+      "user_id": "usr-gm",
+      "action": "UPDATE_JOB",
+      "entity": "jobs",
+      "entity_id": "job-1",
+      "details": "Updated job AMC-2026-021",
+      "timestamp": "2026-09-28T09:18:23.044Z"
+    },
+    {
+      "id": "aud-1790586905591",
+      "user_id": "usr-sales-1",
+      "action": "DELETE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905536-457",
+      "details": "Deleted AMC contract DRAFT-2026-6447",
+      "timestamp": "2026-09-28T09:15:05.591Z"
+    },
+    {
+      "id": "aud-1790586905546",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905536-457",
+      "details": "Created AMC contract DRAFT-2026-6447 (Status: Draft) with 0 system visits",
+      "timestamp": "2026-09-28T09:15:05.546Z"
+    },
+    {
+      "id": "aud-1790586905499",
+      "user_id": "usr-gm",
+      "action": "APPROVE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Approved AMC contract AMC-2026-009 by Ahmed Al-Mansoor. Generated 10 system visits.",
+      "timestamp": "2026-09-28T09:15:05.499Z"
+    },
+    {
+      "id": "aud-1790586905456",
+      "user_id": "usr-sales-1",
+      "action": "SUBMIT_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Submitted contract DRAFT-2026-8510 for approval",
+      "timestamp": "2026-09-28T09:15:05.456Z"
+    },
+    {
+      "id": "aud-1790586905433",
+      "user_id": "usr-gm",
+      "action": "RETURN_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Returned AMC contract DRAFT-2026-8510 for correction: Please increase extinguisher inspection frequency to quarterly per new Civil Defense directive.",
+      "timestamp": "2026-09-28T09:15:05.433Z"
+    },
+    {
+      "id": "aud-1790586905378",
+      "user_id": "usr-sales-1",
+      "action": "SUBMIT_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Submitted contract DRAFT-2026-8510 for approval",
+      "timestamp": "2026-09-28T09:15:05.378Z"
+    },
+    {
+      "id": "aud-1790586905332",
+      "user_id": "usr-sales-1",
+      "action": "UPDATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Updated AMC contract DRAFT-2026-8510",
+      "timestamp": "2026-09-28T09:15:05.332Z"
+    },
+    {
+      "id": "aud-1790586905272",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790586905259-463",
+      "details": "Created AMC contract DRAFT-2026-8510 (Status: Draft) with 0 system visits",
+      "timestamp": "2026-09-28T09:15:05.272Z"
+    },
+    {
+      "id": "aud-1790582800098",
+      "user_id": "usr-sup",
+      "action": "RENEW_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790582799968",
+      "details": "Renewed AMC contract AMC-2026-007 -> AMC-2026-008",
+      "timestamp": "2026-09-28T08:06:40.098Z"
+    },
+    {
+      "id": "aud-1790582748028",
+      "user_id": "usr-sup",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790582747890-226",
+      "details": "Created contract AMC-2026-007 with 10 system visits",
+      "timestamp": "2026-09-28T08:05:48.028Z"
+    },
+    {
+      "id": "aud-1790581186850",
+      "user_id": "usr-sales-1",
+      "action": "CREATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1790581186813-513",
+      "details": "Created contract AMC-2026-006 with 10 system visits",
+      "timestamp": "2026-09-28T07:39:46.851Z"
+    },
+    {
+      "id": "aud-1790578914461",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790578914440-334",
+      "details": "Created AMC Service Report RPT-AMC-2026-007",
+      "timestamp": "2026-09-28T07:01:54.461Z"
+    },
+    {
+      "id": "aud-1790577194002",
+      "user_id": "usr-gm",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790577185949-469",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-28T06:33:14.003Z"
+    },
+    {
+      "id": "aud-1790577185998",
+      "user_id": "usr-gm",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790577185949-469",
+      "details": "Created AMC Service Report RPT-AMC-2026-006",
+      "timestamp": "2026-09-28T06:33:05.998Z"
+    },
+    {
+      "id": "aud-1790577098572",
+      "user_id": "usr-sup",
+      "action": "UPDATE_SETTINGS",
+      "entity": "company_settings",
+      "entity_id": "main",
+      "details": "Updated company settings",
+      "timestamp": "2026-09-28T06:31:38.573Z"
+    },
+    {
+      "id": "aud-1790577071828",
+      "user_id": "usr-gm",
+      "action": "UPDATE_SETTINGS",
+      "entity": "company_settings",
+      "entity_id": "main",
+      "details": "Updated company settings",
+      "timestamp": "2026-09-28T06:31:11.828Z"
+    },
+    {
+      "id": "aud-1790574818150",
+      "user_id": "usr-sup",
+      "action": "UPDATE_FAULT",
+      "entity": "faults",
+      "entity_id": "flt-2",
+      "details": "Updated fault status to Rectified",
+      "timestamp": "2026-09-28T05:53:38.150Z"
+    },
+    {
+      "id": "aud-1790574801668",
+      "user_id": "usr-sup",
+      "action": "UPDATE_FAULT",
+      "entity": "faults",
+      "entity_id": "flt-1",
+      "details": "Updated fault status to Rectified",
+      "timestamp": "2026-09-28T05:53:21.668Z"
+    },
+    {
+      "id": "aud-1790574784260",
+      "user_id": "usr-sup",
+      "action": "UPDATE_FAULT",
+      "entity": "faults",
+      "entity_id": "flt-1",
+      "details": "Updated fault status to Open",
+      "timestamp": "2026-09-28T05:53:04.260Z"
+    },
+    {
+      "id": "aud-1790538085780",
+      "user_id": "usr-gm",
+      "action": "UPDATE_AMC",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1",
+      "details": "Updated AMC contract",
+      "timestamp": "2026-09-27T19:41:25.780Z"
+    },
+    {
+      "id": "aud-1790538065730",
+      "user_id": "usr-gm",
+      "action": "SCHEDULE_AMC_VISIT",
+      "entity": "amc_visits",
+      "entity_id": "amc-1790538065713-464",
+      "details": "Scheduled AMC visit for 2026-09-27",
+      "timestamp": "2026-09-27T19:41:05.730Z"
+    },
+    {
+      "id": "aud-1790538054192",
+      "user_id": "usr-gm",
+      "action": "SCHEDULE_AMC_VISIT",
+      "entity": "amc_visits",
+      "entity_id": "amc-1790538054173-390",
+      "details": "Scheduled AMC visit for 2026-09-27",
+      "timestamp": "2026-09-27T19:40:54.192Z"
+    },
+    {
+      "id": "aud-1790537968022",
+      "user_id": "usr-gm",
+      "action": "CREATE_USER",
+      "entity": "users",
+      "entity_id": "use-1790537968005-924",
+      "details": "Created user Sarath Kr with role Technician",
+      "timestamp": "2026-09-27T19:39:28.022Z"
+    },
+    {
+      "id": "aud-1790537827533",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790537819364-207",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-27T19:37:07.533Z"
+    },
+    {
+      "id": "aud-1790537819376",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790537819364-207",
+      "details": "Created Work Completion Report RPT-WCR-2026-005",
+      "timestamp": "2026-09-27T19:36:59.376Z"
+    },
+    {
+      "id": "aud-1790537726862",
+      "user_id": "usr-sup",
+      "action": "CREATE_JOB",
+      "entity": "jobs",
+      "entity_id": "job-1790537726832-594",
+      "details": "Created job FIT-2026-002",
+      "timestamp": "2026-09-27T19:35:26.862Z"
+    },
+    {
+      "id": "aud-1790536880874",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536724639-56",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-27T19:21:20.874Z"
+    },
+    {
+      "id": "aud-1790536877869",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536724639-56",
+      "details": "Updated report to Reviewed",
+      "timestamp": "2026-09-27T19:21:17.869Z"
+    },
+    {
+      "id": "aud-1790536866515",
+      "user_id": "usr-sup",
+      "action": "SCHEDULE_AMC_VISIT",
+      "entity": "amc_visits",
+      "entity_id": "amc-1790536866495-82",
+      "details": "Scheduled AMC visit for 2026-09-27",
+      "timestamp": "2026-09-27T19:21:06.515Z"
+    },
+    {
+      "id": "aud-1790536856262",
+      "user_id": "usr-sup",
+      "action": "SCHEDULE_AMC_VISIT",
+      "entity": "amc_visits",
+      "entity_id": "amc-1790536856241-768",
+      "details": "Scheduled AMC visit for 2026-09-27",
+      "timestamp": "2026-09-27T19:20:56.262Z"
+    },
+    {
+      "id": "aud-1790536724654",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536724639-56",
+      "details": "Created AMC Service Report RPT-AMC-2026-004",
+      "timestamp": "2026-09-27T19:18:44.654Z"
+    },
+    {
+      "id": "aud-1790536667150",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536604252-273",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-27T19:17:47.150Z"
+    },
+    {
+      "id": "aud-1790536665343",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rpt-2",
+      "details": "Updated report to Approved",
+      "timestamp": "2026-09-27T19:17:45.343Z"
+    },
+    {
+      "id": "aud-1790536610442",
+      "user_id": "usr-sup",
+      "action": "UPDATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536604252-273",
+      "details": "Updated report to Reviewed",
+      "timestamp": "2026-09-27T19:16:50.442Z"
+    },
+    {
+      "id": "aud-1790536604273",
+      "user_id": "usr-sup",
+      "action": "CREATE_REPORT",
+      "entity": "reports",
+      "entity_id": "rep-1790536604252-273",
+      "details": "Created AMC Service Report RPT-AMC-2026-003",
+      "timestamp": "2026-09-27T19:16:44.273Z"
+    }
+  ]
+}

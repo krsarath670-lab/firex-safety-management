@@ -1,0 +1,23 @@
+databases:
+  - name: firex-db
+    databaseName: firex
+    user: firex_user
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: firex-safety-management
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: firex-db
+          property: connectionString

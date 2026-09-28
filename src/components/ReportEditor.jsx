@@ -1,0 +1,623 @@
+import React, { useState, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
+import { 
+  FileText, Sparkles, PenTool, Check, Camera, Plus, 
+  Trash2, Shield, Calendar, Building2, User, ArrowLeft
+} from 'lucide-react';
+import SignaturePad from './SignaturePad';
+
+export default function ReportEditor({ initialData, onSave, onCancel }) {
+  const { currentUser, showToast, setActiveModal } = useApp();
+
+  const [customers, setCustomers] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [amcs, setAmcs] = useState([]);
+  const [materials, setMaterials] = useState([]);
+
+  const [formData, setFormData] = useState({
+    report_type: initialData?.report_type || 'AMC Service Report',
+    customer_id: initialData?.customer_id || '',
+    site_id: initialData?.site_id || '',
+    amc_id: initialData?.amc_id || '',
+    amc_contract_number: initialData?.amc_contract_number || '',
+    job_number: initialData?.job_number || 'AMC-2026-021',
+    date: initialData?.date || new Date().toISOString().slice(0, 10),
+    amc_start_date: initialData?.amc_start_date || '',
+    amc_end_date: initialData?.amc_end_date || '',
+    visit_number: initialData?.visit_number || 'Visit #3 of 4',
+    system: initialData?.system || 'Fire Alarm & Firefighting Systems',
+    work_description: initialData?.work_description || '',
+    faults_found: initialData?.faults_found || '',
+    rectifications: initialData?.rectifications || '',
+    pending_works: initialData?.pending_works || '',
+    recommendations: initialData?.recommendations || '',
+    testing_performed: initialData?.testing_performed || 'Full functional evacuation alarm and pump flow test completed.',
+    result: initialData?.result || 'Satisfactory. System left fully operational and normal.',
+    remarks: initialData?.remarks || '',
+    materials_used: initialData?.materials_used || [],
+    photos: initialData?.photos || [],
+    customer_rep_name: initialData?.customer_rep_name || 'Omar Farooq',
+    customer_rep_designation: initialData?.customer_rep_designation || 'Director of Facilities Management',
+    customer_signature: initialData?.customer_signature || '',
+    supervisor_signature: initialData?.supervisor_signature || '',
+    status: initialData?.status || 'Draft'
+  });
+
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [signatureTarget, setSignatureTarget] = useState('customer'); // 'customer' | 'supervisor'
+
+  // Load auxiliary data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [resCust, resSites, resAmc, resMat] = await Promise.all([
+          fetch('/api/customers', { headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id } }),
+          fetch('/api/sites', { headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id } }),
+          fetch('/api/amc-contracts', { headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id } }),
+          fetch('/api/materials', { headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id } })
+        ]);
+        if (resCust.ok) setCustomers(await resCust.json());
+        if (resSites.ok) setSites(await resSites.json());
+        if (resAmc.ok) setAmcs(await resAmc.json());
+        if (resMat.ok) setMaterials(await resMat.json());
+      } catch (e) {
+        console.warn('Failed loading editor dropdowns', e);
+      }
+    };
+    fetchData();
+  }, [currentUser]);
+
+  // When AMC is selected, automatically populate start date, end date, contract period, and sales person!
+  const handleAMCChange = (amcId) => {
+    const selected = amcs.find((a) => a.id === amcId);
+    if (selected) {
+      const period = selected.start_date && selected.end_date ? `${selected.start_date} to ${selected.end_date}` : '';
+      setFormData((prev) => ({
+        ...prev,
+        amc_id: amcId,
+        amc_contract_number: selected.contract_number,
+        customer_id: selected.customer_id,
+        site_id: selected.site_id,
+        amc_start_date: selected.start_date,
+        amc_end_date: selected.end_date,
+        contract_start_date: selected.start_date,
+        contract_end_date: selected.end_date,
+        contract_period: period,
+        sales_person_id: selected.sales_person_id,
+        sales_person_name: selected.sales_person_name
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, amc_id: amcId }));
+    }
+  };
+
+  // Add material to list
+  const addMaterialItem = (matId) => {
+    const mat = materials.find((m) => m.id === matId);
+    if (!mat) return;
+    setFormData((prev) => ({
+      ...prev,
+      materials_used: [
+        ...prev.materials_used,
+        { material_id: mat.id, name: mat.name, quantity: 1 }
+      ]
+    }));
+  };
+
+  const removeMaterialItem = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials_used: prev.materials_used.filter((_, i) => i !== idx)
+    }));
+  };
+
+  // Compress image
+  const compressImage = (file, callback) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = Math.min(img.width, MAX_WIDTH);
+        canvas.height = img.width > MAX_WIDTH ? img.height * scale : img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    };
+  };
+
+  const handlePhotoUpload = (e, tag = 'Before') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    compressImage(file, (dataUrl) => {
+      setFormData((prev) => ({
+        ...prev,
+        photos: [
+          ...prev.photos,
+          {
+            url: dataUrl,
+            tag,
+            caption: `${tag} service photo`
+          }
+        ]
+      }));
+      showToast('Photo added', 'success');
+    });
+  };
+
+  const handleSubmit = (targetStatus) => {
+    if (!formData.site_id) {
+      showToast('Please select a customer and site', 'error');
+      return;
+    }
+    const finalReport = {
+      ...formData,
+      status: targetStatus,
+      technician_name: currentUser.role === 'Technician' ? currentUser.name : (formData.technician_name || 'Rajesh Kumar'),
+      supervisor_name: currentUser.role === 'Supervisor' ? currentUser.name : (formData.supervisor_name || 'Tariq Mahmoud')
+    };
+    onSave(finalReport);
+  };
+
+  return (
+    <div className="space-y-4 pb-28">
+      
+      {/* Header */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+        <button
+          onClick={onCancel}
+          className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Cancel</span>
+        </button>
+        <h1 className="text-sm sm:text-base font-extrabold text-slate-900">
+          {initialData?.id ? `Edit Report: ${initialData.report_number}` : 'Create Service Report'}
+        </h1>
+        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+          {formData.status}
+        </span>
+      </div>
+
+      {/* Main Form Fields */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4 text-xs">
+        
+        {/* Report Type Selector */}
+        <div>
+          <label className="block font-bold text-slate-700 mb-1">Report Document Type *</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
+            {[
+              'AMC Service Report',
+              'Work Completion Report',
+              'Fault Report',
+              'Inspection Report',
+              'Testing & Commissioning Report'
+            ].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setFormData((p) => ({ ...p, report_type: type }))}
+                className={`py-2 px-2 rounded-xl font-bold border transition-colors text-center text-[11px] ${
+                  formData.report_type === type
+                    ? 'bg-navy-900 text-white border-navy-900 shadow-sm'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* AMC Contract Selection (Auto populates Start & End dates) */}
+        {formData.report_type === 'AMC Service Report' && (
+          <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-200 space-y-2.5">
+            <div>
+              <label className="block font-bold text-blue-900 mb-1">Select AMC Contract *</label>
+              <select
+                value={formData.amc_id}
+                onChange={(e) => handleAMCChange(e.target.value)}
+                className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-medium"
+              >
+                <option value="">-- Choose Active AMC Contract --</option>
+                {amcs.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.contract_number} - {a.site_name} ({a.contract_status})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Auto Filled Start / End Dates */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-blue-700 block">
+                  AMC Start Date (Auto-filled)
+                </span>
+                <input
+                  type="date"
+                  value={formData.amc_start_date}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((p) => ({
+                      ...p,
+                      amc_start_date: val,
+                      contract_period: val && p.amc_end_date ? `${val} to ${p.amc_end_date}` : p.contract_period
+                    }));
+                  }}
+                  className="w-full p-2 bg-white border border-blue-200 rounded-lg text-xs"
+                />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-blue-700 block">
+                  AMC End Date (Auto-filled)
+                </span>
+                <input
+                  type="date"
+                  value={formData.amc_end_date}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((p) => ({
+                      ...p,
+                      amc_end_date: val,
+                      contract_period: p.amc_start_date && val ? `${p.amc_start_date} to ${val}` : p.contract_period
+                    }));
+                  }}
+                  className="w-full p-2 bg-white border border-blue-200 rounded-lg text-xs"
+                />
+              </div>
+            </div>
+
+            {/* AMC Contract Period & Sales Specialist Banner (Requirements 23 & 36) */}
+            <div className="bg-white/80 p-2.5 rounded-lg border border-blue-200 text-xs flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <span className="text-[10px] font-bold text-blue-800 uppercase block">AMC Contract Period</span>
+                <span className="font-mono font-bold text-slate-800">
+                  {formData.amc_start_date && formData.amc_end_date 
+                    ? `${formData.amc_start_date} to ${formData.amc_end_date}` 
+                    : (formData.contract_period || '01-Jan-2026 to 31-Dec-2026')}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-blue-800 uppercase block">Sales Specialist</span>
+                <span className="font-bold text-slate-800">
+                  {formData.sales_person_name || 'Unassigned'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Customer & Site */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Customer / Company *</label>
+            <select
+              required
+              value={formData.customer_id}
+              onChange={(e) => setFormData((p) => ({ ...p, customer_id: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+            >
+              <option value="">-- Select Customer --</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Site / Facility *</label>
+            <select
+              required
+              value={formData.site_id}
+              onChange={(e) => setFormData((p) => ({ ...p, site_id: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+            >
+              <option value="">-- Select Site --</option>
+              {sites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.site_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* System & Job Number */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">System Inspected</label>
+            <input
+              type="text"
+              value={formData.system}
+              onChange={(e) => setFormData((p) => ({ ...p, system: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Job Number Ref</label>
+            <input
+              type="text"
+              value={formData.job_number}
+              onChange={(e) => setFormData((p) => ({ ...p, job_number: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono"
+            />
+          </div>
+        </div>
+
+        {/* Work Description with AI Assistant Shortcut */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="font-bold text-slate-700">Work Description &amp; Scope *</label>
+            <button
+              type="button"
+              onClick={() => setActiveModal({
+                type: 'ai_assistant',
+                onApply: (text) => setFormData((p) => ({ ...p, work_description: text }))
+              })}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Polish with AI</span>
+            </button>
+          </div>
+          <textarea
+            rows={3}
+            required
+            value={formData.work_description}
+            onChange={(e) => setFormData((p) => ({ ...p, work_description: e.target.value }))}
+            placeholder="Describe maintenance or rectification performed..."
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+
+        {/* Faults & Rectifications */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Faults Detected</label>
+            <textarea
+              rows={2}
+              value={formData.faults_found}
+              onChange={(e) => setFormData((p) => ({ ...p, faults_found: e.target.value }))}
+              placeholder="Faults observed on site..."
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Rectification Carried Out</label>
+            <textarea
+              rows={2}
+              value={formData.rectifications}
+              onChange={(e) => setFormData((p) => ({ ...p, rectifications: e.target.value }))}
+              placeholder="Action taken to rectify..."
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+            />
+          </div>
+        </div>
+
+        {/* Materials Used Picker */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="font-bold text-slate-700">Materials &amp; Spares Consumed</label>
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  addMaterialItem(e.target.value);
+                  e.target.value = '';
+                }
+              }}
+              className="text-[11px] p-1 bg-slate-100 rounded-lg border border-slate-300 font-semibold"
+            >
+              <option value="">+ Add Material</option>
+              {materials.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name} (Stock: {m.stock})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            {formData.materials_used.map((m, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs"
+              >
+                <span className="font-semibold text-slate-800">{m.name}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={m.quantity}
+                    onChange={(e) => {
+                      const qty = Number(e.target.value) || 1;
+                      setFormData((p) => {
+                        const copy = [...p.materials_used];
+                        copy[idx].quantity = qty;
+                        return { ...p, materials_used: copy };
+                      });
+                    }}
+                    className="w-14 p-1 border border-slate-300 rounded text-center font-bold"
+                  />
+                  <span className="text-slate-500">Pcs</span>
+                  <button
+                    type="button"
+                    onClick={() => removeMaterialItem(idx)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Photos (Before & After) */}
+        <div>
+          <label className="block font-bold text-slate-700 mb-1">Site Evidence Photos</label>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <label className="p-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors">
+              <Camera className="w-5 h-5 text-blue-600 mb-1" />
+              <span className="font-bold text-slate-700 text-[11px]">+ Add Before Photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => handlePhotoUpload(e, 'Before')}
+                className="hidden"
+              />
+            </label>
+            <label className="p-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors">
+              <Camera className="w-5 h-5 text-emerald-600 mb-1" />
+              <span className="font-bold text-slate-700 text-[11px]">+ Add After Photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => handlePhotoUpload(e, 'After')}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* Photo gallery preview */}
+          {formData.photos.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {formData.photos.map((p, idx) => (
+                <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200">
+                  <img src={p.url} alt="Site" className="w-full h-20 object-cover" />
+                  <span className="absolute top-1 left-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                    {p.tag}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        photos: prev.photos.filter((_, i) => i !== idx)
+                      }))
+                    }
+                    className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full text-[10px]"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Digital Signatures Box */}
+        <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          {/* Customer Signature Card */}
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+            <span className="font-bold text-slate-800 block">Customer Representative</span>
+            <div className="h-16 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1">
+              {formData.customer_signature ? (
+                <img src={formData.customer_signature} alt="Customer signature" className="max-h-full object-contain" />
+              ) : (
+                <span className="text-slate-300 text-[11px]">No signature captured</span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSignatureTarget('customer');
+                setShowSignatureModal(true);
+              }}
+              className="w-full py-2 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1"
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              <span>Capture Customer Signature</span>
+            </button>
+          </div>
+
+          {/* Supervisor Signature Card */}
+          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+            <span className="font-bold text-slate-800 block">Supervisor Sign-off</span>
+            <div className="h-16 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1">
+              {formData.supervisor_signature ? (
+                <img src={formData.supervisor_signature} alt="Supervisor signature" className="max-h-full object-contain" />
+              ) : (
+                <span className="text-slate-300 text-[11px]">Signed by Tariq Mahmoud</span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSignatureTarget('supervisor');
+                setShowSignatureModal(true);
+              }}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1"
+            >
+              <PenTool className="w-3.5 h-3.5" />
+              <span>Sign as Supervisor</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Sticky Bottom Save / Submit Bar */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg">
+        <div className="max-w-md mx-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleSubmit('Draft')}
+            className="flex-1 py-3 px-3 rounded-xl border border-slate-300 font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 text-xs transition-colors"
+          >
+            Save as Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubmit('Submitted')}
+            className="flex-1 py-3 px-3 rounded-xl bg-navy-900 hover:bg-navy-800 active:bg-black text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all"
+          >
+            <Check className="w-4 h-4 text-emerald-400" />
+            <span>Submit Report</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Signature Modal */}
+      {showSignatureModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <SignaturePad
+            title={signatureTarget === 'customer' ? "Customer Sign-off" : "Supervisor Approval"}
+            initialName={signatureTarget === 'customer' ? formData.customer_rep_name : 'Tariq Mahmoud'}
+            initialDesignation={signatureTarget === 'customer' ? formData.customer_rep_designation : 'Senior Field Supervisor'}
+            onSave={({ signatureDataUrl, repName, designation }) => {
+              if (signatureTarget === 'customer') {
+                setFormData((p) => ({
+                  ...p,
+                  customer_signature: signatureDataUrl,
+                  customer_rep_name: repName,
+                  customer_rep_designation: designation
+                }));
+              } else {
+                setFormData((p) => ({
+                  ...p,
+                  supervisor_signature: signatureDataUrl,
+                  supervisor_name: repName
+                }));
+              }
+              setShowSignatureModal(false);
+              showToast('Signature saved', 'success');
+            }}
+            onCancel={() => setShowSignatureModal(false)}
+          />
+        </div>
+      )}
+
+    </div>
+  );
+}
