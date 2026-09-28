@@ -4,7 +4,7 @@ import { formatBHD } from '../utils/formatters';
 import { 
   Building2, MapPin, Phone, Mail, User, Shield, 
   FileCheck, Wrench, AlertTriangle, FileText, ChevronRight, Plus, Search,
-  CheckCircle2, Clock, Calendar, RefreshCw, Edit, Hash, Globe, Layers, ArrowLeft
+  CheckCircle2, Clock, Calendar, RefreshCw, Edit, Hash, Globe, Layers, ArrowLeft, Trash2
 } from 'lucide-react';
 import QuickAddCustomerModal from './QuickAddCustomerModal';
 
@@ -112,6 +112,72 @@ export default function CustomerSiteView() {
       }
     } catch {
       showToast('Network error updating customer', 'error');
+    }
+  };
+
+  // Handle Delete Customer (Restricted to GM, Engineer, Supervisor)
+  const handleDeleteCustomer = async (customer) => {
+    if (!customer?.id) return;
+    if (!isManagement) {
+      showToast('Access Denied: Only GM, Engineer, and Supervisor can delete customers.', 'error');
+      return;
+    }
+
+    const confirm1 = window.confirm(`Are you sure you want to delete customer "${customer.name}"?`);
+    if (!confirm1) return;
+
+    try {
+      const res = await fetch(`/api/customers/${customer.id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast(data.message || 'Customer deleted successfully', 'success');
+        if (selectedCustomerDetails?.customer?.id === customer.id) {
+          setSelectedCustomerDetails(null);
+        }
+        if (editingCustomer?.id === customer.id) {
+          setEditingCustomer(null);
+        }
+        loadData();
+      } else if (res.status === 400 && data.requires_force) {
+        // Linked records exist, ask for confirmation to cascade delete
+        const confirmForce = window.confirm(
+          `${data.message}\n\nWarning: This will also remove associated sites, AMC contracts, and jobs for this customer.\n\nDo you want to proceed with permanent deletion?`
+        );
+        if (confirmForce) {
+          const forceRes = await fetch(`/api/customers/${customer.id}?force=true`, {
+            method: 'DELETE',
+            headers: {
+              'x-user-role': currentUser.role,
+              'x-user-id': currentUser.id
+            }
+          });
+          const forceData = await forceRes.json();
+          if (forceRes.ok) {
+            showToast(forceData.message || 'Customer and linked records deleted successfully', 'success');
+            if (selectedCustomerDetails?.customer?.id === customer.id) {
+              setSelectedCustomerDetails(null);
+            }
+            if (editingCustomer?.id === customer.id) {
+              setEditingCustomer(null);
+            }
+            loadData();
+          } else {
+            showToast(forceData.message || 'Failed to delete customer', 'error');
+          }
+        }
+      } else {
+        showToast(data.message || 'Failed to delete customer', 'error');
+      }
+    } catch {
+      showToast('Network error deleting customer', 'error');
     }
   };
 
@@ -366,13 +432,27 @@ export default function CustomerSiteView() {
                       </h3>
                     </div>
 
-                    <button
-                      onClick={() => setEditingCustomer(c)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Edit Customer"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingCustomer(c)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit Customer"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      {isManagement && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCustomer(c);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Customer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* CR & VAT Badges */}
@@ -729,20 +809,36 @@ export default function CustomerSiteView() {
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingCustomer(null)}
-                  className="py-3 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold shadow-md"
-                >
-                  Save Changes
-                </button>
+              <div className="pt-2 flex items-center justify-between gap-2">
+                {isManagement && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cust = editingCustomer;
+                      setEditingCustomer(null);
+                      handleDeleteCustomer(cust);
+                    }}
+                    className="py-3 px-3.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold border border-red-200 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Customer</span>
+                  </button>
+                )}
+                <div className="flex-1 flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setEditingCustomer(null)}
+                    className="py-3 px-4 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-3 px-6 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold shadow-md"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -922,6 +1018,16 @@ export default function CustomerSiteView() {
                   <Edit className="w-3.5 h-3.5" />
                   <span>Edit</span>
                 </button>
+                {isManagement && (
+                  <button
+                    onClick={() => handleDeleteCustomer(selectedCustomerDetails.customer)}
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors border border-red-200"
+                    title="Delete Customer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setSelectedCustomerDetails(null)}
                   className="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 leading-none"

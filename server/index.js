@@ -754,6 +754,64 @@ app.put('/api/customers/:id', requirePermission('canManageCustomers'), (req, res
   });
 });
 
+app.delete('/api/customers/:id', (req, res) => {
+  const existing = db.getById('customers', req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Customer not found' });
+
+  // Access restricted strictly to GM, Engineer, and Supervisor
+  if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Access Denied',
+      message: 'Access restricted: Only GM, Engineer, and Supervisor can delete customers.'
+    });
+  }
+
+  const force = req.query.force === 'true' || req.body?.force === true;
+  const sites = db.get('sites').filter(s => s.customer_id === req.params.id);
+  const contracts = db.get('amc_contracts').filter(a => a.customer_id === req.params.id);
+  const jobs = db.get('jobs').filter(j => j.customer_id === req.params.id);
+
+  if (!force && (sites.length > 0 || contracts.length > 0 || jobs.length > 0)) {
+    return res.status(400).json({
+      error: 'Cannot delete customer',
+      message: `Customer "${existing.name}" has ${sites.length} site(s), ${contracts.length} AMC contract(s), and ${jobs.length} job(s) linked. Do you want to permanently delete this customer and all linked records?`,
+      linked_records: {
+        sites_count: sites.length,
+        contracts_count: contracts.length,
+        jobs_count: jobs.length
+      },
+      requires_force: true
+    });
+  }
+
+  // If force is true, clean up related sites, amc contracts, visits, jobs, and reports
+  if (force) {
+    const dbData = db.read();
+    const contractIds = new Set(contracts.map(c => c.id));
+
+    if (dbData.sites) {
+      dbData.sites = dbData.sites.filter(s => s.customer_id !== req.params.id);
+    }
+    if (dbData.amc_contracts) {
+      dbData.amc_contracts = dbData.amc_contracts.filter(c => c.customer_id !== req.params.id);
+    }
+    if (dbData.amc_visits) {
+      dbData.amc_visits = dbData.amc_visits.filter(v => !contractIds.has(v.amc_contract_id) && !contractIds.has(v.amc_id));
+    }
+    if (dbData.jobs) {
+      dbData.jobs = dbData.jobs.filter(j => j.customer_id !== req.params.id);
+    }
+    if (dbData.reports) {
+      dbData.reports = dbData.reports.filter(r => r.customer_id !== req.params.id);
+    }
+    db.write(dbData);
+  }
+
+  db.delete('customers', req.params.id);
+  db.logAudit(req.user.id, 'DELETE_CUSTOMER', 'customers', req.params.id, `Deleted customer ${existing.name} (${existing.customer_code || req.params.id})`);
+  res.json({ success: true, message: `Customer ${existing.name} deleted successfully` });
+});
+
 app.get('/api/sites', (req, res) => {
   const sites = db.get('sites');
   if (req.user.role === 'Technician') {
