@@ -23,7 +23,13 @@ app.use(authMiddleware);
 
 // --- HEALTH & AUTH INFO ---
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', serverTime: new Date().toISOString() });
+  const dbHealth = db.isPostgres ? (db.pgPool ? 'postgres-connected' : 'postgres-connecting') : 'local-storage';
+  res.json({
+    status: 'ok',
+    database: dbHealth,
+    serverTime: new Date().toISOString(),
+    uptime: Math.floor(process.uptime())
+  });
 });
 
 app.get('/api/auth/me', (req, res) => {
