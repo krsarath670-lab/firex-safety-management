@@ -1271,6 +1271,33 @@
   "quotations": [],
   "audit_logs": [
     {
+      "id": "aud-1790639842863",
+      "user_id": "use-1790621830998-19",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1790621830998-19",
+      "details": "User Sarath Kr logged in successfully",
+      "timestamp": "2026-09-28T23:57:22.863Z"
+    },
+    {
+      "id": "aud-1790639807234",
+      "user_id": "use-1790622019667-210",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1790622019667-210",
+      "details": "User Mohammed Alwadhi logged in successfully",
+      "timestamp": "2026-09-28T23:56:47.234Z"
+    },
+    {
+      "id": "aud-1790639706641",
+      "user_id": "usr-gm-1790621464394",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm-1790621464394",
+      "details": "User Eng. Mohamed Hweidi logged in successfully",
+      "timestamp": "2026-09-28T23:55:06.641Z"
+    },
+    {
       "id": "aud-1790639627869",
       "user_id": "use-1790622080786-809",
       "action": "CREATE_REPORT",
