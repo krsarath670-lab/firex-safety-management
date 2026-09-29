@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut, Flame } from 'lucide-react';
+import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut, Flame, FileText } from 'lucide-react';
 
 export default function Header() {
   const {
@@ -166,6 +166,19 @@ export default function Header() {
               </span>
             )}
           </button>
+
+          {/* User Roles & Jobs Guide PDF Download */}
+          <a
+            href="/FIREX_User_Roles_and_Jobs_Guide.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Download Official User Roles & Jobs Guide (PDF)"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-200 bg-navy-800/80 hover:bg-navy-700 border border-navy-700 transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden lg:inline">Roles &amp; Jobs Guide (PDF)</span>
+            <span className="lg:hidden">Guide PDF</span>
+          </a>
 
           {/* Notifications Bell */}
           <div className="relative">

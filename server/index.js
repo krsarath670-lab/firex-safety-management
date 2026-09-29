@@ -3092,6 +3092,18 @@ app.post('/api/sync', (req, res) => {
   });
 });
 
+// Serve User Roles and Jobs Guide PDF (Official System Documentation)
+app.get('/api/guide-pdf', (req, res) => {
+  const filePath = path.join(__dirname, '..', 'public', 'FIREX_User_Roles_and_Jobs_Guide.pdf');
+  if (require('fs').existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="FIREX_User_Roles_and_Jobs_Guide.pdf"');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Guide PDF not found');
+  }
+});
+
 // Serve public static assets (letterhead, logo, icons)
 const publicPath = path.join(__dirname, '..', 'public');
 if (require('fs').existsSync(publicPath)) {

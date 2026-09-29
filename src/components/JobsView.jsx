@@ -373,6 +373,18 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
             </span>
           </button>
 
+          <a
+            href="/FIREX_User_Roles_and_Jobs_Guide.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+            title="Download Step-by-Step Roles & Jobs Guide (PDF)"
+          >
+            <FileText className="w-4 h-4 text-blue-600" />
+            <span className="hidden sm:inline">Jobs &amp; Roles Guide (PDF)</span>
+            <span className="sm:hidden">Guide PDF</span>
+          </a>
+
           {!isTechnician && (
             <button
               onClick={() => {
