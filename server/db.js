@@ -746,6 +746,10 @@ class Database {
       data.job_holds = [];
       modified = true;
     }
+    if (!data.emergency_calls) {
+      data.emergency_calls = [];
+      modified = true;
+    }
 
     // User requested: Delete Accounts and Projects Manager pre-seeded names (GM will add them manually)
     if (data.users && Array.isArray(data.users)) {
@@ -1189,6 +1193,152 @@ class Database {
           hold_date: '2026-09-25T11:00:00Z',
           expected_release_date: '2026-10-02',
           remarks: 'Ceiling grid work incomplete. Site access rescheduled.'
+        }
+      ];
+
+      modified = true;
+    }
+
+    // Seed realistic Emergency Call-Outs if emergency_calls array is empty
+    if (!data.emergency_calls || data.emergency_calls.length === 0) {
+      const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'Hawar School' };
+      const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'Main Facility / Head Office' };
+
+      data.emergency_calls = [
+        {
+          id: 'eco-1',
+          call_number: 'ECO-2026-001',
+          report_number: 'ECR-2026-001',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          site_address: 'Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain',
+          contact_person: 'Ms. Fatima Al-Zahra (Facilities Lead)',
+          contact_phone: '+973 1777 5555',
+          call_date: '2026-09-28',
+          call_time: '02:15',
+          emergency_type: 'Main Fire Pump Controller Malfunction & Pressure Bleed',
+          system: 'Fire Fighting',
+          emergency_description: 'Night emergency callout: Main electric jockey pump cycling continuously every 40 seconds; fire pump controller sounding alarm and displaying low header pressure warning.',
+          reported_problem: 'FACP annunciator panel displaying fire pump trouble alarm; jockey pump failing to maintain system pressure above cut-in setpoint of 7.5 bar.',
+          priority: 'Critical',
+          assigned_supervisor_id: 'use-1790621830998-19',
+          assigned_supervisor_name: 'Sarath Kr',
+          assigned_technician_id: 'use-1790622080786-809',
+          assigned_technician_name: 'Abdul Majeed',
+          arrival_date: '2026-09-28',
+          arrival_time: '02:45',
+          completion_date: '2026-09-28',
+          completion_time: '05:15',
+          findings: 'Ruptured 1-inch pressure sensing brass fitting on jockey pump discharge line; vibration-induced fatigue failure causing rapid pressure loss. Sensing line strainer clogged with scale.',
+          cause: 'Mechanical fatigue on rigid connector without pulsation dampening, combined with pipe sediment accumulation.',
+          action_taken: 'Isolated jockey pump lines. Replaced damaged rigid fitting with stainless steel braided high-pressure flexible loop with pulsation snubber. Flushed strainer and recalibrated cut-in/cut-out settings.',
+          rectification: 'Re-pressurized system to 8.8 bar. Tested 3 automatic start/stop cycles successfully. Verified standby diesel pump auto-crank signal. Cleared panel alarms.',
+          materials_used: [
+            { name: '1-inch SS Braided Flexible Sensing Loop (UL/FM)', quantity: 1, unit: 'pcs', part_number: 'FX-FLX-100' },
+            { name: 'Danfoss Pressure Snubber & Isolation Cock', quantity: 1, unit: 'pcs', part_number: 'DAN-SNB-01' }
+          ],
+          additional_work_required: false,
+          additional_work_details: '',
+          recommendations: 'Inspect primary non-return check valve during next quarterly AMC inspection.',
+          customer_remarks: 'Urgent response within 30 minutes in early morning. Noise and pressure alarm resolved completely.',
+          technician_remarks: 'Pump room left clean and in 100% normal automatic operating mode.',
+          supervisor_remarks: 'Civil Defence and NFPA 20 compliance verified. Work inspected and approved.',
+          customer_rep_name: 'Tariq Al-Sayed',
+          customer_rep_phone: '+973 3999 1122',
+          customer_rep_designation: 'Facilities Shift In-charge',
+          customer_signature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><path d="M10 40 Q 50 10 90 35 T 180 25" stroke="%230F1E36" stroke-width="2.5" fill="none"/></svg>',
+          customer_signature_date: '2026-09-28 05:20',
+          signature_captured_by: 'Abdul Majeed (Technician)',
+          technician_signature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><path d="M15 35 Q 45 15 80 30 T 160 30" stroke="%230F1E36" stroke-width="2.5" fill="none"/></svg>',
+          technician_signed_date: '2026-09-28 05:15',
+          supervisor_signature: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60"><path d="M20 40 Q 60 10 100 35 T 170 20" stroke="%230F1E36" stroke-width="2.5" fill="none"/></svg>',
+          supervisor_signed_date: '2026-09-28 08:30',
+          photos: [
+            { id: 'pho-1', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80', caption: 'Ruptured brass fitting leaking pressure on manifold', category: 'Before', uploaded_at: '2026-09-28T02:50:00Z', uploaded_by: 'Abdul Majeed' },
+            { id: 'pho-2', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=600&q=80', caption: 'Installation of stainless steel braided line and snubber', category: 'During', uploaded_at: '2026-09-28T03:45:00Z', uploaded_by: 'Abdul Majeed' },
+            { id: 'pho-3', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80', caption: 'Manifold holding steady at 8.8 bar with FACP normalized', category: 'After', uploaded_at: '2026-09-28T05:10:00Z', uploaded_by: 'Abdul Majeed' }
+          ],
+          status: 'Approved',
+          report_status: 'Approved',
+          distribution_list: [
+            { recipient_name: 'Eng. Mohamed Hweidi', recipient_email: 'eng..mohamed.hweidi@firexbahrain.com', recipient_role: 'GM', sent_at: '2026-09-28T09:00:00Z', sent_by: 'Sarath Kr', status: 'Delivered' }
+          ],
+          audit_trail: [
+            { action: 'CALL_LOGGED', by_name: 'Eng. Mohamed Hweidi', by_role: 'GM', timestamp: '2026-09-28T02:20:00Z', details: 'Critical Emergency Call logged: Main Fire Pump Controller Malfunction' },
+            { action: 'TEAM_ASSIGNED', by_name: 'Sarath Kr', by_role: 'Supervisor', timestamp: '2026-09-28T02:25:00Z', details: 'Assigned Abdul Majeed to attend site urgently' },
+            { action: 'ARRIVAL_RECORDED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-28T02:45:00Z', details: 'Technician on site at Hawar School Main Facility' },
+            { action: 'FINDINGS_RECORDED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-28T03:30:00Z', details: 'Identified ruptured sensing line on jockey pump' },
+            { action: 'RECTIFIED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-28T05:10:00Z', details: 'Replaced line, re-pressurized to 8.8 bar, tests passed' },
+            { action: 'SIGNATURE_CAPTURED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-28T05:20:00Z', details: 'Customer representative Tariq Al-Sayed signed report' },
+            { action: 'REPORT_SUBMITTED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-28T05:25:00Z', details: 'Draft report ECR-2026-001 submitted for supervisor review' },
+            { action: 'REPORT_REVIEWED', by_name: 'Sarath Kr', by_role: 'Supervisor', timestamp: '2026-09-28T08:30:00Z', details: 'Technical findings and NFPA compliance reviewed and confirmed' },
+            { action: 'REPORT_APPROVED', by_name: 'Eng. Mohamed Hweidi', by_role: 'GM', timestamp: '2026-09-28T09:00:00Z', details: 'Emergency report approved and locked' }
+          ],
+          created_by_id: 'usr-gm-1790621464394',
+          created_by_name: 'Eng. Mohamed Hweidi',
+          created_at: '2026-09-28T02:20:00Z',
+          submitted_by_name: 'Abdul Majeed',
+          submitted_at: '2026-09-28T05:25:00Z',
+          reviewed_by_name: 'Sarath Kr',
+          reviewed_at: '2026-09-28T08:30:00Z',
+          approved_by_name: 'Eng. Mohamed Hweidi',
+          approved_at: '2026-09-28T09:00:00Z'
+        },
+        {
+          id: 'eco-2',
+          call_number: 'ECO-2026-002',
+          report_number: 'ECR-2026-002',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          site_address: 'Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain',
+          contact_person: 'Ms. Fatima Al-Zahra (Facilities Lead)',
+          contact_phone: '+973 1777 5555',
+          call_date: '2026-09-29',
+          call_time: '10:30',
+          emergency_type: 'Smoke Detector Loop Fault & False Alarms',
+          system: 'Fire Alarm',
+          emergency_description: 'Intermittent false alarms in Administration Corridor. Loop 2 reporting communication dropouts.',
+          reported_problem: 'Strobes and sounders triggered unexpectedly during school hours without fire condition.',
+          priority: 'High',
+          assigned_supervisor_id: 'use-1790621830998-19',
+          assigned_supervisor_name: 'Sarath Kr',
+          assigned_technician_id: 'use-1790622080786-809',
+          assigned_technician_name: 'Abdul Majeed',
+          arrival_date: '2026-09-29',
+          arrival_time: '11:05',
+          completion_date: '',
+          completion_time: '',
+          findings: 'Device #42 in Server Corridor contaminated with AC maintenance dust particles causing analog voltage spike.',
+          cause: 'Fine particulates settling on internal optical sensing chamber.',
+          action_taken: 'Isolated zone alarm outputs. Cleaned optical chamber with compressed gas and recalibrated baseline.',
+          rectification: 'Replaced head with spare XP95 detector and conducted aerosol canister smoke test. Re-enabled outputs.',
+          materials_used: [
+            { name: 'Apollo XP95 Optical Smoke Detector (UL Listed)', quantity: 1, unit: 'pcs', part_number: 'APO-55000-600' }
+          ],
+          additional_work_required: false,
+          additional_work_details: '',
+          recommendations: 'Advise AC duct contractor to cover detectors during plenum cleaning.',
+          customer_remarks: 'Technician responded immediately and silenced the false alarm.',
+          technician_remarks: 'Loop 2 now communicating 100% normal with zero polling errors.',
+          supervisor_remarks: 'Pending final customer representative sign-off.',
+          status: 'In Progress',
+          report_status: 'Submitted',
+          photos: [],
+          distribution_list: [],
+          audit_trail: [
+            { action: 'CALL_LOGGED', by_name: 'Sarath Kr', by_role: 'Supervisor', timestamp: '2026-09-29T10:35:00Z', details: 'High Priority Call logged: Smoke Detector Loop Fault' },
+            { action: 'ARRIVAL_RECORDED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-29T11:05:00Z', details: 'Technician on site' },
+            { action: 'REPORT_SUBMITTED', by_name: 'Abdul Majeed', by_role: 'Technician', timestamp: '2026-09-29T12:00:00Z', details: 'Field report submitted for review' }
+          ],
+          created_by_id: 'use-1790621830998-19',
+          created_by_name: 'Sarath Kr',
+          created_at: '2026-09-29T10:35:00Z',
+          submitted_by_name: 'Abdul Majeed',
+          submitted_at: '2026-09-29T12:00:00Z'
         }
       ];
 
@@ -2809,6 +2959,305 @@ class Database {
       },
       by_type,
       jobs: monthJobs
+    };
+  }
+
+  // --- EMERGENCY CALL-OUT METHODS ---
+  getEmergencyCalls() {
+    const db = this.read();
+    return db.emergency_calls || [];
+  }
+
+  getEmergencyCallById(id) {
+    const calls = this.getEmergencyCalls();
+    return calls.find(c => c.id === id || c.call_number === id);
+  }
+
+  generateEmergencyCallNumber() {
+    const db = this.read();
+    const calls = db.emergency_calls || [];
+    const year = new Date().getFullYear();
+    let maxSeq = 0;
+    const regex = new RegExp(`^ECO-${year}-(\\d+)$`);
+    calls.forEach(c => {
+      if (c.call_number) {
+        const match = c.call_number.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+    return `ECO-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+  }
+
+  generateEmergencyReportNumber() {
+    const db = this.read();
+    const calls = db.emergency_calls || [];
+    const year = new Date().getFullYear();
+    let maxSeq = 0;
+    const regex = new RegExp(`^ECR-${year}-(\\d+)$`);
+    calls.forEach(c => {
+      if (c.report_number) {
+        const match = c.report_number.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+    return `ECR-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+  }
+
+  createEmergencyCall(callData, user) {
+    const db = this.read();
+    if (!db.emergency_calls) db.emergency_calls = [];
+
+    const callNumber = callData.call_number || this.generateEmergencyCallNumber();
+    const reportNumber = callData.report_number || this.generateEmergencyReportNumber();
+    const id = `eco-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const nowIso = new Date().toISOString();
+
+    const newCall = {
+      id,
+      call_number: callNumber,
+      report_number: reportNumber,
+      customer_id: callData.customer_id || null,
+      customer_name: callData.customer_name || 'Client Premises',
+      site_id: callData.site_id || null,
+      site_name: callData.site_name || 'Main Facility',
+      site_address: callData.site_address || 'Kingdom of Bahrain',
+      contact_person: callData.contact_person || '',
+      contact_phone: callData.contact_phone || '',
+      call_date: callData.call_date || nowIso.slice(0, 10),
+      call_time: callData.call_time || new Date().toTimeString().slice(0, 5),
+      emergency_type: callData.emergency_type || 'General Fire Safety Emergency',
+      system: callData.system || 'Fire Alarm',
+      emergency_description: callData.emergency_description || '',
+      reported_problem: callData.reported_problem || '',
+      priority: callData.priority || 'High',
+      assigned_supervisor_id: callData.assigned_supervisor_id || null,
+      assigned_supervisor_name: callData.assigned_supervisor_name || '',
+      assigned_technician_id: callData.assigned_technician_id || null,
+      assigned_technician_name: callData.assigned_technician_name || '',
+      arrival_date: callData.arrival_date || '',
+      arrival_time: callData.arrival_time || '',
+      completion_date: callData.completion_date || '',
+      completion_time: callData.completion_time || '',
+      findings: callData.findings || '',
+      cause: callData.cause || '',
+      action_taken: callData.action_taken || '',
+      rectification: callData.rectification || '',
+      materials_used: Array.isArray(callData.materials_used) ? callData.materials_used : [],
+      additional_work_required: !!callData.additional_work_required,
+      additional_work_details: callData.additional_work_details || '',
+      recommendations: callData.recommendations || '',
+      customer_remarks: callData.customer_remarks || '',
+      technician_remarks: callData.technician_remarks || '',
+      supervisor_remarks: callData.supervisor_remarks || '',
+      customer_rep_name: callData.customer_rep_name || '',
+      customer_rep_phone: callData.customer_rep_phone || '',
+      customer_rep_designation: callData.customer_rep_designation || '',
+      customer_signature: callData.customer_signature || null,
+      customer_signature_date: callData.customer_signature_date || null,
+      signature_captured_by: callData.signature_captured_by || (user ? `${user.name} (${user.role})` : ''),
+      technician_signature: callData.technician_signature || null,
+      technician_signed_date: callData.technician_signed_date || null,
+      supervisor_signature: callData.supervisor_signature || null,
+      supervisor_signed_date: callData.supervisor_signed_date || null,
+      photos: Array.isArray(callData.photos) ? callData.photos : [],
+      status: callData.status || (callData.assigned_technician_id ? 'Assigned' : 'New'),
+      report_status: callData.report_status || 'Draft',
+      distribution_list: Array.isArray(callData.distribution_list) ? callData.distribution_list : [],
+      audit_trail: [
+        {
+          action: 'CALL_LOGGED',
+          by_id: user?.id,
+          by_name: user?.name || 'Dispatcher',
+          by_role: user?.role || 'Staff',
+          timestamp: nowIso,
+          details: `Emergency Call-Out ${callNumber} registered with priority ${callData.priority || 'High'}`
+        }
+      ],
+      created_by_id: user?.id || null,
+      created_by_name: user?.name || 'Staff',
+      created_at: nowIso,
+      updated_at: nowIso
+    };
+
+    db.emergency_calls.unshift(newCall);
+    this.write(db);
+    this.logAudit(user?.id || 'system', 'CREATE_EMERGENCY_CALL', 'emergency_calls', id, `Logged Emergency Call ${callNumber} (${newCall.priority})`);
+    return newCall;
+  }
+
+  updateEmergencyCall(id, updates, user) {
+    const db = this.read();
+    if (!db.emergency_calls) db.emergency_calls = [];
+
+    const index = db.emergency_calls.findIndex(c => c.id === id);
+    if (index === -1) return null;
+
+    const current = db.emergency_calls[index];
+    const nowIso = new Date().toISOString();
+    const audit_trail = Array.isArray(current.audit_trail) ? [...current.audit_trail] : [];
+
+    // Track status transitions
+    if (updates.status && updates.status !== current.status) {
+      audit_trail.push({
+        action: 'STATUS_CHANGED',
+        by_id: user?.id,
+        by_name: user?.name,
+        by_role: user?.role,
+        timestamp: nowIso,
+        details: `Status transitioned from ${current.status} to ${updates.status}`
+      });
+    }
+
+    if (updates.report_status && updates.report_status !== current.report_status) {
+      audit_trail.push({
+        action: 'REPORT_STATUS_CHANGED',
+        by_id: user?.id,
+        by_name: user?.name,
+        by_role: user?.role,
+        timestamp: nowIso,
+        details: `Report status updated from ${current.report_status} to ${updates.report_status}`
+      });
+      if (updates.report_status === 'Submitted') {
+        updates.submitted_by_id = user?.id;
+        updates.submitted_by_name = user?.name;
+        updates.submitted_at = nowIso;
+      } else if (updates.report_status === 'Reviewed') {
+        updates.reviewed_by_id = user?.id;
+        updates.reviewed_by_name = user?.name;
+        updates.reviewed_at = nowIso;
+      } else if (updates.report_status === 'Approved') {
+        updates.approved_by_id = user?.id;
+        updates.approved_by_name = user?.name;
+        updates.approved_at = nowIso;
+      } else if (updates.report_status === 'Closed') {
+        updates.closed_by_id = user?.id;
+        updates.closed_by_name = user?.name;
+        updates.closed_at = nowIso;
+      }
+    }
+
+    if (updates.arrival_time && !current.arrival_time) {
+      audit_trail.push({
+        action: 'ARRIVAL_RECORDED',
+        by_id: user?.id,
+        by_name: user?.name,
+        by_role: user?.role,
+        timestamp: nowIso,
+        details: `Technician arrived on site at ${updates.arrival_time}`
+      });
+    }
+
+    if (updates.customer_signature && !current.customer_signature) {
+      audit_trail.push({
+        action: 'SIGNATURE_CAPTURED',
+        by_id: user?.id,
+        by_name: user?.name,
+        by_role: user?.role,
+        timestamp: nowIso,
+        details: `Customer representative signature captured for ${updates.customer_rep_name || current.customer_rep_name || 'Client'}`
+      });
+    }
+
+    const updated = {
+      ...current,
+      ...updates,
+      audit_trail,
+      updated_at: nowIso
+    };
+
+    db.emergency_calls[index] = updated;
+    this.write(db);
+    this.logAudit(user?.id || 'system', 'UPDATE_EMERGENCY_CALL', 'emergency_calls', id, `Updated Emergency Call ${current.call_number}`);
+    return updated;
+  }
+
+  addEmergencyPhoto(id, photoData, user) {
+    const db = this.read();
+    if (!db.emergency_calls) db.emergency_calls = [];
+
+    const call = db.emergency_calls.find(c => c.id === id);
+    if (!call) return null;
+
+    if (!Array.isArray(call.photos)) call.photos = [];
+    const newPhoto = {
+      id: `pho-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      url: photoData.url,
+      caption: photoData.caption || '',
+      category: photoData.category || 'During', // 'Before' | 'During' | 'After'
+      uploaded_at: new Date().toISOString(),
+      uploaded_by: user?.name || 'Technician'
+    };
+
+    call.photos.push(newPhoto);
+    if (!Array.isArray(call.audit_trail)) call.audit_trail = [];
+    call.audit_trail.push({
+      action: 'PHOTO_ADDED',
+      by_id: user?.id,
+      by_name: user?.name,
+      by_role: user?.role,
+      timestamp: new Date().toISOString(),
+      details: `Added ${newPhoto.category} photo: ${newPhoto.caption || 'Evidence photo'}`
+    });
+
+    call.updated_at = new Date().toISOString();
+    this.write(db);
+    return newPhoto;
+  }
+
+  distributeEmergencyReport(id, distributionData, user) {
+    const db = this.read();
+    if (!db.emergency_calls) db.emergency_calls = [];
+
+    const call = db.emergency_calls.find(c => c.id === id);
+    if (!call) return null;
+
+    if (!Array.isArray(call.distribution_list)) call.distribution_list = [];
+    const record = {
+      id: `dist-${Date.now()}`,
+      recipient_name: distributionData.recipient_name,
+      recipient_email: distributionData.recipient_email,
+      recipient_role: distributionData.recipient_role,
+      sent_at: new Date().toISOString(),
+      sent_by: user?.name || 'Staff',
+      status: 'Delivered'
+    };
+
+    call.distribution_list.push(record);
+    if (!Array.isArray(call.audit_trail)) call.audit_trail = [];
+    call.audit_trail.push({
+      action: 'REPORT_DISTRIBUTED',
+      by_id: user?.id,
+      by_name: user?.name,
+      by_role: user?.role,
+      timestamp: new Date().toISOString(),
+      details: `Report distributed internally to ${record.recipient_name} (${record.recipient_role})`
+    });
+
+    call.updated_at = new Date().toISOString();
+    this.write(db);
+    return record;
+  }
+
+  getEmergencyDashboardStats() {
+    const db = this.read();
+    const calls = db.emergency_calls || [];
+    return {
+      totalEmergencyCalls: calls.length,
+      newEmergencyCallsCount: calls.filter(c => c.status === 'New').length,
+      criticalCallsCount: calls.filter(c => c.priority === 'Critical' && !['Closed', 'Cancelled', 'Approved'].includes(c.status)).length,
+      highCallsCount: calls.filter(c => c.priority === 'High' && !['Closed', 'Cancelled', 'Approved'].includes(c.status)).length,
+      inProgressCallsCount: calls.filter(c => ['On Site', 'In Progress', 'Assigned', 'En Route'].includes(c.status)).length,
+      pendingCallsCount: calls.filter(c => ['Pending Material', 'Pending Customer'].includes(c.status)).length,
+      reportsPendingCount: calls.filter(c => ['Draft', 'Submitted'].includes(c.report_status)).length,
+      reportsApprovedCount: calls.filter(c => c.report_status === 'Approved').length,
+      closedCallsCount: calls.filter(c => ['Closed', 'Rectified'].includes(c.status)).length,
+      activeCriticalEmergency: calls.some(c => c.priority === 'Critical' && !['Closed', 'Cancelled', 'Approved'].includes(c.status))
     };
   }
 }

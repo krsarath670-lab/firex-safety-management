@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut } from 'lucide-react';
+import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut, Flame } from 'lucide-react';
 
 export default function Header() {
   const {
@@ -14,10 +14,12 @@ export default function Header() {
     setDeviceView,
     offlineQueue,
     syncOfflineData,
+    activeTab,
     setActiveTab,
     companySettings,
     logout,
-    setIsLoginModalOpen
+    setIsLoginModalOpen,
+    dashboardStats
   } = useApp();
 
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
@@ -143,6 +145,25 @@ export default function Header() {
                 <Wifi className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="hidden xs:inline">Online</span>
               </>
+            )}
+          </button>
+
+          {/* Emergency Call-Out Quick Button */}
+          <button
+            onClick={() => setActiveTab('emergency')}
+            title="Emergency Call-Out & Rapid Response"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all border shadow-sm ${
+              activeTab === 'emergency'
+                ? 'bg-safety-red text-white border-red-500 ring-2 ring-red-400/40 shadow-red-900/40'
+                : 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border-red-500/30'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-safety-red fill-safety-red" />
+            <span className="hidden sm:inline tracking-wider uppercase text-[11px]">Emergency</span>
+            {dashboardStats?.emergencyStats?.active > 0 && (
+              <span className="px-1.5 py-0.2 bg-safety-red text-white text-[10px] font-black rounded-full animate-pulse">
+                {dashboardStats.emergencyStats.active}
+              </span>
             )}
           </button>
 

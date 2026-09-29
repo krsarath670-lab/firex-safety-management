@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, Building2, Wrench, Package, Sparkles, 
-  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt
+  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt, Flame
 } from 'lucide-react';
 
 export default function MoreMenu({ onSelectView }) {
@@ -35,6 +35,16 @@ export default function MoreMenu({ onSelectView }) {
     {
       title: "Operations & Contracts",
       items: [
+        {
+          id: 'emergency',
+          label: 'Emergency Call-Out & Rapid Response',
+          description: 'Urgent site attendance, findings, photos, customer signature & approval',
+          icon: Flame,
+          iconColor: 'text-safety-red bg-red-50',
+          badge: dashboardStats?.emergencyStats?.active > 0 ? `${dashboardStats.emergencyStats.active} Active` : null,
+          badgeColor: 'bg-red-100 text-red-800 font-bold',
+          hide: false
+        },
         {
           id: 'amc',
           label: 'AMC Contracts & Reminders',

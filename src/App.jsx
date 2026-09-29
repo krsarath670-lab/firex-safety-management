@@ -17,6 +17,7 @@ import CompanySettingsView from './components/CompanySettingsView';
 import AccountsView from './components/AccountsView';
 import UserManagementView from './components/UserManagementView';
 import MoreMenu from './components/MoreMenu';
+import EmergencyCalloutView from './components/EmergencyCalloutView';
 import AIAssistantModal from './components/AIAssistantModal';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
@@ -243,6 +244,8 @@ function AppContent() {
           {activeTab === 'users' && <UserManagementView />}
 
           {activeTab === 'accounts' && <AccountsView />}
+
+          {activeTab === 'emergency' && <EmergencyCalloutView />}
 
           {activeTab === 'more' && (
             <MoreMenu

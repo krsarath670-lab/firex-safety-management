@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, Briefcase, FileText, Grid, ShieldCheck, Building2, Users, Receipt } from 'lucide-react';
+import { Home, Briefcase, FileText, Grid, ShieldCheck, Building2, Users, Receipt, Flame } from 'lucide-react';
 
 export default function BottomNav() {
   const { activeTab, setActiveTab, dashboardStats, currentUser } = useApp();
@@ -11,11 +11,16 @@ export default function BottomNav() {
   const isProjectsManager = currentUser?.role === 'Projects Manager';
   const isGM = currentUser?.role === 'GM';
 
+  const emergencyBadge = (dashboardStats?.emergencyStats?.active > 0) 
+    ? dashboardStats.emergencyStats.active 
+    : (dashboardStats?.emergencyStats?.critical > 0 ? '!' : null);
+
   let navItems = [];
 
   if (isSales) {
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'jobs', label: 'My Jobs', icon: Briefcase, badge: dashboardStats?.myJobsCount > 0 ? dashboardStats.myJobsCount : null },
       { id: 'customers', label: 'Customers', icon: Building2, badge: null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.myAmcCount > 0 ? dashboardStats.myAmcCount : null },
@@ -24,6 +29,7 @@ export default function BottomNav() {
   } else if (isTechnician) {
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
       { id: 'reports', label: 'Reports', icon: FileText, badge: dashboardStats?.pendingReportsCount > 0 ? dashboardStats.pendingReportsCount : null },
       { id: 'more', label: 'More', icon: Grid, badge: null }
@@ -31,6 +37,7 @@ export default function BottomNav() {
   } else if (isAccounts) {
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
       { id: 'customers', label: 'Statements', icon: Building2, badge: null },
       { id: 'jobs', label: 'Holds & Jobs', icon: Briefcase, badge: dashboardStats?.paymentHoldsCount > 0 ? dashboardStats.paymentHoldsCount : null },
@@ -39,29 +46,30 @@ export default function BottomNav() {
   } else if (isProjectsManager) {
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'jobs', label: 'Projects', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
       { id: 'customers', label: 'Sites', icon: Building2, badge: null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
       { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.operationalHoldsCount > 0 ? dashboardStats.operationalHoldsCount : null }
     ];
   } else if (isGM) {
-    // GM: Full overview with direct Accounts link
+    // GM: Full overview with direct Accounts link and Emergency Call-Out
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
       { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
-      { id: 'users', label: 'Staff', icon: Users, badge: null },
       { id: 'more', label: 'More', icon: Grid, badge: (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) > 0 ? (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) : null }
     ];
   } else {
     // Engineer, Supervisor
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
       { id: 'customers', label: 'Customers', icon: Building2, badge: null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
-      { id: 'users', label: 'Staff Access', icon: Users, badge: null },
       { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.openFaultsCount > 0 ? dashboardStats.openFaultsCount : null }
     ];
   }
@@ -85,18 +93,30 @@ export default function BottomNav() {
             >
               {/* Active indicator bar */}
               {isActive && (
-                <div className="absolute top-0 w-10 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-b-full shadow-sm shadow-blue-500/50" />
+                <div className={`absolute top-0 w-10 h-1 rounded-b-full shadow-sm ${
+                  item.isEmergency 
+                    ? 'bg-gradient-to-r from-red-600 to-orange-500 shadow-red-500/50' 
+                    : 'bg-gradient-to-r from-blue-500 to-cyan-400 shadow-blue-500/50'
+                }`} />
               )}
               
               <div className="relative">
-                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 text-blue-400' : ''}`} />
+                <Icon className={`w-5 h-5 transition-transform ${
+                  isActive 
+                    ? (item.isEmergency ? 'scale-110 text-safety-red' : 'scale-110 text-blue-400') 
+                    : (item.isEmergency ? 'text-red-400 hover:text-red-300' : '')
+                }`} />
                 {item.badge && (
                   <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 bg-safety-red text-white text-[9px] font-extrabold rounded-full border border-navy-900 shadow-sm animate-pulse">
                     {item.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-[11px] mt-1 tracking-tight leading-none ${isActive ? 'text-white font-semibold' : 'text-slate-400 font-normal'}`}>
+              <span className={`text-[11px] mt-1 tracking-tight leading-none ${
+                isActive 
+                  ? (item.isEmergency ? 'text-safety-red font-bold' : 'text-white font-semibold') 
+                  : (item.isEmergency ? 'text-red-300 font-medium' : 'text-slate-400 font-normal')
+              }`}>
                 {item.label}
               </span>
             </button>

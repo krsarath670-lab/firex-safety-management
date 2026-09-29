@@ -44,7 +44,16 @@ const ROLE_PERMISSIONS = {
     canHoldJobsOperational: true,
     canReleaseHold: true,
     canManageProjects: true,
-    canExportAccountsExcel: true
+    canExportAccountsExcel: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: true,
+    canEditEmergency: 'all',
+    canAssignEmergency: true,
+    canSubmitEmergency: true,
+    canReviewEmergency: true,
+    canApproveEmergency: true,
+    canCloseEmergency: true,
+    canDistributeEmergency: true
   },
   Engineer: {
     canViewDashboard: 'full',
@@ -80,7 +89,16 @@ const ROLE_PERMISSIONS = {
     canHoldJobsFinancial: false,
     canHoldJobsOperational: true,
     canReleaseHold: true,
-    canManageProjects: true
+    canManageProjects: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: true,
+    canEditEmergency: 'operational',
+    canAssignEmergency: true,
+    canSubmitEmergency: true,
+    canReviewEmergency: true,
+    canApproveEmergency: true,
+    canCloseEmergency: false,
+    canDistributeEmergency: true
   },
   Supervisor: {
     canViewDashboard: 'full',
@@ -116,7 +134,16 @@ const ROLE_PERMISSIONS = {
     canHoldJobsFinancial: false,
     canHoldJobsOperational: true,
     canReleaseHold: true,
-    canManageProjects: true
+    canManageProjects: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: true,
+    canEditEmergency: 'assigned_managed',
+    canAssignEmergency: true,
+    canSubmitEmergency: true,
+    canReviewEmergency: true,
+    canApproveEmergency: false,
+    canCloseEmergency: false,
+    canDistributeEmergency: true
   },
   Technician: {
     canViewDashboard: 'limited',
@@ -151,7 +178,16 @@ const ROLE_PERMISSIONS = {
     canAccessAccounts: false,
     canHoldJobsFinancial: false,
     canHoldJobsOperational: false,
-    canReleaseHold: false
+    canReleaseHold: false,
+    canViewEmergencyReports: true,
+    canCreateEmergency: false,
+    canEditEmergency: 'field_only',
+    canAssignEmergency: false,
+    canSubmitEmergency: true,
+    canReviewEmergency: false,
+    canApproveEmergency: false,
+    canCloseEmergency: false,
+    canDistributeEmergency: false
   },
   Sales: {
     canViewDashboard: 'sales_only',
@@ -186,7 +222,16 @@ const ROLE_PERMISSIONS = {
     canAccessAccounts: false,
     canHoldJobsFinancial: false,
     canHoldJobsOperational: false,
-    canRequestHold: true
+    canRequestHold: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: false,
+    canEditEmergency: false,
+    canAssignEmergency: false,
+    canSubmitEmergency: false,
+    canReviewEmergency: false,
+    canApproveEmergency: false,
+    canCloseEmergency: false,
+    canDistributeEmergency: false
   },
   Accounts: {
     canViewDashboard: 'accounts_only',
@@ -225,7 +270,17 @@ const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canManageSettings: false,
     canViewFinancials: true,
-    canViewAllJobs: true
+    canViewAllJobs: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: false,
+    canEditEmergency: false,
+    canAssignEmergency: false,
+    canSubmitEmergency: false,
+    canReviewEmergency: false,
+    canApproveEmergency: false,
+    canCloseEmergency: false,
+    canDistributeEmergency: false,
+    canLinkEmergencyInvoice: true
   },
   'Projects Manager': {
     canViewDashboard: 'projects_only',
@@ -261,7 +316,16 @@ const ROLE_PERMISSIONS = {
     canReleaseHold: true,
     canManageProjects: true,
     canAccessAccounts: false,
-    canHoldJobsFinancial: false
+    canHoldJobsFinancial: false,
+    canViewEmergencyReports: true,
+    canCreateEmergency: true,
+    canEditEmergency: 'projects_operational',
+    canAssignEmergency: true,
+    canSubmitEmergency: true,
+    canReviewEmergency: false,
+    canApproveEmergency: false,
+    canCloseEmergency: false,
+    canDistributeEmergency: true
   }
 };
 

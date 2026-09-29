@@ -363,7 +363,8 @@ app.get('/api/dashboard/stats', (req, res) => {
     return res.json({
       role: 'Sales',
       ...salesStats,
-      upcoming_amc: upcomingAmc
+      upcoming_amc: upcomingAmc,
+      emergencyStats: db.getEmergencyDashboardStats()
     });
   }
 
@@ -461,7 +462,9 @@ app.get('/api/dashboard/stats', (req, res) => {
       q3Done,
       q4Done,
       totalContracts: amcsList.length
-    }
+    },
+    // Emergency Call-Outs (Module Stats)
+    emergencyStats: db.getEmergencyDashboardStats()
   });
 });
 
@@ -2397,6 +2400,356 @@ app.post('/api/ai/enhance', (req, res) => {
     case 'full':
     default:
       return res.json({ result: ai.generateFullReportNarrative(notes) });
+  }
+});
+
+// --- EMERGENCY CALL-OUT MODULE & REPORTS ---
+// Accessible by ALL 7 roles: GM, Engineer, Supervisor, Technician, Sales, Accounts, Projects Manager
+app.get('/api/emergency-calls', (req, res) => {
+  try {
+    let calls = db.getEmergencyCalls();
+    const {
+      search,
+      priority,
+      status,
+      system,
+      technician_id,
+      supervisor_id,
+      report_status,
+      customer_id
+    } = req.query;
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      calls = calls.filter(c =>
+        (c.call_number && c.call_number.toLowerCase().includes(q)) ||
+        (c.report_number && c.report_number.toLowerCase().includes(q)) ||
+        (c.customer_name && c.customer_name.toLowerCase().includes(q)) ||
+        (c.site_name && c.site_name.toLowerCase().includes(q)) ||
+        (c.system && c.system.toLowerCase().includes(q)) ||
+        (c.emergency_type && c.emergency_type.toLowerCase().includes(q)) ||
+        (c.reported_problem && c.reported_problem.toLowerCase().includes(q)) ||
+        (c.assigned_technician_name && c.assigned_technician_name.toLowerCase().includes(q)) ||
+        (c.assigned_supervisor_name && c.assigned_supervisor_name.toLowerCase().includes(q))
+      );
+    }
+
+    if (priority) {
+      calls = calls.filter(c => c.priority === priority);
+    }
+
+    if (status) {
+      calls = calls.filter(c => c.status === status);
+    }
+
+    if (system) {
+      calls = calls.filter(c => c.system === system);
+    }
+
+    if (report_status) {
+      calls = calls.filter(c => c.report_status === report_status);
+    }
+
+    if (customer_id) {
+      calls = calls.filter(c => c.customer_id === customer_id);
+    }
+
+    if (technician_id) {
+      calls = calls.filter(c => c.assigned_technician_id === technician_id);
+    }
+
+    if (supervisor_id) {
+      calls = calls.filter(c => c.assigned_supervisor_id === supervisor_id);
+    }
+
+    res.json(calls);
+  } catch (err) {
+    console.error('Error fetching emergency calls:', err);
+    res.status(500).json({ error: 'Failed to retrieve emergency calls' });
+  }
+});
+
+app.get('/api/emergency-calls/stats', (req, res) => {
+  try {
+    const stats = db.getEmergencyDashboardStats();
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve emergency stats' });
+  }
+});
+
+app.get('/api/emergency-calls/:id', (req, res) => {
+  try {
+    const call = db.getEmergencyCallById(req.params.id);
+    if (!call) return res.status(404).json({ error: 'Emergency call record not found' });
+    res.json(call);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch emergency call details' });
+  }
+});
+
+// Create new Emergency Call (GM, Engineer, Supervisor, Projects Manager)
+app.post('/api/emergency-calls', (req, res) => {
+  try {
+    const allowedRoles = ['GM', 'Engineer', 'Supervisor', 'Projects Manager'];
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Only General Managers, Engineers, Supervisors, and Projects Managers can log new Emergency Call-Outs.'
+      });
+    }
+
+    const { customer_name, emergency_type } = req.body;
+    if (!customer_name || !emergency_type) {
+      return res.status(400).json({ error: 'Customer name and Emergency Type are required' });
+    }
+
+    const newCall = db.createEmergencyCall(req.body, req.user);
+
+    // If Critical or High priority, trigger emergency notification
+    if (['Critical', 'High'].includes(newCall.priority)) {
+      const notifs = db.get('notifications') || [];
+      notifs.unshift({
+        id: `notif-eco-${Date.now()}`,
+        type: 'EMERGENCY_ALERT',
+        title: `🚨 ${newCall.priority.toUpperCase()} EMERGENCY: ${newCall.emergency_type}`,
+        message: `Call ${newCall.call_number} logged for ${newCall.customer_name} (${newCall.site_name}). Immediate attendance required.`,
+        link_id: newCall.id,
+        link_type: 'emergency_call',
+        priority: newCall.priority,
+        created_at: new Date().toISOString(),
+        read: false
+      });
+      db.write({ ...db.read(), notifications: notifs.slice(0, 50) });
+    }
+
+    res.status(201).json(newCall);
+  } catch (err) {
+    console.error('Error creating emergency call:', err);
+    res.status(500).json({ error: 'Failed to create emergency call' });
+  }
+});
+
+// Update Emergency Call with role-based restriction enforcement
+app.put('/api/emergency-calls/:id', (req, res) => {
+  try {
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const isGM = req.user.role === 'GM';
+    const isEngineer = req.user.role === 'Engineer';
+    const isSupervisor = req.user.role === 'Supervisor';
+    const isTech = req.user.role === 'Technician';
+    const isSales = req.user.role === 'Sales';
+    const isAccounts = req.user.role === 'Accounts';
+    const isPM = req.user.role === 'Projects Manager';
+
+    // If call is already Approved or Closed, only GM can modify
+    if (['Approved', 'Closed'].includes(existing.report_status) || ['Approved', 'Closed'].includes(existing.status)) {
+      if (!isGM) {
+        return res.status(403).json({
+          error: 'Report Locked',
+          message: 'This Emergency Call-Out report has been Approved / Closed and is strictly read-only. Only the General Manager can make revisions.'
+        });
+      }
+    }
+
+    // Role-specific field authorization
+    let allowedUpdates = { ...req.body };
+
+    if (isTech) {
+      // Technicians cannot approve or review reports
+      if (req.body.report_status === 'Approved' || req.body.report_status === 'Reviewed') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Technicians are not authorized to approve or review reports.'
+        });
+      }
+      delete allowedUpdates.assigned_supervisor_id;
+      delete allowedUpdates.assigned_supervisor_name;
+    } else if (isSales) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Sales representatives have view-only access to Emergency Call-Out technical findings.'
+      });
+    } else if (isAccounts) {
+      allowedUpdates = {
+        invoice_id: req.body.invoice_id,
+        invoice_number: req.body.invoice_number,
+        billing_status: req.body.billing_status
+      };
+    } else if (!isGM && !isEngineer && !isSupervisor && !isPM) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Unauthorized role for modifying emergency calls.'
+      });
+    }
+
+    const updated = db.updateEmergencyCall(existing.id, allowedUpdates, req.user);
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating emergency call:', err);
+    res.status(500).json({ error: 'Failed to update emergency call' });
+  }
+});
+
+// Quick action: Record Arrival On Site (Technician / Supervisor / PM / GM)
+app.post('/api/emergency-calls/:id/arrival', (req, res) => {
+  try {
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const now = new Date();
+    const arrival_date = now.toISOString().slice(0, 10);
+    const arrival_time = now.toTimeString().slice(0, 5);
+
+    const updated = db.updateEmergencyCall(existing.id, {
+      arrival_date,
+      arrival_time,
+      status: 'On Site'
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to record arrival time' });
+  }
+});
+
+// Submit report for review (Technician, Supervisor, Engineer, GM)
+app.post('/api/emergency-calls/:id/submit', (req, res) => {
+  try {
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    if (['Approved', 'Closed'].includes(existing.report_status)) {
+      return res.status(400).json({ error: 'Report is already finalized.' });
+    }
+
+    const now = new Date();
+    const updated = db.updateEmergencyCall(existing.id, {
+      report_status: 'Submitted',
+      status: 'Report Submitted',
+      completion_date: existing.completion_date || now.toISOString().slice(0, 10),
+      completion_time: existing.completion_time || now.toTimeString().slice(0, 5)
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit report' });
+  }
+});
+
+// Review report (Supervisor, Engineer, GM)
+app.post('/api/emergency-calls/:id/review', (req, res) => {
+  try {
+    const allowed = ['Supervisor', 'Engineer', 'GM'];
+    if (!allowed.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, and GM can review reports.' });
+    }
+
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const updated = db.updateEmergencyCall(existing.id, {
+      report_status: 'Reviewed',
+      supervisor_signature: req.body.supervisor_signature || existing.supervisor_signature,
+      supervisor_remarks: req.body.supervisor_remarks || existing.supervisor_remarks
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to review report' });
+  }
+});
+
+// Approve report (Engineer, GM) - Technician and others FORBIDDEN
+app.post('/api/emergency-calls/:id/approve', (req, res) => {
+  try {
+    const allowed = ['Engineer', 'GM'];
+    if (!allowed.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Only Lead Engineers and General Managers are authorized to approve emergency reports.'
+      });
+    }
+
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const updated = db.updateEmergencyCall(existing.id, {
+      report_status: 'Approved',
+      status: 'Approved'
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to approve report' });
+  }
+});
+
+// Close Emergency Call (GM)
+app.post('/api/emergency-calls/:id/close', (req, res) => {
+  try {
+    if (req.user.role !== 'GM') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Only the General Manager can officially close an Emergency Call-Out.'
+      });
+    }
+
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const updated = db.updateEmergencyCall(existing.id, {
+      status: 'Closed',
+      report_status: 'Closed'
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to close emergency call' });
+  }
+});
+
+// Upload emergency photo with category (Before / During / After) and caption
+app.post('/api/emergency-calls/:id/photos', (req, res) => {
+  try {
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const { url, caption, category } = req.body;
+    if (!url) return res.status(400).json({ error: 'Photo URL / data is required' });
+
+    const photo = db.addEmergencyPhoto(existing.id, { url, caption, category }, req.user);
+    res.status(201).json(photo);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to add photo' });
+  }
+});
+
+// Distribute report internally to authorized staff
+app.post('/api/emergency-calls/:id/distribute', (req, res) => {
+  try {
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const { recipient_name, recipient_email, recipient_role } = req.body;
+    if (!recipient_name || !recipient_email) {
+      return res.status(400).json({ error: 'Recipient name and email required' });
+    }
+
+    // Security check: Must be internal @firexbahrain.com recipient
+    if (!recipient_email.endsWith('@firexbahrain.com')) {
+      return res.status(403).json({
+        error: 'Security Policy Violation',
+        message: 'Confidential emergency reports can only be distributed internally to registered @firexbahrain.com staff addresses.'
+      });
+    }
+
+    const record = db.distributeEmergencyReport(existing.id, { recipient_name, recipient_email, recipient_role }, req.user);
+    res.json({ success: true, distribution: record });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to distribute report' });
   }
 });
 

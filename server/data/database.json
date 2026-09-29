@@ -247,7 +247,166 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:53:47.368Z",
       "id": "amc-1790639627369-808",
-      "updated_at": "2026-09-28T23:53:47.633Z"
+      "updated_at": "2026-09-28T23:53:47.633Z",
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (Jan - Mar)",
+          "months": "Jan - Mar",
+          "status": "Completed",
+          "scheduled_date": "2026-02-15",
+          "actual_visit_date": "2026-02-16",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Manual Call Point Glass & Microswitch": {
+              "status": "Pass"
+            },
+            "Main Diesel Fire Pump Auto-Start": {
+              "status": "Pass"
+            },
+            "Sprinkler Zone Valve Tamper Switch": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "Routine periodic quarterly maintenance successfully completed with no critical faults.",
+          "corrective_action": "Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.",
+          "materials_used": [],
+          "photos": [
+            {
+              "id": "q1-p1",
+              "url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600",
+              "tag": "After",
+              "caption": "FACP Morley Panel Verified Normal"
+            }
+          ],
+          "technician_remarks": "All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q1",
+          "report_number": "RPT-2026-Q1-001",
+          "report_status": "Approved",
+          "approved_by": "Eng. Mohamed Hweidi (GM)"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (Apr - Jun)",
+          "months": "Apr - Jun",
+          "status": "Completed",
+          "scheduled_date": "2026-05-18",
+          "actual_visit_date": "2026-05-19",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Emergency Light"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Sprinkler Flow Switch & Valves": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 1,
+          "faults_details": "Level 2 MCP frangible glass cracked by freight cart.",
+          "corrective_action": "Replaced cracked element with genuine Notifier glass.",
+          "materials_used": [
+            {
+              "part_number": "MCP-GL-01",
+              "description": "Notifier Call Point Replacement Glass",
+              "quantity": 1
+            }
+          ],
+          "photos": [],
+          "technician_remarks": "Q2 inspection completed. System restored to 100% normal.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q2",
+          "report_number": "RPT-2026-Q2-002",
+          "report_status": "Approved",
+          "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (Jul - Sep)",
+          "months": "Jul - Sep",
+          "status": "In Progress",
+          "scheduled_date": "2026-08-20",
+          "actual_visit_date": "2026-09-28",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "Technician on site executing Q3 testing and loop checks.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Draft"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (Oct - Dec)",
+          "months": "Oct - Dec",
+          "status": "Scheduled",
+          "scheduled_date": "2026-11-15",
+          "actual_visit_date": null,
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      }
     },
     {
       "contract_number": "AMC-2026-004",
@@ -288,7 +447,166 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:38:23.567Z",
       "id": "amc-1790638703568-371",
-      "updated_at": "2026-09-28T23:38:23.758Z"
+      "updated_at": "2026-09-28T23:38:23.758Z",
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (Jan - Mar)",
+          "months": "Jan - Mar",
+          "status": "Completed",
+          "scheduled_date": "2026-02-15",
+          "actual_visit_date": "2026-02-16",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Manual Call Point Glass & Microswitch": {
+              "status": "Pass"
+            },
+            "Main Diesel Fire Pump Auto-Start": {
+              "status": "Pass"
+            },
+            "Sprinkler Zone Valve Tamper Switch": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "Routine periodic quarterly maintenance successfully completed with no critical faults.",
+          "corrective_action": "Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.",
+          "materials_used": [],
+          "photos": [
+            {
+              "id": "q1-p1",
+              "url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600",
+              "tag": "After",
+              "caption": "FACP Morley Panel Verified Normal"
+            }
+          ],
+          "technician_remarks": "All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q1",
+          "report_number": "RPT-2026-Q1-001",
+          "report_status": "Approved",
+          "approved_by": "Eng. Mohamed Hweidi (GM)"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (Apr - Jun)",
+          "months": "Apr - Jun",
+          "status": "Completed",
+          "scheduled_date": "2026-05-18",
+          "actual_visit_date": "2026-05-19",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Emergency Light"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Sprinkler Flow Switch & Valves": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 1,
+          "faults_details": "Level 2 MCP frangible glass cracked by freight cart.",
+          "corrective_action": "Replaced cracked element with genuine Notifier glass.",
+          "materials_used": [
+            {
+              "part_number": "MCP-GL-01",
+              "description": "Notifier Call Point Replacement Glass",
+              "quantity": 1
+            }
+          ],
+          "photos": [],
+          "technician_remarks": "Q2 inspection completed. System restored to 100% normal.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q2",
+          "report_number": "RPT-2026-Q2-002",
+          "report_status": "Approved",
+          "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (Jul - Sep)",
+          "months": "Jul - Sep",
+          "status": "In Progress",
+          "scheduled_date": "2026-08-20",
+          "actual_visit_date": "2026-09-28",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "Technician on site executing Q3 testing and loop checks.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Draft"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (Oct - Dec)",
+          "months": "Oct - Dec",
+          "status": "Scheduled",
+          "scheduled_date": "2026-11-15",
+          "actual_visit_date": null,
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      }
     },
     {
       "contract_number": "AMC-2026-002",
@@ -329,7 +647,166 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:22:28.425Z",
       "id": "amc-1790637748426-910",
-      "updated_at": "2026-09-28T23:22:28.585Z"
+      "updated_at": "2026-09-28T23:22:28.585Z",
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (Jan - Mar)",
+          "months": "Jan - Mar",
+          "status": "Completed",
+          "scheduled_date": "2026-02-15",
+          "actual_visit_date": "2026-02-16",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Manual Call Point Glass & Microswitch": {
+              "status": "Pass"
+            },
+            "Main Diesel Fire Pump Auto-Start": {
+              "status": "Pass"
+            },
+            "Sprinkler Zone Valve Tamper Switch": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "Routine periodic quarterly maintenance successfully completed with no critical faults.",
+          "corrective_action": "Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.",
+          "materials_used": [],
+          "photos": [
+            {
+              "id": "q1-p1",
+              "url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600",
+              "tag": "After",
+              "caption": "FACP Morley Panel Verified Normal"
+            }
+          ],
+          "technician_remarks": "All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q1",
+          "report_number": "RPT-2026-Q1-001",
+          "report_status": "Approved",
+          "approved_by": "Eng. Mohamed Hweidi (GM)"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (Apr - Jun)",
+          "months": "Apr - Jun",
+          "status": "Completed",
+          "scheduled_date": "2026-05-18",
+          "actual_visit_date": "2026-05-19",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Emergency Light"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Sprinkler Flow Switch & Valves": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 1,
+          "faults_details": "Level 2 MCP frangible glass cracked by freight cart.",
+          "corrective_action": "Replaced cracked element with genuine Notifier glass.",
+          "materials_used": [
+            {
+              "part_number": "MCP-GL-01",
+              "description": "Notifier Call Point Replacement Glass",
+              "quantity": 1
+            }
+          ],
+          "photos": [],
+          "technician_remarks": "Q2 inspection completed. System restored to 100% normal.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q2",
+          "report_number": "RPT-2026-Q2-002",
+          "report_status": "Approved",
+          "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (Jul - Sep)",
+          "months": "Jul - Sep",
+          "status": "In Progress",
+          "scheduled_date": "2026-08-20",
+          "actual_visit_date": "2026-09-28",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "Technician on site executing Q3 testing and loop checks.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Draft"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (Oct - Dec)",
+          "months": "Oct - Dec",
+          "status": "Scheduled",
+          "scheduled_date": "2026-11-15",
+          "actual_visit_date": null,
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      }
     },
     {
       "contract_number": "AMC-2026-001",
@@ -370,7 +847,166 @@
       "sales_person_name": "Unassigned",
       "vat_percent": 10,
       "vat_amount": 75,
-      "total_including_vat": 825
+      "total_including_vat": 825,
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (Jan - Mar)",
+          "months": "Jan - Mar",
+          "status": "Completed",
+          "scheduled_date": "2026-02-15",
+          "actual_visit_date": "2026-02-16",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Manual Call Point Glass & Microswitch": {
+              "status": "Pass"
+            },
+            "Main Diesel Fire Pump Auto-Start": {
+              "status": "Pass"
+            },
+            "Sprinkler Zone Valve Tamper Switch": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "Routine periodic quarterly maintenance successfully completed with no critical faults.",
+          "corrective_action": "Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.",
+          "materials_used": [],
+          "photos": [
+            {
+              "id": "q1-p1",
+              "url": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600",
+              "tag": "After",
+              "caption": "FACP Morley Panel Verified Normal"
+            }
+          ],
+          "technician_remarks": "All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q1",
+          "report_number": "RPT-2026-Q1-001",
+          "report_status": "Approved",
+          "approved_by": "Eng. Mohamed Hweidi (GM)"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (Apr - Jun)",
+          "months": "Apr - Jun",
+          "status": "Completed",
+          "scheduled_date": "2026-05-18",
+          "actual_visit_date": "2026-05-19",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Emergency Light"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            },
+            "Sprinkler Flow Switch & Valves": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 1,
+          "faults_details": "Level 2 MCP frangible glass cracked by freight cart.",
+          "corrective_action": "Replaced cracked element with genuine Notifier glass.",
+          "materials_used": [
+            {
+              "part_number": "MCP-GL-01",
+              "description": "Notifier Call Point Replacement Glass",
+              "quantity": 1
+            }
+          ],
+          "photos": [],
+          "technician_remarks": "Q2 inspection completed. System restored to 100% normal.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": "Verified & Signed Electronically",
+          "report_id": "rpt-amc-q2",
+          "report_number": "RPT-2026-Q2-002",
+          "report_status": "Approved",
+          "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (Jul - Sep)",
+          "months": "Jul - Sep",
+          "status": "In Progress",
+          "scheduled_date": "2026-08-20",
+          "actual_visit_date": "2026-09-28",
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {
+            "FACP Main Power & Battery Standby": {
+              "status": "Pass"
+            },
+            "Detector Smoke Chamber Sensitivity": {
+              "status": "Pass"
+            }
+          },
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "Technician on site executing Q3 testing and loop checks.",
+          "customer_rep_name": "KHALIL EBRAHIM",
+          "customer_rep_designation": "Facilities Supervisor",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Draft"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (Oct - Dec)",
+          "months": "Oct - Dec",
+          "status": "Scheduled",
+          "scheduled_date": "2026-11-15",
+          "actual_visit_date": null,
+          "technician_name": "Abdul Majeed",
+          "supervisor_name": "Sarath Kr",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting"
+          ],
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      }
     }
   ],
   "amc_visits": [
@@ -999,7 +1635,170 @@
       "updated_at": "2026-09-28T23:53:47.636Z"
     }
   ],
-  "jobs": [],
+  "jobs": [
+    {
+      "id": "job-1",
+      "job_number": "AMC-2026-021",
+      "job_type": "AMC",
+      "customer_id": "cus-1790624104568-530",
+      "site_id": "sit-1790624104596-666",
+      "system": "Fire Alarm",
+      "system_type": "Fire Alarm",
+      "description": "Q3 Routine Quarterly AMC Periodic Inspection for HALA TOWER. Check FACP, test 120 detection devices, test diesel fire pump auto-crank.",
+      "date": "2026-09-28",
+      "expected_start_date": "2026-09-28",
+      "expected_completion_date": "2026-09-30",
+      "amount": 450,
+      "vat_percent": 10,
+      "vat_amount": 45,
+      "total_including_vat": 495,
+      "currency": "BHD",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "supervisor_id": "use-1790621830998-19",
+      "supervisor_name": "Sarath Kr",
+      "technician_id": "use-1790622080786-809",
+      "technician_name": "Abdul Majeed",
+      "status": "In Progress",
+      "is_on_hold": false,
+      "materials_used": [
+        {
+          "material_id": "mat-1",
+          "name": "Optical Smoke Detector (UL Listed)",
+          "quantity": 2
+        }
+      ],
+      "photos": [],
+      "created_at": "2026-09-28T08:00:00Z"
+    },
+    {
+      "id": "job-2",
+      "job_number": "BRK-2026-014",
+      "job_type": "Breakdown",
+      "customer_id": "cus-1790624104568-530",
+      "site_id": "sit-1790624104596-666",
+      "system": "Fire Fighting",
+      "system_type": "Fire Fighting",
+      "description": "Emergency Breakdown Callout: Diesel fire pump starting battery voltage drop and pressure switch calibration.",
+      "date": "2026-09-20",
+      "expected_start_date": "2026-09-20",
+      "expected_completion_date": "2026-09-25",
+      "amount": 820,
+      "vat_percent": 10,
+      "vat_amount": 82,
+      "total_including_vat": 902,
+      "currency": "BHD",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "supervisor_id": "use-1790621830998-19",
+      "supervisor_name": "Sarath Kr",
+      "technician_id": "use-1790622080786-809",
+      "technician_name": "Abdul Majeed",
+      "status": "Pending",
+      "is_on_hold": true,
+      "hold_type": "Payment Hold",
+      "hold_reason": "Payment Pending / Overdue Payment",
+      "held_by_id": "usr-gm-1790621464394",
+      "held_by_name": "Eng. Mohamed Hweidi",
+      "held_by_role": "GM",
+      "hold_date": "2026-09-22T09:30:00Z",
+      "expected_release_date": "2026-10-05",
+      "hold_remarks": "Client invoice INV-2026-003 is overdue (24 days overdue). Service held until payment settlement.",
+      "hold_history": [
+        {
+          "action": "HOLD_PLACED",
+          "hold_type": "Payment Hold",
+          "hold_reason": "Payment Pending / Overdue Payment",
+          "held_by_name": "Eng. Mohamed Hweidi",
+          "held_by_role": "GM",
+          "hold_date": "2026-09-22T09:30:00Z",
+          "expected_release_date": "2026-10-05",
+          "remarks": "Overdue payment invoice INV-2026-003 for BHD 902.000."
+        }
+      ],
+      "materials_used": [],
+      "photos": [],
+      "created_at": "2026-09-20T08:00:00Z"
+    },
+    {
+      "id": "job-3",
+      "job_number": "FIT-2026-008",
+      "job_type": "Fit-out",
+      "customer_id": "cus-1790624104568-530",
+      "site_id": "sit-1790624104596-666",
+      "system": "Sprinkler",
+      "system_type": "Sprinkler",
+      "description": "Commercial Restaurant Renovation: Relocate 14 smoke detectors and add 6 pendant quick-response sprinkler drops.",
+      "date": "2026-09-15",
+      "expected_start_date": "2026-09-15",
+      "expected_completion_date": "2026-10-10",
+      "amount": 1650,
+      "vat_percent": 10,
+      "vat_amount": 165,
+      "total_including_vat": 1815,
+      "currency": "BHD",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "supervisor_id": "use-1790621830998-19",
+      "supervisor_name": "Sarath Kr",
+      "technician_id": "use-1790622080786-809",
+      "technician_name": "Abdul Majeed",
+      "status": "In Progress",
+      "is_on_hold": true,
+      "hold_type": "Operational Hold",
+      "hold_reason": "Site Not Ready / Access Denied",
+      "held_by_id": "usr-gm-1790621464394",
+      "held_by_name": "Eng. Mohamed Hweidi",
+      "held_by_role": "GM",
+      "hold_date": "2026-09-25T11:00:00Z",
+      "expected_release_date": "2026-10-02",
+      "hold_remarks": "Ceiling grid framing not completed by tenant general contractor. Testing deferred until site ready.",
+      "hold_history": [
+        {
+          "action": "HOLD_PLACED",
+          "hold_type": "Operational Hold",
+          "hold_reason": "Site Not Ready / Access Denied",
+          "held_by_name": "Eng. Mohamed Hweidi",
+          "held_by_role": "GM",
+          "hold_date": "2026-09-25T11:00:00Z",
+          "expected_release_date": "2026-10-02",
+          "remarks": "Site not ready."
+        }
+      ],
+      "materials_used": [],
+      "photos": [],
+      "created_at": "2026-09-15T10:00:00Z"
+    },
+    {
+      "id": "job-4",
+      "job_number": "PRJ-2026-003",
+      "job_type": "Project",
+      "customer_id": "cus-1790624104568-530",
+      "site_id": "sit-1790624104596-666",
+      "system": "Suppression",
+      "system_type": "Suppression",
+      "description": "Server Room Clean Agent Novec 1230 automatic fire extinguishing system installation and room integrity fan test.",
+      "date": "2026-09-10",
+      "expected_start_date": "2026-09-10",
+      "expected_completion_date": "2026-10-15",
+      "amount": 2400,
+      "vat_percent": 10,
+      "vat_amount": 240,
+      "total_including_vat": 2640,
+      "currency": "BHD",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "supervisor_id": "use-1790621830998-19",
+      "supervisor_name": "Sarath Kr",
+      "technician_id": "use-1790622080786-809",
+      "technician_name": "Abdul Majeed",
+      "status": "In Progress",
+      "is_on_hold": false,
+      "materials_used": [],
+      "photos": [],
+      "created_at": "2026-09-10T10:00:00Z"
+    }
+  ],
   "faults": [],
   "materials": [
     {
@@ -3285,6 +4084,495 @@
       "entity_id": "rep-1790536604252-273",
       "details": "Created AMC Service Report RPT-AMC-2026-003",
       "timestamp": "2026-09-27T19:16:44.273Z"
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv-1",
+      "invoice_number": "INV-2026-001",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "amc_id": "amc-1790639627369-808",
+      "amc_number": "AMC-2026-005",
+      "job_id": null,
+      "job_number": null,
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "invoice_date": "2026-01-15",
+      "due_date": "2026-02-15",
+      "amount_before_vat": 3000,
+      "vat_percent": 10,
+      "vat_amount": 300,
+      "total_amount": 3300,
+      "amount_paid": 3300,
+      "outstanding_balance": 0,
+      "payment_status": "Paid",
+      "days_overdue": 0,
+      "hold_status": "Active",
+      "description": "Annual Comprehensive Fire & Safety Maintenance Contract (AMC-2026-005)",
+      "items": [
+        {
+          "description": "Annual Comprehensive Fire Protection Maintenance",
+          "quantity": 1,
+          "unit_price": 3000,
+          "total": 3000
+        }
+      ],
+      "notes": "Full payment received via BenefitPay.",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-01-15T09:00:00Z",
+      "updated_at": "2026-02-10T11:00:00Z"
+    },
+    {
+      "id": "inv-2",
+      "invoice_number": "INV-2026-002",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "job_id": "job-1",
+      "job_number": "AMC-2026-021",
+      "amc_id": "amc-1790639627369-808",
+      "amc_number": "AMC-2026-005",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "invoice_date": "2026-09-01",
+      "due_date": "2026-09-15",
+      "amount_before_vat": 450,
+      "vat_percent": 10,
+      "vat_amount": 45,
+      "total_amount": 495,
+      "amount_paid": 200,
+      "outstanding_balance": 295,
+      "payment_status": "Partially Paid",
+      "days_overdue": 14,
+      "hold_status": "Active",
+      "description": "Supply and replacement of faulty optical smoke sensors during Q3 maintenance",
+      "items": [
+        {
+          "description": "Optical Smoke Detector XP95 (UL Listed)",
+          "quantity": 2,
+          "unit_price": 150,
+          "total": 300
+        },
+        {
+          "description": "Specialist Technical Labor & Loop Recalibration",
+          "quantity": 1,
+          "unit_price": 150,
+          "total": 150
+        }
+      ],
+      "notes": "Partial advance payment received. Remaining BHD 295.000 due.",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-01T10:00:00Z",
+      "updated_at": "2026-09-10T14:30:00Z"
+    },
+    {
+      "id": "inv-3",
+      "invoice_number": "INV-2026-003",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "job_id": "job-2",
+      "job_number": "BRK-2026-014",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "invoice_date": "2026-08-20",
+      "due_date": "2026-09-05",
+      "amount_before_vat": 820,
+      "vat_percent": 10,
+      "vat_amount": 82,
+      "total_amount": 902,
+      "amount_paid": 0,
+      "outstanding_balance": 902,
+      "payment_status": "Overdue",
+      "days_overdue": 24,
+      "hold_status": "Payment Hold",
+      "description": "Emergency Diesel Fire Pump Solenoid and starting batteries overhaul",
+      "items": [
+        {
+          "description": "12V 17Ah Heavy Duty Fire Pump Starter Batteries",
+          "quantity": 2,
+          "unit_price": 220,
+          "total": 440
+        },
+        {
+          "description": "Pump Controller Solenoid Relay 24V",
+          "quantity": 1,
+          "unit_price": 180,
+          "total": 180
+        },
+        {
+          "description": "Emergency Callout & Pressure Testing",
+          "quantity": 1,
+          "unit_price": 200,
+          "total": 200
+        }
+      ],
+      "notes": "Invoice is severely overdue. Payment Hold placed on Job BRK-2026-014 by Accounts.",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-08-20T11:00:00Z",
+      "updated_at": "2026-09-22T09:30:00Z"
+    },
+    {
+      "id": "inv-4",
+      "invoice_number": "INV-2026-004",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "job_id": "job-4",
+      "job_number": "PRJ-2026-003",
+      "sales_person_id": "use-1790622019667-210",
+      "sales_person_name": "Mohammed Alwadhi",
+      "invoice_date": "2026-09-20",
+      "due_date": "2026-10-20",
+      "amount_before_vat": 2400,
+      "vat_percent": 10,
+      "vat_amount": 240,
+      "total_amount": 2640,
+      "amount_paid": 0,
+      "outstanding_balance": 2640,
+      "payment_status": "Pending",
+      "days_overdue": 0,
+      "hold_status": "Active",
+      "description": "Clean Agent Novec 1230 System Installation - 50% Mobilization Advance",
+      "items": [
+        {
+          "description": "Novec 1230 Engineered Cylinder & Discharge Nozzles",
+          "quantity": 1,
+          "unit_price": 1800,
+          "total": 1800
+        },
+        {
+          "description": "Engineering Design, Hydraulic Calculations & Commissioning",
+          "quantity": 1,
+          "unit_price": 600,
+          "total": 600
+        }
+      ],
+      "notes": "Advance invoice issued. Awaiting client finance disbursement.",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-20T12:00:00Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-1",
+      "payment_number": "RCPT-2026-001",
+      "invoice_id": "inv-1",
+      "invoice_number": "INV-2026-001",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "payment_date": "2026-02-10",
+      "amount": 3300,
+      "payment_method": "BenefitPay",
+      "reference_number": "BP-992817203",
+      "received_by": "Eng. Mohamed Hweidi",
+      "remarks": "Settlement in full for AMC-2026-005 contract agreement.",
+      "created_at": "2026-02-10T11:00:00Z"
+    },
+    {
+      "id": "pay-2",
+      "payment_number": "RCPT-2026-002",
+      "invoice_id": "inv-2",
+      "invoice_number": "INV-2026-002",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "payment_date": "2026-09-10",
+      "amount": 200,
+      "payment_method": "Bank Transfer",
+      "reference_number": "NBB-TX-440192",
+      "received_by": "Eng. Mohamed Hweidi",
+      "remarks": "Part-payment 50% for material supply.",
+      "created_at": "2026-09-10T14:30:00Z"
+    }
+  ],
+  "job_holds": [
+    {
+      "id": "hld-1",
+      "job_id": "job-2",
+      "job_number": "BRK-2026-014",
+      "customer_name": "Test Customer Verification",
+      "site_name": "Test Tower Building",
+      "hold_type": "Payment Hold",
+      "hold_reason": "Payment Pending / Overdue Payment",
+      "held_by_id": "usr-gm-1790621464394",
+      "held_by_name": "Eng. Mohamed Hweidi",
+      "held_by_role": "GM",
+      "hold_date": "2026-09-22T09:30:00Z",
+      "expected_release_date": "2026-10-05",
+      "remarks": "Overdue invoice INV-2026-003 for BHD 902.000."
+    },
+    {
+      "id": "hld-2",
+      "job_id": "job-3",
+      "job_number": "FIT-2026-008",
+      "customer_name": "Test Customer Verification",
+      "site_name": "Test Tower Building",
+      "hold_type": "Operational Hold",
+      "hold_reason": "Site Not Ready / Access Denied",
+      "held_by_id": "usr-gm-1790621464394",
+      "held_by_name": "Eng. Mohamed Hweidi",
+      "held_by_role": "GM",
+      "hold_date": "2026-09-25T11:00:00Z",
+      "expected_release_date": "2026-10-02",
+      "remarks": "Ceiling grid work incomplete. Site access rescheduled."
+    }
+  ],
+  "emergency_calls": [
+    {
+      "id": "eco-1",
+      "call_number": "ECO-2026-001",
+      "report_number": "ECR-2026-001",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "site_address": "Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain",
+      "contact_person": "Ms. Fatima Al-Zahra (Facilities Lead)",
+      "contact_phone": "+973 1777 5555",
+      "call_date": "2026-09-28",
+      "call_time": "02:15",
+      "emergency_type": "Main Fire Pump Controller Malfunction & Pressure Bleed",
+      "system": "Fire Fighting",
+      "emergency_description": "Night emergency callout: Main electric jockey pump cycling continuously every 40 seconds; fire pump controller sounding alarm and displaying low header pressure warning.",
+      "reported_problem": "FACP annunciator panel displaying fire pump trouble alarm; jockey pump failing to maintain system pressure above cut-in setpoint of 7.5 bar.",
+      "priority": "Critical",
+      "assigned_supervisor_id": "use-1790621830998-19",
+      "assigned_supervisor_name": "Sarath Kr",
+      "assigned_technician_id": "use-1790622080786-809",
+      "assigned_technician_name": "Abdul Majeed",
+      "arrival_date": "2026-09-28",
+      "arrival_time": "02:45",
+      "completion_date": "2026-09-28",
+      "completion_time": "05:15",
+      "findings": "Ruptured 1-inch pressure sensing brass fitting on jockey pump discharge line; vibration-induced fatigue failure causing rapid pressure loss. Sensing line strainer clogged with scale.",
+      "cause": "Mechanical fatigue on rigid connector without pulsation dampening, combined with pipe sediment accumulation.",
+      "action_taken": "Isolated jockey pump lines. Replaced damaged rigid fitting with stainless steel braided high-pressure flexible loop with pulsation snubber. Flushed strainer and recalibrated cut-in/cut-out settings.",
+      "rectification": "Re-pressurized system to 8.8 bar. Tested 3 automatic start/stop cycles successfully. Verified standby diesel pump auto-crank signal. Cleared panel alarms.",
+      "materials_used": [
+        {
+          "name": "1-inch SS Braided Flexible Sensing Loop (UL/FM)",
+          "quantity": 1,
+          "unit": "pcs",
+          "part_number": "FX-FLX-100"
+        },
+        {
+          "name": "Danfoss Pressure Snubber & Isolation Cock",
+          "quantity": 1,
+          "unit": "pcs",
+          "part_number": "DAN-SNB-01"
+        }
+      ],
+      "additional_work_required": false,
+      "additional_work_details": "",
+      "recommendations": "Inspect primary non-return check valve during next quarterly AMC inspection.",
+      "customer_remarks": "Urgent response within 30 minutes in early morning. Noise and pressure alarm resolved completely.",
+      "technician_remarks": "Pump room left clean and in 100% normal automatic operating mode.",
+      "supervisor_remarks": "Civil Defence and NFPA 20 compliance verified. Work inspected and approved.",
+      "customer_rep_name": "Tariq Al-Sayed",
+      "customer_rep_phone": "+973 3999 1122",
+      "customer_rep_designation": "Facilities Shift In-charge",
+      "customer_signature": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"60\"><path d=\"M10 40 Q 50 10 90 35 T 180 25\" stroke=\"%230F1E36\" stroke-width=\"2.5\" fill=\"none\"/></svg>",
+      "customer_signature_date": "2026-09-28 05:20",
+      "signature_captured_by": "Abdul Majeed (Technician)",
+      "technician_signature": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"60\"><path d=\"M15 35 Q 45 15 80 30 T 160 30\" stroke=\"%230F1E36\" stroke-width=\"2.5\" fill=\"none\"/></svg>",
+      "technician_signed_date": "2026-09-28 05:15",
+      "supervisor_signature": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"60\"><path d=\"M20 40 Q 60 10 100 35 T 170 20\" stroke=\"%230F1E36\" stroke-width=\"2.5\" fill=\"none\"/></svg>",
+      "supervisor_signed_date": "2026-09-28 08:30",
+      "photos": [
+        {
+          "id": "pho-1",
+          "url": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+          "caption": "Ruptured brass fitting leaking pressure on manifold",
+          "category": "Before",
+          "uploaded_at": "2026-09-28T02:50:00Z",
+          "uploaded_by": "Abdul Majeed"
+        },
+        {
+          "id": "pho-2",
+          "url": "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=600&q=80",
+          "caption": "Installation of stainless steel braided line and snubber",
+          "category": "During",
+          "uploaded_at": "2026-09-28T03:45:00Z",
+          "uploaded_by": "Abdul Majeed"
+        },
+        {
+          "id": "pho-3",
+          "url": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80",
+          "caption": "Manifold holding steady at 8.8 bar with FACP normalized",
+          "category": "After",
+          "uploaded_at": "2026-09-28T05:10:00Z",
+          "uploaded_by": "Abdul Majeed"
+        }
+      ],
+      "status": "Approved",
+      "report_status": "Approved",
+      "distribution_list": [
+        {
+          "recipient_name": "Eng. Mohamed Hweidi",
+          "recipient_email": "eng..mohamed.hweidi@firexbahrain.com",
+          "recipient_role": "GM",
+          "sent_at": "2026-09-28T09:00:00Z",
+          "sent_by": "Sarath Kr",
+          "status": "Delivered"
+        }
+      ],
+      "audit_trail": [
+        {
+          "action": "CALL_LOGGED",
+          "by_name": "Eng. Mohamed Hweidi",
+          "by_role": "GM",
+          "timestamp": "2026-09-28T02:20:00Z",
+          "details": "Critical Emergency Call logged: Main Fire Pump Controller Malfunction"
+        },
+        {
+          "action": "TEAM_ASSIGNED",
+          "by_name": "Sarath Kr",
+          "by_role": "Supervisor",
+          "timestamp": "2026-09-28T02:25:00Z",
+          "details": "Assigned Abdul Majeed to attend site urgently"
+        },
+        {
+          "action": "ARRIVAL_RECORDED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-28T02:45:00Z",
+          "details": "Technician on site at Hawar School Main Facility"
+        },
+        {
+          "action": "FINDINGS_RECORDED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-28T03:30:00Z",
+          "details": "Identified ruptured sensing line on jockey pump"
+        },
+        {
+          "action": "RECTIFIED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-28T05:10:00Z",
+          "details": "Replaced line, re-pressurized to 8.8 bar, tests passed"
+        },
+        {
+          "action": "SIGNATURE_CAPTURED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-28T05:20:00Z",
+          "details": "Customer representative Tariq Al-Sayed signed report"
+        },
+        {
+          "action": "REPORT_SUBMITTED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-28T05:25:00Z",
+          "details": "Draft report ECR-2026-001 submitted for supervisor review"
+        },
+        {
+          "action": "REPORT_REVIEWED",
+          "by_name": "Sarath Kr",
+          "by_role": "Supervisor",
+          "timestamp": "2026-09-28T08:30:00Z",
+          "details": "Technical findings and NFPA compliance reviewed and confirmed"
+        },
+        {
+          "action": "REPORT_APPROVED",
+          "by_name": "Eng. Mohamed Hweidi",
+          "by_role": "GM",
+          "timestamp": "2026-09-28T09:00:00Z",
+          "details": "Emergency report approved and locked"
+        }
+      ],
+      "created_by_id": "usr-gm-1790621464394",
+      "created_by_name": "Eng. Mohamed Hweidi",
+      "created_at": "2026-09-28T02:20:00Z",
+      "submitted_by_name": "Abdul Majeed",
+      "submitted_at": "2026-09-28T05:25:00Z",
+      "reviewed_by_name": "Sarath Kr",
+      "reviewed_at": "2026-09-28T08:30:00Z",
+      "approved_by_name": "Eng. Mohamed Hweidi",
+      "approved_at": "2026-09-28T09:00:00Z"
+    },
+    {
+      "id": "eco-2",
+      "call_number": "ECO-2026-002",
+      "report_number": "ECR-2026-002",
+      "customer_id": "cus-1790624104568-530",
+      "customer_name": "Test Customer Verification",
+      "site_id": "sit-1790624104596-666",
+      "site_name": "Test Tower Building",
+      "site_address": "Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain",
+      "contact_person": "Ms. Fatima Al-Zahra (Facilities Lead)",
+      "contact_phone": "+973 1777 5555",
+      "call_date": "2026-09-29",
+      "call_time": "10:30",
+      "emergency_type": "Smoke Detector Loop Fault & False Alarms",
+      "system": "Fire Alarm",
+      "emergency_description": "Intermittent false alarms in Administration Corridor. Loop 2 reporting communication dropouts.",
+      "reported_problem": "Strobes and sounders triggered unexpectedly during school hours without fire condition.",
+      "priority": "High",
+      "assigned_supervisor_id": "use-1790621830998-19",
+      "assigned_supervisor_name": "Sarath Kr",
+      "assigned_technician_id": "use-1790622080786-809",
+      "assigned_technician_name": "Abdul Majeed",
+      "arrival_date": "2026-09-29",
+      "arrival_time": "11:05",
+      "completion_date": "",
+      "completion_time": "",
+      "findings": "Device #42 in Server Corridor contaminated with AC maintenance dust particles causing analog voltage spike.",
+      "cause": "Fine particulates settling on internal optical sensing chamber.",
+      "action_taken": "Isolated zone alarm outputs. Cleaned optical chamber with compressed gas and recalibrated baseline.",
+      "rectification": "Replaced head with spare XP95 detector and conducted aerosol canister smoke test. Re-enabled outputs.",
+      "materials_used": [
+        {
+          "name": "Apollo XP95 Optical Smoke Detector (UL Listed)",
+          "quantity": 1,
+          "unit": "pcs",
+          "part_number": "APO-55000-600"
+        }
+      ],
+      "additional_work_required": false,
+      "additional_work_details": "",
+      "recommendations": "Advise AC duct contractor to cover detectors during plenum cleaning.",
+      "customer_remarks": "Technician responded immediately and silenced the false alarm.",
+      "technician_remarks": "Loop 2 now communicating 100% normal with zero polling errors.",
+      "supervisor_remarks": "Pending final customer representative sign-off.",
+      "status": "In Progress",
+      "report_status": "Submitted",
+      "photos": [],
+      "distribution_list": [],
+      "audit_trail": [
+        {
+          "action": "CALL_LOGGED",
+          "by_name": "Sarath Kr",
+          "by_role": "Supervisor",
+          "timestamp": "2026-09-29T10:35:00Z",
+          "details": "High Priority Call logged: Smoke Detector Loop Fault"
+        },
+        {
+          "action": "ARRIVAL_RECORDED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-29T11:05:00Z",
+          "details": "Technician on site"
+        },
+        {
+          "action": "REPORT_SUBMITTED",
+          "by_name": "Abdul Majeed",
+          "by_role": "Technician",
+          "timestamp": "2026-09-29T12:00:00Z",
+          "details": "Field report submitted for review"
+        }
+      ],
+      "created_by_id": "use-1790621830998-19",
+      "created_by_name": "Sarath Kr",
+      "created_at": "2026-09-29T10:35:00Z",
+      "submitted_by_name": "Abdul Majeed",
+      "submitted_at": "2026-09-29T12:00:00Z"
     }
   ]
 }

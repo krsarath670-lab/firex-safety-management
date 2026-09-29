@@ -148,6 +148,103 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     </div>
   );
 
+  // Reusable Emergency Call-Out & Rapid Response Widget
+  const renderEmergencyCalloutWidget = () => {
+    const eStats = dashboardStats?.emergencyStats || {
+      total: 0,
+      critical: 0,
+      active: 0,
+      pending_reports: 0,
+      approved: 0,
+      closed: 0
+    };
+
+    return (
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center text-safety-red">
+              <Flame className="w-4 h-4 fill-safety-red" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Emergency Call-Out &amp; Rapid Response</span>
+                {eStats.critical > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-red-600 text-white animate-pulse">
+                    {eStats.critical} Critical
+                  </span>
+                )}
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                24/7 Field attendance, findings, fault rectification, photos &amp; customer sign-off
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('emergency')}
+            className="text-xs font-bold text-safety-red hover:text-red-700 flex items-center gap-0.5 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors"
+          >
+            <span>Open Call-Outs</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* 4 Mini KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div 
+            onClick={() => setActiveTab('emergency')}
+            className="p-2.5 rounded-xl bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100/60 transition-colors"
+          >
+            <span className="text-[10px] font-black uppercase text-red-700 block">Active Calls</span>
+            <span className="text-lg font-black text-red-950 font-mono block mt-0.5">{eStats.active}</span>
+            <span className="text-[9px] text-red-600 font-semibold">In field / In progress</span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('emergency')}
+            className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100/60 transition-colors"
+          >
+            <span className="text-[10px] font-black uppercase text-amber-800 block">Critical / High</span>
+            <span className="text-lg font-black text-amber-950 font-mono block mt-0.5">{eStats.critical}</span>
+            <span className="text-[9px] text-amber-700 font-semibold">Immediate attention</span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('emergency')}
+            className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100/60 transition-colors"
+          >
+            <span className="text-[10px] font-black uppercase text-blue-800 block">Reports Pending</span>
+            <span className="text-lg font-black text-blue-950 font-mono block mt-0.5">{eStats.pending_reports}</span>
+            <span className="text-[9px] text-blue-700 font-semibold">Review &amp; sign-off</span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('emergency')}
+            className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 cursor-pointer hover:bg-emerald-100/60 transition-colors"
+          >
+            <span className="text-[10px] font-black uppercase text-emerald-800 block">Approved &amp; Closed</span>
+            <span className="text-lg font-black text-emerald-950 font-mono block mt-0.5">{(eStats.approved || 0) + (eStats.closed || 0)}</span>
+            <span className="text-[9px] text-emerald-700 font-semibold">Signed &amp; archived</span>
+          </div>
+        </div>
+
+        {/* 1-Click Launch Button */}
+        <div className="pt-1 flex items-center justify-between">
+          <span className="text-[11px] text-slate-500 font-medium">
+            Sequential auto-numbering ECO-2026-XXX &amp; ECR-2026-XXX
+          </span>
+          <button
+            onClick={() => setActiveTab('emergency')}
+            className="px-3 py-1.5 bg-safety-red hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+          >
+            <Flame className="w-3.5 h-3.5" />
+            <span>Launch Emergency Call-Out</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // ----------------------------------------------------
   // DEDICATED SALES DASHBOARD VIEW (Role: Sales)
   // ----------------------------------------------------
@@ -520,6 +617,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           </div>
         </div>
 
+        {/* Emergency Call-Outs & Rapid Response */}
+        {renderEmergencyCalloutWidget()}
+
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
 
@@ -694,6 +794,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           </div>
         </div>
 
+        {/* Emergency Call-Outs & Rapid Response */}
+        {renderEmergencyCalloutWidget()}
+
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
       </div>
@@ -855,6 +958,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           </div>
         </div>
 
+        {/* Emergency Call-Outs & Rapid Response */}
+        {renderEmergencyCalloutWidget()}
+
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
       </div>
@@ -945,6 +1051,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           <ChevronRight className="w-4 h-4 text-red-600 self-center" />
         </div>
       )}
+
+      {/* Emergency Call-Outs & Rapid Response Widget */}
+      {renderEmergencyCalloutWidget()}
 
       {/* GM Financial & Invoicing Overview Widget (Strictly Hidden for Technicians) */}
       {isGM && dashboardStats?.financials && (
@@ -1333,18 +1442,18 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             <span className="text-xs font-bold text-white tracking-tight">AMC Inspection</span>
           </button>
 
-          {/* New Breakdown Emergency */}
+          {/* New Breakdown Emergency / Call-Out */}
           <button
-            onClick={() => onStartJob('Breakdown')}
+            onClick={() => setActiveTab('emergency')}
             className="h-16 rounded-xl bg-safety-red hover:bg-red-700 active:bg-safety-darkred text-white p-2.5 flex flex-col justify-between transition-all shadow-sm text-left"
           >
             <div className="flex items-center justify-between w-full">
               <div className="p-1.5 rounded-lg bg-white/20 text-white">
                 <Flame className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-semibold text-red-200">Urgent</span>
+              <span className="text-[10px] font-semibold text-red-200">24/7 Field</span>
             </div>
-            <span className="text-xs font-bold text-white tracking-tight">Breakdown</span>
+            <span className="text-xs font-bold text-white tracking-tight">Emergency Call-Out</span>
           </button>
 
           {/* Generate Report */}
