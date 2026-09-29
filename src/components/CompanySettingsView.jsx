@@ -439,7 +439,7 @@ export default function CompanySettingsView() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">24/7 Dispatch Hotline &amp; Phone</label>
+            <label className="block font-bold text-slate-700 mb-1">Company Telephone &amp; Contact Phone</label>
             <input
               type="text"
               disabled={!canEdit}

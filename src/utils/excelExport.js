@@ -307,3 +307,138 @@ export function exportProjectToExcel(projectsList, filename = 'FIREX_Projects_Li
   XLSX.utils.book_append_sheet(wb, ws, 'Projects');
   saveWorkbook(wb, filename);
 }
+
+/**
+ * 16. EXCEL EXPORT - INVOICES MASTER
+ */
+export function exportInvoicesToExcel(invoicesList, filename = 'FIREX_Invoices_Master.xlsx') {
+  const rows = invoicesList.map(inv => {
+    const amountBeforeVat = Number(inv.amount_before_vat || 0);
+    const vatPercent = Number(inv.vat_percent !== undefined ? inv.vat_percent : 10);
+    const vatAmount = Number(inv.vat_amount || ((amountBeforeVat * vatPercent) / 100));
+    const totalAmount = Number(inv.total_amount || (amountBeforeVat + vatAmount));
+    const amountPaid = Number(inv.amount_paid || 0);
+    const balance = Number(inv.outstanding_balance !== undefined ? inv.outstanding_balance : (totalAmount - amountPaid));
+
+    return {
+      'Invoice #': inv.invoice_number,
+      'Customer Name': inv.customer_name || 'N/A',
+      'Site / Location': inv.site_name || 'N/A',
+      'Reference (Job/AMC)': inv.job_number || inv.amc_number || 'Direct',
+      'Sales Person': inv.sales_person_name || 'Unassigned',
+      'Invoice Date': inv.invoice_date || '',
+      'Due Date': inv.due_date || '',
+      'Amount Before VAT (BHD)': Number(amountBeforeVat.toFixed(3)),
+      'VAT Rate (%)': Number(vatPercent.toFixed(1)),
+      'VAT Amount (BHD)': Number(vatAmount.toFixed(3)),
+      'Total Amount (BHD)': Number(totalAmount.toFixed(3)),
+      'Amount Paid (BHD)': Number(amountPaid.toFixed(3)),
+      'Outstanding Balance (BHD)': Number(balance.toFixed(3)),
+      'Payment Status': inv.payment_status || 'Pending',
+      'Days Overdue': inv.days_overdue || 0,
+      'Hold Status': inv.hold_status || 'Active',
+      'Description / Scope': inv.description || ''
+    };
+  });
+
+  const headers = [
+    'Invoice #',
+    'Customer Name',
+    'Site / Location',
+    'Reference (Job/AMC)',
+    'Sales Person',
+    'Invoice Date',
+    'Due Date',
+    'Amount Before VAT (BHD)',
+    'VAT Rate (%)',
+    'VAT Amount (BHD)',
+    'Total Amount (BHD)',
+    'Amount Paid (BHD)',
+    'Outstanding Balance (BHD)',
+    'Payment Status',
+    'Days Overdue',
+    'Hold Status',
+    'Description / Scope'
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+  fitColumns(ws, rows, headers);
+  ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Invoices Master');
+  saveWorkbook(wb, filename);
+}
+
+/**
+ * 17. EXCEL EXPORT - PAYMENT RECEIPTS
+ */
+export function exportPaymentsToExcel(paymentsList, filename = 'FIREX_Payment_Receipts.xlsx') {
+  const rows = paymentsList.map(p => ({
+    'Receipt #': p.payment_number,
+    'Invoice #': p.invoice_number,
+    'Customer Name': p.customer_name || 'N/A',
+    'Payment Date': p.payment_date || '',
+    'Amount Paid (BHD)': Number((Number(p.amount) || 0).toFixed(3)),
+    'Payment Method': p.payment_method || 'Bank Transfer',
+    'Reference #': p.reference_number || 'N/A',
+    'Received By': p.received_by || 'Accounts',
+    'Remarks': p.remarks || ''
+  }));
+
+  const headers = [
+    'Receipt #',
+    'Invoice #',
+    'Customer Name',
+    'Payment Date',
+    'Amount Paid (BHD)',
+    'Payment Method',
+    'Reference #',
+    'Received By',
+    'Remarks'
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+  fitColumns(ws, rows, headers);
+  ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Payment Receipts');
+  saveWorkbook(wb, filename);
+}
+
+/**
+ * 18. EXCEL EXPORT - CUSTOMER STATEMENT
+ */
+export function exportCustomerStatementToExcel(statement, filename = 'FIREX_Customer_Statement.xlsx') {
+  const customer = statement.customer || {};
+  const rows = (statement.ledger || []).map(row => ({
+    'Date': row.date,
+    'Transaction Type': row.type,
+    'Reference #': row.reference,
+    'Description': row.description,
+    'Debit (BHD)': Number((Number(row.debit) || 0).toFixed(3)),
+    'Credit (BHD)': Number((Number(row.credit) || 0).toFixed(3)),
+    'Running Balance (BHD)': Number((Number(row.running_balance) || 0).toFixed(3)),
+    'Status': row.status
+  }));
+
+  const headers = [
+    'Date',
+    'Transaction Type',
+    'Reference #',
+    'Description',
+    'Debit (BHD)',
+    'Credit (BHD)',
+    'Running Balance (BHD)',
+    'Status'
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+  fitColumns(ws, rows, headers);
+  ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `Statement - ${customer.name?.slice(0, 20) || 'Account'}`);
+  saveWorkbook(wb, filename);
+}

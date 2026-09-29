@@ -34,7 +34,17 @@ const ROLE_PERMISSIONS = {
     canManageUsers: true,
     canManageSettings: true,
     canViewFinancials: true,
-    canViewAllJobs: true
+    canViewAllJobs: true,
+    canAccessAccounts: true,
+    canManageInvoices: true,
+    canManagePayments: true,
+    canViewCustomerStatements: true,
+    canViewFinancialReports: true,
+    canHoldJobsFinancial: true,
+    canHoldJobsOperational: true,
+    canReleaseHold: true,
+    canManageProjects: true,
+    canExportAccountsExcel: true
   },
   Engineer: {
     canViewDashboard: 'full',
@@ -65,7 +75,12 @@ const ROLE_PERMISSIONS = {
     canManageUsers: true,
     canManageSettings: false,
     canViewFinancials: true,
-    canViewAllJobs: true
+    canViewAllJobs: true,
+    canAccessAccounts: false,
+    canHoldJobsFinancial: false,
+    canHoldJobsOperational: true,
+    canReleaseHold: true,
+    canManageProjects: true
   },
   Supervisor: {
     canViewDashboard: 'full',
@@ -96,7 +111,12 @@ const ROLE_PERMISSIONS = {
     canManageUsers: true,
     canManageSettings: true,
     canViewFinancials: true,
-    canViewAllJobs: true
+    canViewAllJobs: true,
+    canAccessAccounts: false,
+    canHoldJobsFinancial: false,
+    canHoldJobsOperational: true,
+    canReleaseHold: true,
+    canManageProjects: true
   },
   Technician: {
     canViewDashboard: 'limited',
@@ -127,7 +147,11 @@ const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canManageSettings: false,
     canViewFinancials: false, // strictly forbidden: scrubbed at API level
-    canViewAllJobs: false
+    canViewAllJobs: false,
+    canAccessAccounts: false,
+    canHoldJobsFinancial: false,
+    canHoldJobsOperational: false,
+    canReleaseHold: false
   },
   Sales: {
     canViewDashboard: 'sales_only',
@@ -158,7 +182,86 @@ const ROLE_PERMISSIONS = {
     canManageUsers: false,
     canManageSettings: false,
     canViewFinancials: 'own_only', // only their own work amount
-    canViewAllJobs: false          // only their own jobs
+    canViewAllJobs: false,          // only their own jobs
+    canAccessAccounts: false,
+    canHoldJobsFinancial: false,
+    canHoldJobsOperational: false,
+    canRequestHold: true
+  },
+  Accounts: {
+    canViewDashboard: 'accounts_only',
+    canAccessAccounts: true,
+    canManageInvoices: true,
+    canManagePayments: true,
+    canViewCustomerStatements: true,
+    canViewFinancialReports: true,
+    canHoldJobsFinancial: true,
+    canReleaseHold: true,
+    canExportAccountsExcel: true,
+    canManageCustomers: true,
+    canManageSites: true,
+    canManageContracts: true,
+    canCreateAMC: false,
+    canSubmitAMC: false,
+    canApproveAMC: false,
+    canGenerateAMCVisits: false,
+    canAssignTechnician: false,
+    canViewFullAMCList: true,
+    canViewOtherSalesAMC: true,
+    canChangeAMCFrequency: false,
+    canEditContractDates: false,
+    canScheduleVisits: false,
+    canCreateBreakdowns: false,
+    canCreateFitOuts: false,
+    canCreateProjects: false,
+    canCreateSupply: false,
+    canCreateQuotations: false,
+    canManageFaults: false,
+    canManageMaterials: false,
+    canManageReports: false,
+    canDeleteReports: false,
+    canReviewReports: false,
+    canApproveReports: false,
+    canManageUsers: false,
+    canManageSettings: false,
+    canViewFinancials: true,
+    canViewAllJobs: true
+  },
+  'Projects Manager': {
+    canViewDashboard: 'projects_only',
+    canManageCustomers: true,
+    canManageSites: true,
+    canManageContracts: true,
+    canCreateAMC: false,
+    canSubmitAMC: false,
+    canApproveAMC: false,
+    canGenerateAMCVisits: false,
+    canAssignTechnician: true,
+    canViewFullAMCList: true,
+    canViewOtherSalesAMC: true,
+    canChangeAMCFrequency: false,
+    canEditContractDates: false,
+    canScheduleVisits: true,
+    canCreateBreakdowns: false,
+    canCreateFitOuts: true,
+    canCreateProjects: true,
+    canCreateSupply: true,
+    canCreateQuotations: true,
+    canManageFaults: true,
+    canManageMaterials: true,
+    canManageReports: 'full',
+    canDeleteReports: false,
+    canReviewReports: true,
+    canApproveReports: true,
+    canManageUsers: false,
+    canManageSettings: false,
+    canViewFinancials: true,
+    canViewAllJobs: true,
+    canHoldJobsOperational: true,
+    canReleaseHold: true,
+    canManageProjects: true,
+    canAccessAccounts: false,
+    canHoldJobsFinancial: false
   }
 };
 
@@ -176,6 +279,14 @@ function sanitizeJobForRole(job, user) {
     cloned.total_including_vat = null;
     cloned.currency = null;
     cloned.quotation_amount = null;
+    cloned.invoice_amount = null;
+    cloned.invoice_total = null;
+    cloned.invoice_paid = null;
+    cloned.invoice_outstanding = null;
+    cloned.invoice_number = null;
+    cloned.payment_status = null;
+    cloned.is_payment_pending = false;
+    cloned.is_payment_overdue = false;
   }
   return cloned;
 }
@@ -193,6 +304,12 @@ function sanitizeContractForRole(contract, user) {
     cloned.vat_amount = null;
     cloned.total_including_vat = null;
     cloned.currency = null;
+    cloned.invoice_total = null;
+    cloned.invoice_paid = null;
+    cloned.invoice_outstanding = null;
+    cloned.payment_status = null;
+    cloned.is_payment_pending = false;
+    cloned.is_payment_overdue = false;
   }
   return cloned;
 }

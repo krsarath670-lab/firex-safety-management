@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, Building2, Wrench, Package, Sparkles, 
-  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield
+  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt
 } from 'lucide-react';
 
 export default function MoreMenu({ onSelectView }) {
@@ -10,10 +10,28 @@ export default function MoreMenu({ onSelectView }) {
 
   const isTechnician = currentUser?.role === 'Technician';
   const isSales = currentUser?.role === 'Sales';
+  const isAccounts = currentUser?.role === 'Accounts';
+  const isProjectsManager = currentUser?.role === 'Projects Manager';
   const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
+  const canAccessFinance = isGM || isAccounts || currentUser?.role === 'Engineer';
 
   const menuSections = [
+    {
+      title: "Finance & Accounts",
+      items: [
+        {
+          id: 'accounts',
+          label: 'Accounts, Invoices & Holds',
+          description: 'Master invoices, payments, client ledgers & financial holds',
+          icon: Receipt,
+          iconColor: 'text-teal-600 bg-teal-50',
+          badge: dashboardStats?.overdueInvoicesCount > 0 ? `${dashboardStats.overdueInvoicesCount} Overdue` : null,
+          badgeColor: 'bg-red-100 text-red-800',
+          hide: !canAccessFinance
+        }
+      ]
+    },
     {
       title: "Operations & Contracts",
       items: [

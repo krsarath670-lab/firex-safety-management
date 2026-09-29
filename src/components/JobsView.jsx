@@ -29,10 +29,30 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeletingJob, setIsDeletingJob] = useState(false);
 
+  // Job Hold States
+  const [holdingJob, setHoldingJob] = useState(null);
+  const [releasingHoldJob, setReleasingHoldJob] = useState(null);
+  const [holdFormData, setHoldFormData] = useState({
+    hold_type: 'Payment Hold',
+    reason: 'Overdue Invoice',
+    remarks: '',
+    next_action: 'Client to clear overdue payment before work resumes'
+  });
+  const [releaseRemarks, setReleaseRemarks] = useState('');
+  const [isHoldSubmitting, setIsHoldSubmitting] = useState(false);
+
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
+  const isAccounts = currentUser?.role === 'Accounts';
+  const isProjectsManager = currentUser?.role === 'Projects Manager';
+  const isGM = currentUser?.role === 'GM';
+  const isEngineer = currentUser?.role === 'Engineer';
   const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
-  const canEditDelete = isManagement;
+  const canEditDelete = isManagement || isProjectsManager;
+  const canHoldFinancial = isGM || isAccounts;
+  const canHoldOperational = isGM || isProjectsManager || isEngineer;
+  const canHoldJobs = canHoldFinancial || canHoldOperational;
+  const canReleaseHold = isGM || isAccounts || isProjectsManager || isEngineer;
 
   const salesUsers = (allUsers || []).filter(u => u.role === 'Sales');
   const supervisorUsers = (allUsers || []).filter(u => u.role === 'Supervisor');
@@ -209,6 +229,67 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
       }
     } catch (e) {
       showToast('Failed to update job status', 'error');
+    }
+  };
+
+  // Place Job on Hold (Payment Hold or Operational Hold)
+  const handlePlaceHold = async (e) => {
+    e.preventDefault();
+    if (!holdingJob) return;
+    setIsHoldSubmitting(true);
+    try {
+      const res = await fetch(`/api/jobs/${holdingJob.id}/hold`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify(holdFormData)
+      });
+      if (res.ok) {
+        showToast(`Job ${holdingJob.job_number} placed on ${holdFormData.hold_type}`, 'warning');
+        setHoldingJob(null);
+        await loadData();
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed to place job on hold', 'error');
+      }
+    } catch {
+      showToast('Network error while placing hold', 'error');
+    } finally {
+      setIsHoldSubmitting(false);
+    }
+  };
+
+  // Release Job Hold with audit logging
+  const handleReleaseHold = async (e) => {
+    e.preventDefault();
+    if (!releasingHoldJob) return;
+    setIsHoldSubmitting(true);
+    try {
+      const res = await fetch(`/api/jobs/${releasingHoldJob.id}/release-hold`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify({ release_remarks: releaseRemarks })
+      });
+      if (res.ok) {
+        showToast(`Job ${releasingHoldJob.job_number} hold successfully released`, 'success');
+        setReleasingHoldJob(null);
+        setReleaseRemarks('');
+        await loadData();
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed to release hold', 'error');
+      }
+    } catch {
+      showToast('Network error while releasing hold', 'error');
+    } finally {
+      setIsHoldSubmitting(false);
     }
   };
 
@@ -421,6 +502,24 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                   >
                     {j.status}
                   </span>
+
+                  {/* On Hold Status Badges */}
+                  {(j.on_hold || j.is_on_hold) && (
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white shadow-sm flex items-center gap-1 ${
+                      j.hold_type === 'Payment Hold' ? 'bg-red-600' : 'bg-amber-600'
+                    }`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      <span>{j.hold_type === 'Payment Hold' ? '🔴 PAYMENT HOLD' : `🟠 OPERATIONAL HOLD: ${j.hold_reason || 'Site Constraint'}`}</span>
+                    </span>
+                  )}
+
+                  {/* Payment Pending Warning Badge */}
+                  {(j.has_unpaid_invoices || j.payment_status === 'Unpaid' || j.payment_status === 'Overdue') && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-sm">
+                      <AlertTriangle className="w-3 h-3 text-amber-700" />
+                      <span>⚠ PAYMENT PENDING</span>
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 mt-1.5">
                   {j.site_name}
@@ -452,6 +551,37 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                 </div>
               </div>
             </div>
+
+            {/* Prominent Hold Details Banner */}
+            {(j.on_hold || j.is_on_hold) && (
+              <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                j.hold_type === 'Payment Hold'
+                  ? 'bg-red-50 border-red-300 text-red-950'
+                  : 'bg-amber-50 border-amber-300 text-amber-950'
+              }`}>
+                <div className="flex items-center justify-between font-black text-[11px]">
+                  <span className="flex items-center gap-1.5">
+                    <AlertTriangle className={`w-4 h-4 ${j.hold_type === 'Payment Hold' ? 'text-red-600' : 'text-amber-600'}`} />
+                    <span>{j.hold_type === 'Payment Hold' ? '🔴 JOB ON PAYMENT HOLD (WORK SUSPENDED)' : `🟠 JOB ON OPERATIONAL HOLD: ${j.hold_reason || 'Site Constraint'}`}</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-semibold">{j.held_at?.slice(0, 10) || 'Active'}</span>
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  <strong>Held By:</strong> {j.held_by_name || 'Management'} ({j.held_by_role || 'Staff'}) • <strong>Reason:</strong> {j.hold_reason}
+                </div>
+                {j.hold_remarks && (
+                  <div className="text-[10.5px] italic text-slate-700">
+                    <strong>Remarks:</strong> {j.hold_remarks}
+                  </div>
+                )}
+                {j.hold_next_action && (
+                  <div className="text-[10.5px] font-bold text-red-900 bg-white/80 p-2 rounded-lg border border-red-200 mt-1 flex items-center gap-1.5">
+                    <span>Required Next Action:</span>
+                    <span className="font-normal">{j.hold_next_action}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed">
@@ -509,8 +639,44 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
 
             {/* Action Buttons */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                {canEditDelete && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Hold Action: Release Hold button if held, or Hold Job button if active */}
+                {(j.on_hold || j.is_on_hold) ? (
+                  canReleaseHold && (
+                    <button
+                      onClick={() => {
+                        setReleasingHoldJob(j);
+                        setReleaseRemarks('');
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1 shadow-sm transition-all"
+                      title="Authorize and log release of this job from hold"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Release Hold</span>
+                    </button>
+                  )
+                ) : (
+                  canHoldJobs && j.status !== 'Completed' && (
+                    <button
+                      onClick={() => {
+                        setHoldingJob(j);
+                        setHoldFormData({
+                          hold_type: isAccounts ? 'Payment Hold' : isProjectsManager ? 'Operational Hold' : 'Payment Hold',
+                          reason: isAccounts ? 'Unpaid Invoices' : 'Site Access Restricted',
+                          remarks: '',
+                          next_action: isAccounts ? 'Client to clear overdue payment before field attendance' : 'Site team to resolve operational constraint'
+                        });
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-1 transition-all"
+                      title="Place this job on Payment Hold or Operational Hold"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-red-600" />
+                      <span>Hold Job</span>
+                    </button>
+                  )
+                )}
+
+                {canEditDelete && !(j.on_hold || j.is_on_hold) && (
                   j.status !== 'Completed' ? (
                     <button
                       onClick={() => handleUpdateJobStatus(j.id, 'Completed')}
@@ -529,7 +695,7 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                   )
                 )}
 
-                {/* Management Only (GM, Engineer, Supervisor): Edit & Delete for Fit Out, Jobs, Projects */}
+                {/* Management Only (GM, Engineer, Supervisor, PM): Edit & Delete for Fit Out, Jobs, Projects */}
                 {canEditDelete && (
                   <div className="flex items-center gap-1">
                     <button
@@ -554,13 +720,24 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
 
               <div className="flex items-center gap-1.5">
                 {/* Start Inspection */}
-                <button
-                  onClick={() => onStartInspectionForJob(j)}
-                  className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
-                >
-                  <Wrench className="w-3.5 h-3.5" />
-                  <span>Inspect</span>
-                </button>
+                {(j.on_hold || j.is_on_hold) ? (
+                  <button
+                    disabled={true}
+                    title="Inspection blocked: Job is currently on hold"
+                    className="px-2.5 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-xs font-bold flex items-center gap-1 opacity-50 cursor-not-allowed"
+                  >
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Held</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onStartInspectionForJob(j)}
+                    className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Inspect</span>
+                  </button>
+                )}
 
                 {/* Complete Report */}
                 <button
@@ -1235,6 +1412,229 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
           }
         }}
       />
+
+      {/* HOLD JOB MODAL */}
+      {holdingJob && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-6 text-xs space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-red-50 text-red-600 rounded-2xl shrink-0 border border-red-200">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
+                  Suspend Work Order
+                </span>
+                <h3 className="text-base font-black text-slate-900 mt-1">
+                  Place Job on Hold
+                </h3>
+                <p className="text-slate-500 mt-0.5 text-xs">
+                  Placing on hold halts field inspections, technician dispatch, and report sign-offs.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-slate-700 space-y-1 font-medium">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Work Order:</span>
+                <span className="font-mono font-bold text-slate-900">{holdingJob.job_number} ({holdingJob.job_type})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Site &amp; Client:</span>
+                <span className="font-semibold text-slate-900 truncate max-w-[200px]">{holdingJob.site_name}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handlePlaceHold} className="space-y-3 pt-1">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Hold Type *</label>
+                <select
+                  value={holdFormData.hold_type}
+                  onChange={(e) => {
+                    const hType = e.target.value;
+                    setHoldFormData(p => ({
+                      ...p,
+                      hold_type: hType,
+                      reason: hType === 'Payment Hold' ? 'Unpaid Invoices' : 'Site Access Restricted',
+                      next_action: hType === 'Payment Hold' ? 'Client must clear overdue balance' : 'Resolve site access/coordination'
+                    }));
+                  }}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-red-500"
+                >
+                  {(isGM || isAccounts) && (
+                    <option value="Payment Hold">Payment Hold — (Financial &amp; Accounts hold)</option>
+                  )}
+                  {(isGM || isProjectsManager || isEngineer) && (
+                    <option value="Operational Hold">Operational Hold — (Site constraint, safety, client hold)</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Hold Reason *</label>
+                <select
+                  value={holdFormData.reason}
+                  onChange={(e) => setHoldFormData(p => ({ ...p, reason: e.target.value }))}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-red-500"
+                >
+                  {holdFormData.hold_type === 'Payment Hold' ? (
+                    <>
+                      <option value="Unpaid Invoices">Unpaid Invoices / Overdue Receivables</option>
+                      <option value="Overdue Balance Exceeded">Overdue Balance Exceeded</option>
+                      <option value="Credit Limit Breach">Credit Limit Breach</option>
+                      <option value="Bounced Cheque / Payment Reversal">Bounced Cheque / Payment Reversal</option>
+                      <option value="Other Financial Hold">Other Financial Hold</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Site Access Restricted">Site Access Restricted / Permits Pending</option>
+                      <option value="Awaiting Civil Defence Drawings">Awaiting Civil Defence Drawing / Approval</option>
+                      <option value="Awaiting Equipment / Materials">Awaiting Specialized Equipment / Spare Parts</option>
+                      <option value="Client Postponed Request">Client Requested Postponement</option>
+                      <option value="Site Safety Concern">Site Safety Concern / Hazardous Conditions</option>
+                      <option value="General Contractor Delay">General Contractor Delay / Civil Work Not Ready</option>
+                      <option value="Scope Discrepancy">Scope of Work Discrepancy</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Hold Remarks / Context</label>
+                <textarea
+                  rows={2}
+                  placeholder="Provide internal background or details on the situation..."
+                  value={holdFormData.remarks}
+                  onChange={(e) => setHoldFormData(p => ({ ...p, remarks: e.target.value }))}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Required Next Action to Release Hold *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Accounts to confirm receipt of BHD 350.000 before technician attendance"
+                  value={holdFormData.next_action}
+                  onChange={(e) => setHoldFormData(p => ({ ...p, next_action: e.target.value }))}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isHoldSubmitting}
+                  onClick={() => setHoldingJob(null)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isHoldSubmitting}
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors shadow-lg shadow-red-600/20 flex items-center justify-center gap-1.5"
+                >
+                  {isHoldSubmitting ? (
+                    <span className="animate-pulse">Placing Hold...</span>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Confirm &amp; Place on Hold</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RELEASE HOLD MODAL */}
+      {releasingHoldJob && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-6 text-xs space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shrink-0 border border-emerald-200">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                  Authorize Resume Work
+                </span>
+                <h3 className="text-base font-black text-slate-900 mt-1">
+                  Release Job Hold
+                </h3>
+                <p className="text-slate-500 mt-0.5 text-xs">
+                  Releasing hold resumes technician scheduling and on-site inspection execution.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-slate-700 space-y-1 font-medium">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Work Order:</span>
+                <span className="font-mono font-bold text-slate-900">{releasingHoldJob.job_number}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Current Hold:</span>
+                <span className="font-bold text-red-700">{releasingHoldJob.hold_type} ({releasingHoldJob.hold_reason})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Held By:</span>
+                <span className="font-semibold text-slate-900">{releasingHoldJob.held_by_name || 'Staff'} on {releasingHoldJob.held_at?.slice(0, 10)}</span>
+              </div>
+              {releasingHoldJob.hold_next_action && (
+                <div className="pt-1 border-t border-slate-200 text-slate-600 text-[11px]">
+                  <strong>Condition:</strong> {releasingHoldJob.hold_next_action}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleReleaseHold} className="space-y-3 pt-1">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Release Remarks &amp; Justification *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Payment verified by Accounts (Receipt #REC-2026-081) / Site clearance issued by consultant"
+                  value={releaseRemarks}
+                  onChange={(e) => setReleaseRemarks(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isHoldSubmitting}
+                  onClick={() => setReleasingHoldJob(null)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isHoldSubmitting}
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-colors shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+                >
+                  {isHoldSubmitting ? (
+                    <span className="animate-pulse">Releasing...</span>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirm &amp; Resume Work</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

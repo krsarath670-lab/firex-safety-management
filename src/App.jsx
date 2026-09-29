@@ -14,6 +14,7 @@ import PDFReportGenerator from './components/PDFReportGenerator';
 import CustomerSiteView from './components/CustomerSiteView';
 import MaterialsView from './components/MaterialsView';
 import CompanySettingsView from './components/CompanySettingsView';
+import AccountsView from './components/AccountsView';
 import UserManagementView from './components/UserManagementView';
 import MoreMenu from './components/MoreMenu';
 import AIAssistantModal from './components/AIAssistantModal';
@@ -240,6 +241,8 @@ function AppContent() {
           {activeTab === 'settings' && <CompanySettingsView />}
 
           {activeTab === 'users' && <UserManagementView />}
+
+          {activeTab === 'accounts' && <AccountsView />}
 
           {activeTab === 'more' && (
             <MoreMenu

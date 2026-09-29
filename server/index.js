@@ -36,7 +36,7 @@ app.get('/api/auth/me', (req, res) => {
   res.json({
     user: req.user,
     permissions: req.permissions,
-    allRoles: ['GM', 'Engineer', 'Supervisor', 'Technician', 'Sales']
+    allRoles: ['GM', 'Engineer', 'Supervisor', 'Technician', 'Sales', 'Accounts', 'Projects Manager']
   });
 });
 
@@ -414,6 +414,20 @@ app.get('/api/dashboard/stats', (req, res) => {
 
   const upcomingAmc = db.getUpcomingAmcVisits();
 
+  // Financial KPIs (Confidential: GM, Accounts, and management permitted)
+  const finSummary = (req.permissions?.canViewFinancials && !isTechnician) ? db.getFinancialSummary(req.user) : null;
+
+  // AMC Quarters Breakdown
+  const amcsList = db.get('amc_contracts') || [];
+  let q1Done = 0, q2Done = 0, q3Done = 0, q4Done = 0;
+  amcsList.forEach(a => {
+    const q = a.quarters || db.getContractQuarters(a.id);
+    if (q?.Q1?.status === 'Completed' || q?.Q1?.status === 'Report Approved') q1Done++;
+    if (q?.Q2?.status === 'Completed' || q?.Q2?.status === 'Report Approved') q2Done++;
+    if (q?.Q3?.status === 'Completed' || q?.Q3?.status === 'Report Approved') q3Done++;
+    if (q?.Q4?.status === 'Completed' || q?.Q4?.status === 'Report Approved') q4Done++;
+  });
+
   res.json({
     role: req.user.role,
     totalActiveAMC: isTechnician ? 0 : totalActiveAMC,
@@ -430,7 +444,24 @@ app.get('/api/dashboard/stats', (req, res) => {
     pendingReportsCount,
     customersCount: isTechnician ? 0 : customers.length,
     sitesCount: isTechnician ? 0 : sites.length,
-    upcoming_amc: upcomingAmc
+    upcoming_amc: upcomingAmc,
+    // Accounts and Financials (Requirements 13, 21)
+    financials: finSummary,
+    overdueInvoicesCount: finSummary ? finSummary.overdue_count : 0,
+    overdueInvoicesAmount: finSummary ? finSummary.overdue_amount : 0,
+    pendingInvoicesCount: finSummary ? finSummary.pending_count : 0,
+    totalOutstandingAmount: finSummary ? finSummary.total_outstanding : 0,
+    paymentHoldsCount: finSummary ? finSummary.payment_holds_count : 0,
+    operationalHoldsCount: finSummary ? finSummary.operational_holds_count : 0,
+    outstandingCustomersCount: finSummary ? finSummary.outstanding_customers_count : 0,
+    // AMC Quarters Progress (Requirements 2, 7)
+    amcQuartersProgress: {
+      q1Done,
+      q2Done,
+      q3Done,
+      q4Done,
+      totalContracts: amcsList.length
+    }
   });
 });
 
@@ -967,6 +998,14 @@ const getAmcContractsHandler = (req, res) => {
       total_including_vat: totalIncVat
     }, req.user);
 
+    const quartersData = contract.quarters || db.getContractQuarters(contract.id);
+    const quarters_summary = {
+      Q1: quartersData?.Q1?.status || 'Not Started',
+      Q2: quartersData?.Q2?.status || 'Not Started',
+      Q3: quartersData?.Q3?.status || 'Not Started',
+      Q4: quartersData?.Q4?.status || 'Not Started'
+    };
+
     return {
       ...sanitized,
       contract_status: autoStatus,
@@ -980,7 +1019,9 @@ const getAmcContractsHandler = (req, res) => {
       contract_start_date: contract.start_date,
       contract_end_date: contract.end_date,
       contract_period: `${contract.start_date} to ${contract.end_date}`,
-      quarter: db.getQuarter(contract.start_date)
+      quarter: db.getQuarter(contract.start_date),
+      quarters: quartersData,
+      quarters_summary
     };
   });
 
@@ -1032,6 +1073,14 @@ const getAmcContractByIdHandler = (req, res) => {
     total_including_vat: totalIncVat
   }, req.user);
 
+  const quartersData = contract.quarters || db.getContractQuarters(contract.id);
+  const quarters_summary = {
+    Q1: quartersData?.Q1?.status || 'Not Started',
+    Q2: quartersData?.Q2?.status || 'Not Started',
+    Q3: quartersData?.Q3?.status || 'Not Started',
+    Q4: quartersData?.Q4?.status || 'Not Started'
+  };
+
   res.json({
     ...sanitized,
     customer_name: customer ? customer.name : 'Unknown Customer',
@@ -1042,6 +1091,8 @@ const getAmcContractByIdHandler = (req, res) => {
     contract_end_date: contract.end_date,
     contract_period: `${contract.start_date} to ${contract.end_date}`,
     quarter: db.getQuarter(contract.start_date),
+    quarters: quartersData,
+    quarters_summary,
     visits,
     reports,
     faults
@@ -1458,6 +1509,9 @@ app.get('/api/jobs', (req, res) => {
     jobs = jobs.filter(j => j.customer_id === req.query.customer_id);
   }
 
+  const invoices = db.get('invoices') || [];
+  const todayStr = new Date().toISOString().slice(0, 10);
+
   const enhanced = jobs.map(j => {
     const cust = customers.find(c => c.id === j.customer_id);
     const site = sites.find(s => s.id === j.site_id);
@@ -1470,13 +1524,49 @@ app.get('/api/jobs', (req, res) => {
     const vatAmt = j.vat_amount !== undefined ? Number(j.vat_amount) : Math.round(numAmount * (vatPct / 100) * 1000) / 1000;
     const totalIncVat = j.total_including_vat !== undefined ? Number(j.total_including_vat) : Math.round((numAmount + vatAmt) * 1000) / 1000;
 
+    // Check linked invoice
+    const linkedInvoice = invoices.find(inv => inv.job_id === j.id || inv.job_number === j.job_number);
+    let invoiceInfo = {
+      invoice_id: null,
+      invoice_number: null,
+      invoice_total: null,
+      invoice_paid: null,
+      invoice_outstanding: null,
+      payment_status: 'Not Invoiced',
+      is_payment_pending: false,
+      is_payment_overdue: false
+    };
+
+    if (linkedInvoice) {
+      const invTotal = Number(linkedInvoice.total_amount) || 0;
+      const invPaid = Number(linkedInvoice.amount_paid) || 0;
+      const invOutstanding = Math.max(0, Math.round((invTotal - invPaid) * 1000) / 1000);
+      let invStatus = linkedInvoice.payment_status || (invOutstanding > 0 ? 'Pending' : 'Paid');
+      const isOverdue = invOutstanding > 0 && linkedInvoice.due_date && linkedInvoice.due_date < todayStr;
+      if (isOverdue && invStatus !== 'Partially Paid') {
+        invStatus = 'Overdue';
+      }
+
+      invoiceInfo = {
+        invoice_id: linkedInvoice.id,
+        invoice_number: linkedInvoice.invoice_number,
+        invoice_total: invTotal,
+        invoice_paid: invPaid,
+        invoice_outstanding: invOutstanding,
+        payment_status: invStatus,
+        is_payment_pending: invOutstanding > 0 && invStatus !== 'Cancelled',
+        is_payment_overdue: isOverdue
+      };
+    }
+
     // Sanitize financial values for Technician (Requirement 33)
     const sanitized = sanitizeJobForRole({
       ...j,
       amount: numAmount,
       vat_percent: vatPct,
       vat_amount: vatAmt,
-      total_including_vat: totalIncVat
+      total_including_vat: totalIncVat,
+      ...invoiceInfo
     }, req.user);
 
     return {
@@ -1486,8 +1576,17 @@ app.get('/api/jobs', (req, res) => {
       site_address: site ? site.site_address : '',
       sales_person_id: j.sales_person_id,
       sales_person_name: sp ? sp.name : (j.sales_person_name || 'Unassigned'),
-      supervisor_name: sup ? sup.name : 'Tariq Mahmoud',
-      technician_name: tech ? tech.name : 'Rajesh Kumar'
+      supervisor_name: sup ? sup.name : 'Sarath Kr',
+      technician_name: tech ? tech.name : 'Abdul Majeed',
+      is_on_hold: !!j.is_on_hold,
+      hold_type: j.hold_type || null,
+      hold_reason: j.hold_reason || null,
+      held_by_name: j.held_by_name || null,
+      held_by_role: j.held_by_role || null,
+      hold_date: j.hold_date || null,
+      expected_release_date: j.expected_release_date || null,
+      hold_remarks: j.hold_remarks || '',
+      hold_history: j.hold_history || []
     };
   });
 
@@ -1510,11 +1609,47 @@ app.get('/api/jobs/:id', (req, res) => {
 
   const users = db.get('users') || [];
   const sp = users.find(u => u.id === job.sales_person_id);
+  const invoices = db.get('invoices') || [];
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   const numAmount = Number(job.amount) || 0;
   const vatPct = job.vat_percent !== undefined ? Number(job.vat_percent) : 10;
   const vatAmt = job.vat_amount !== undefined ? Number(job.vat_amount) : Math.round(numAmount * (vatPct / 100) * 1000) / 1000;
   const totalIncVat = job.total_including_vat !== undefined ? Number(job.total_including_vat) : Math.round((numAmount + vatAmt) * 1000) / 1000;
+
+  const linkedInvoice = invoices.find(inv => inv.job_id === job.id || inv.job_number === job.job_number);
+  let invoiceInfo = {
+    invoice_id: null,
+    invoice_number: null,
+    invoice_total: null,
+    invoice_paid: null,
+    invoice_outstanding: null,
+    payment_status: 'Not Invoiced',
+    is_payment_pending: false,
+    is_payment_overdue: false
+  };
+
+  if (linkedInvoice) {
+    const invTotal = Number(linkedInvoice.total_amount) || 0;
+    const invPaid = Number(linkedInvoice.amount_paid) || 0;
+    const invOutstanding = Math.max(0, Math.round((invTotal - invPaid) * 1000) / 1000);
+    let invStatus = linkedInvoice.payment_status || (invOutstanding > 0 ? 'Pending' : 'Paid');
+    const isOverdue = invOutstanding > 0 && linkedInvoice.due_date && linkedInvoice.due_date < todayStr;
+    if (isOverdue && invStatus !== 'Partially Paid') {
+      invStatus = 'Overdue';
+    }
+
+    invoiceInfo = {
+      invoice_id: linkedInvoice.id,
+      invoice_number: linkedInvoice.invoice_number,
+      invoice_total: invTotal,
+      invoice_paid: invPaid,
+      invoice_outstanding: invOutstanding,
+      payment_status: invStatus,
+      is_payment_pending: invOutstanding > 0 && invStatus !== 'Cancelled',
+      is_payment_overdue: isOverdue
+    };
+  }
 
   res.json(sanitizeJobForRole({
     ...job,
@@ -1522,7 +1657,17 @@ app.get('/api/jobs/:id', (req, res) => {
     vat_percent: vatPct,
     vat_amount: vatAmt,
     total_including_vat: totalIncVat,
-    sales_person_name: sp ? sp.name : (job.sales_person_name || 'Unassigned')
+    sales_person_name: sp ? sp.name : (job.sales_person_name || 'Unassigned'),
+    ...invoiceInfo,
+    is_on_hold: !!job.is_on_hold,
+    hold_type: job.hold_type || null,
+    hold_reason: job.hold_reason || null,
+    held_by_name: job.held_by_name || null,
+    held_by_role: job.held_by_role || null,
+    hold_date: job.hold_date || null,
+    expected_release_date: job.expected_release_date || null,
+    hold_remarks: job.hold_remarks || '',
+    hold_history: job.hold_history || []
   }, req.user));
 });
 
@@ -1591,11 +1736,11 @@ app.put('/api/jobs/:id', (req, res) => {
   const existing = db.getById('jobs', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Job not found' });
 
-  // Access restricted strictly to GM, Engineer, and Supervisor
-  if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted to GM, Engineer, Supervisor, and Projects Manager
+  if (!['GM', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, Engineer, and Supervisor can edit jobs, fit-outs, and projects.'
+      message: 'Access restricted: Only GM, Engineer, Supervisor, and Projects Manager can edit jobs, fit-outs, and projects.'
     });
   }
 
@@ -1625,17 +1770,261 @@ app.delete('/api/jobs/:id', (req, res) => {
   const existing = db.getById('jobs', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Job not found' });
 
-  // Access restricted strictly to GM, Engineer, and Supervisor
-  if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted to GM, Engineer, Supervisor, and Projects Manager
+  if (!['GM', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, Engineer, and Supervisor can delete jobs, fit-outs, and projects.'
+      message: 'Access restricted: Only GM, Engineer, Supervisor, and Projects Manager can delete jobs, fit-outs, and projects.'
     });
   }
 
   db.delete('jobs', req.params.id);
   db.logAudit(req.user.id, 'DELETE_JOB', 'jobs', req.params.id, `Deleted job ${existing.job_number} (${existing.job_type})`);
   res.json({ message: 'Job deleted successfully' });
+});
+
+// --- JOB HOLD & RELEASE (Requirements 15, 16, 17, 18, 31) ---
+app.post('/api/jobs/:id/hold', (req, res) => {
+  const existing = db.getById('jobs', req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Job not found' });
+
+  const { hold_type, hold_reason, expected_release_date, remarks } = req.body;
+  if (!hold_type || !hold_reason) {
+    return res.status(400).json({ error: 'Hold type and hold reason are required' });
+  }
+
+  // RBAC for holds:
+  // Payment Hold: GM and Accounts only
+  if (hold_type === 'Payment Hold') {
+    if (!req.permissions.canHoldJobsFinancial && !['GM', 'Accounts'].includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Only Accounts and GM can place a job on Payment Hold.'
+      });
+    }
+  } else {
+    // Operational Hold: GM, Engineer, Supervisor, Projects Manager
+    if (!['GM', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+      if (req.user.role === 'Sales') {
+        // Sales can request hold
+        const updated = db.update('jobs', req.params.id, {
+          hold_requested: true,
+          hold_request_reason: hold_reason,
+          hold_request_by: req.user.name,
+          hold_request_date: new Date().toISOString(),
+          hold_request_remarks: remarks || ''
+        });
+        db.logAudit(req.user.id, 'REQUEST_HOLD', 'jobs', req.params.id, `Sales requested hold: ${hold_reason}`);
+        return res.json({ message: 'Hold request submitted for management review', job: sanitizeJobForRole(updated, req.user) });
+      }
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Your role is not authorized to place jobs on Operational Hold.'
+      });
+    }
+  }
+
+  const updated = db.holdJob(req.params.id, {
+    hold_type,
+    hold_reason,
+    expected_release_date,
+    remarks
+  }, req.user);
+
+  res.json({ success: true, message: `Job placed on ${hold_type}`, job: sanitizeJobForRole(updated, req.user) });
+});
+
+app.post('/api/jobs/:id/release-hold', (req, res) => {
+  const existing = db.getById('jobs', req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Job not found' });
+
+  if (!existing.is_on_hold) {
+    return res.status(400).json({ error: 'Job is not currently on hold' });
+  }
+
+  const { release_reason, remarks } = req.body;
+  if (!release_reason) {
+    return res.status(400).json({ error: 'Release reason is required' });
+  }
+
+  // RBAC for releases:
+  // If current hold is Payment Hold: GM and Accounts only
+  if (existing.hold_type === 'Payment Hold') {
+    if (!req.permissions.canHoldJobsFinancial && !['GM', 'Accounts'].includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Only Accounts and GM can release a Payment Hold.'
+      });
+    }
+  } else {
+    // Operational hold release: GM, Engineer, Supervisor, Projects Manager
+    if (!['GM', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Your role is not authorized to release this hold.'
+      });
+    }
+  }
+
+  const updated = db.releaseJobHold(req.params.id, {
+    release_reason,
+    remarks
+  }, req.user);
+
+  res.json({ success: true, message: 'Job hold released successfully', job: sanitizeJobForRole(updated, req.user) });
+});
+
+// --- AMC QUARTERS ENDPOINTS (Requirements 2, 3, 4, 5, 6, 7) ---
+app.get('/api/amc-contracts/:id/quarters', (req, res) => {
+  const contract = db.getById('amc_contracts', req.params.id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  if (req.user.role === 'Sales' && contract.sales_person_id !== req.user.id) {
+    return res.status(403).json({ error: 'Access Denied' });
+  }
+
+  const quarters = db.getContractQuarters(req.params.id);
+  res.json(quarters);
+});
+
+app.post('/api/amc-contracts/:id/quarters/:quarter/inspection', (req, res) => {
+  const contract = db.getById('amc_contracts', req.params.id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  // Update inspection checklist, faults, materials, signature
+  const updatedQuarter = db.updateQuarterInspection(req.params.id, req.params.quarter, req.body, req.user);
+  res.json({ success: true, quarter: updatedQuarter });
+});
+
+app.post('/api/amc-contracts/:id/quarters/:quarter/schedule', (req, res) => {
+  const contract = db.getById('amc_contracts', req.params.id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  const { scheduled_date, technician_id, technician_name, remarks } = req.body;
+  const updatedQuarter = db.updateQuarterInspection(req.params.id, req.params.quarter, {
+    scheduled_date,
+    technician_name: technician_name || 'Abdul Majeed',
+    status: 'Scheduled',
+    technician_remarks: remarks || ''
+  }, req.user);
+
+  res.json({ success: true, quarter: updatedQuarter });
+});
+
+app.post('/api/amc-contracts/:id/quarters/:quarter/report', (req, res) => {
+  const contract = db.getById('amc_contracts', req.params.id);
+  if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+  const { action, report_data } = req.body;
+  const qKey = req.params.quarter;
+  let status = 'Report Submitted';
+  let report_status = 'Submitted';
+
+  if (action === 'approve') {
+    if (!['GM', 'Engineer'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only GM or Engineer can approve quarter reports.' });
+    }
+    status = 'Completed';
+    report_status = 'Approved';
+  } else if (action === 'review') {
+    if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Supervisor review required.' });
+    }
+    status = 'Report Reviewed';
+    report_status = 'Reviewed';
+  }
+
+  const updatedQuarter = db.updateQuarterInspection(req.params.id, qKey, {
+    status,
+    report_status,
+    ...(report_data || {})
+  }, req.user);
+
+  res.json({ success: true, quarter: updatedQuarter });
+});
+
+// --- INVOICES & PAYMENTS (Dedicated ACCOUNTS Module - Requirements 8, 11, 12, 13, 19, 28, 29) ---
+app.get('/api/invoices', (req, res) => {
+  if (req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied', message: 'Technicians are not authorized to view financial invoices.' });
+  }
+  const invoices = db.getInvoices(req.query, req.user);
+  res.json(invoices);
+});
+
+app.get('/api/invoices/summary', (req, res) => {
+  if (req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied', message: 'Technicians are not authorized to view financial summaries.' });
+  }
+  const summary = db.getFinancialSummary(req.user);
+  res.json(summary);
+});
+
+app.get('/api/invoices/:id', (req, res) => {
+  if (req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied' });
+  }
+  const invoice = db.getInvoiceById(req.params.id, req.user);
+  if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
+  res.json(invoice);
+});
+
+app.post('/api/invoices', (req, res) => {
+  if (!['GM', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts and GM can create invoices.' });
+  }
+  const { customer_id, site_id, amount_before_vat } = req.body;
+  if (!customer_id || !site_id || amount_before_vat === undefined) {
+    return res.status(400).json({ error: 'Customer, Site, and Amount Before VAT are required.' });
+  }
+  const invoice = db.createInvoice(req.body, req.user);
+  res.status(201).json(invoice);
+});
+
+app.put('/api/invoices/:id', (req, res) => {
+  if (!['GM', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts and GM can update invoices.' });
+  }
+  const existing = db.getById('invoices', req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Invoice not found' });
+  const updated = db.update('invoices', req.params.id, req.body);
+  db.logAudit(req.user.id, 'UPDATE_INVOICE', 'invoices', req.params.id, `Updated invoice ${existing.invoice_number}`);
+  res.json(updated);
+});
+
+app.post('/api/invoices/:id/payments', (req, res) => {
+  if (!['GM', 'Accounts'].includes(req.user.role) && !req.permissions.canManagePayments) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts and GM can record payments.' });
+  }
+  const { amount } = req.body;
+  if (!amount || Number(amount) <= 0) {
+    return res.status(400).json({ error: 'A positive payment amount is required.' });
+  }
+  const result = db.recordPayment(req.params.id, req.body, req.user);
+  if (!result) return res.status(404).json({ error: 'Invoice not found or invalid payment' });
+  res.status(201).json(result);
+});
+
+app.get('/api/payments', (req, res) => {
+  if (req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied' });
+  }
+  let payments = db.get('payments') || [];
+  if (req.user.role === 'Sales') {
+    const invoices = db.getInvoices({}, req.user);
+    const invoiceIds = new Set(invoices.map(i => i.id));
+    payments = payments.filter(p => invoiceIds.has(p.invoice_id));
+  }
+  res.json(payments);
+});
+
+app.get('/api/customers/:id/statement', (req, res) => {
+  if (req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied' });
+  }
+  const statement = db.getCustomerStatement(req.params.id);
+  if (!statement) return res.status(404).json({ error: 'Customer not found' });
+  res.json(statement);
 });
 
 // --- SALES MONTHLY REPORT (Requirement 31) ---

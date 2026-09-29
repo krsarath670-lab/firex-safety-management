@@ -232,7 +232,7 @@ if (db.jobs.length < 8) {
       expected_start_date: "2026-09-28",
       expected_completion_date: "2026-09-28",
       status: "New",
-      remarks: "Customer called 24/7 hotline. Dispatched immediately.",
+      remarks: "Customer called emergency office dispatch. Dispatched immediately.",
       created_by: "usr-sales-2",
       created_at: new Date().toISOString()
     }

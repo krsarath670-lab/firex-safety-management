@@ -282,11 +282,15 @@ export default function UserManagementView() {
   const totalTechnicians = users.filter(u => u.role === 'Technician').length;
   const totalSales = users.filter(u => u.role === 'Sales').length;
   const totalManagement = users.filter(u => ['GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
+  const totalAccounts = users.filter(u => u.role === 'Accounts').length;
+  const totalProjects = users.filter(u => u.role === 'Projects Manager').length;
 
   const filteredUsers = users.filter(u => {
     // Role filter
     if (activeFilter === 'Technician' && u.role !== 'Technician') return false;
     if (activeFilter === 'Sales' && u.role !== 'Sales') return false;
+    if (activeFilter === 'Accounts' && u.role !== 'Accounts') return false;
+    if (activeFilter === 'Projects' && u.role !== 'Projects Manager') return false;
     if (activeFilter === 'Management' && !['GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
 
     // Search query
@@ -421,6 +425,8 @@ export default function UserManagementView() {
             { id: 'All', label: `All Staff (${users.length})` },
             { id: 'Technician', label: `Technicians (${totalTechnicians})` },
             { id: 'Sales', label: `Sales Team (${totalSales})` },
+            { id: 'Accounts', label: `Accounts (${totalAccounts})` },
+            { id: 'Projects', label: `Projects Mgr (${totalProjects})` },
             { id: 'Management', label: `Management (${totalManagement})` }
           ].map(f => (
             <button
@@ -481,6 +487,8 @@ export default function UserManagementView() {
                         u.role === 'Engineer' ? 'bg-indigo-700 text-white' :
                         u.role === 'Supervisor' ? 'bg-blue-600 text-white' :
                         u.role === 'Sales' ? 'bg-amber-500 text-white' :
+                        u.role === 'Accounts' ? 'bg-teal-700 text-white' :
+                        u.role === 'Projects Manager' ? 'bg-cyan-700 text-white' :
                         'bg-emerald-600 text-white'
                       }`}>
                         {u.avatar || (u.name?.slice(0, 2).toUpperCase())}
@@ -509,6 +517,8 @@ export default function UserManagementView() {
                         u.role === 'Engineer' ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
                         u.role === 'Supervisor' ? 'bg-blue-50 text-blue-800 border-blue-200' :
                         u.role === 'Sales' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                        u.role === 'Accounts' ? 'bg-teal-50 text-teal-800 border-teal-200' :
+                        u.role === 'Projects Manager' ? 'bg-cyan-50 text-cyan-800 border-cyan-200' :
                         'bg-emerald-50 text-emerald-800 border-emerald-200'
                       }`}>
                         {u.role}
@@ -670,6 +680,8 @@ export default function UserManagementView() {
                     else if (newRole === 'Sales') defaultDesig = 'Commercial Sales Representative';
                     else if (newRole === 'Supervisor') defaultDesig = 'Senior Field Supervisor';
                     else if (newRole === 'Engineer') defaultDesig = 'Lead Fire Protection Engineer';
+                    else if (newRole === 'Accounts') defaultDesig = 'Senior Accountant & Billing Officer';
+                    else if (newRole === 'Projects Manager') defaultDesig = 'Projects & Fit-out Operations Manager';
                     else if (newRole === 'GM') defaultDesig = 'General Manager';
 
                     setFormData(p => ({
@@ -686,6 +698,8 @@ export default function UserManagementView() {
                     <>
                       <option value="Supervisor">Supervisor — (Field dispatch, job approvals, full ops)</option>
                       <option value="Engineer">Engineer — (Technical approval, inspections, full ops)</option>
+                      <option value="Accounts">Accounts — (Finance, Invoices, Payments, Customer Ledgers &amp; Holds)</option>
+                      <option value="Projects Manager">Projects Manager — (Projects, Fit-out, Installation, T&amp;C, Milestones &amp; Ops Holds)</option>
                       <option value="GM">GM — (Executive management &amp; system-wide access)</option>
                     </>
                   )}

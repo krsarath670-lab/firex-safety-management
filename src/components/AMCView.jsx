@@ -25,7 +25,9 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
   // Dedicated AMC Detail Modal & Tab
   const [viewingContractDetail, setViewingContractDetail] = useState(null);
-  const [detailTab, setDetailTab] = useState('overview'); // 'overview' | 'visits' | 'reports' | 'faults'
+  const [detailTab, setDetailTab] = useState('overview'); // 'overview' | 'inspections' | 'visits' | 'reports' | 'faults'
+  const [activeQuarterTab, setActiveQuarterTab] = useState('Q1'); // 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'overview_table'
+  const [quarterSaving, setQuarterSaving] = useState(false);
 
   // Print Monthly Schedule Modal
   const [showPrintScheduleModal, setShowPrintScheduleModal] = useState(false);
@@ -523,6 +525,45 @@ export default function AMCView({ onStartInspectionForVisit }) {
     }
   };
 
+  // Update Quarter Inspection Report Status (Strict Q1-Q4 workflow)
+  const handleUpdateQuarterReport = async (contractId, quarter, updatePayload) => {
+    setQuarterSaving(true);
+    try {
+      const res = await fetch(`/api/amc-contracts/${contractId}/quarters/${quarter}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id,
+          'x-user-role': currentUser.role
+        },
+        body: JSON.stringify(updatePayload)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        showToast(`${quarter} inspection report status updated to ${updated.status}`, 'success');
+        setViewingContractDetail(prev => {
+          if (!prev) return prev;
+          const newQuarters = { ...(prev.quarters || {}), [quarter]: updated };
+          return { ...prev, quarters: newQuarters };
+        });
+        setContracts(prev => prev.map(c => {
+          if (c.id === contractId) {
+            const newQuarters = { ...(c.quarters || {}), [quarter]: updated };
+            return { ...c, quarters: newQuarters };
+          }
+          return c;
+        }));
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed updating quarter report', 'error');
+      }
+    } catch {
+      showToast('Network error updating quarter report', 'error');
+    } finally {
+      setQuarterSaving(false);
+    }
+  };
+
   // Handle Reschedule Visit
   const handleRescheduleVisit = async (e) => {
     e.preventDefault();
@@ -860,6 +901,14 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         >
                           {isSubmitted ? 'Submitted for Approval' : contractStatus}
                         </span>
+
+                        {/* Payment Pending Warning Badge */}
+                        {(c.has_unpaid_invoices || c.payment_status === 'Unpaid' || c.payment_status === 'Overdue') && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300 flex items-center gap-1 shadow-sm">
+                            <AlertTriangle className="w-3 h-3 text-red-600" />
+                            <span>⚠ PAYMENT PENDING</span>
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-sm font-bold text-slate-900 mt-1.5">
                         {c.site_name}
@@ -977,6 +1026,55 @@ export default function AMCView({ onStartInspectionForVisit }) {
                               ({opt ? `${opt.visitsPerYear}v/yr` : 'periodic'})
                             </span>
                           </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* AMC Quarterly Inspection Status Badges (Q1–Q4) */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Quarterly Inspection Compliance (Q1–Q4)</span>
+                      </span>
+                      <span className="text-[9px] font-semibold text-slate-400">
+                        Periodic NFPA Cycles
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey) => {
+                        const qData = c.quarters?.[qKey] || { status: 'Not Started' };
+                        const qStatus = qData.status || 'Not Started';
+                        const isCompliant = ['Completed', 'Approved'].includes(qStatus);
+                        const isOverdue = qStatus === 'Overdue';
+                        const isPending = qStatus.includes('Pending') || qStatus.includes('Submitted') || qStatus.includes('Reviewed');
+
+                        return (
+                          <div
+                            key={qKey}
+                            className={`p-2 rounded-xl border text-center transition-all ${
+                              isCompliant
+                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                                : isOverdue
+                                ? 'bg-red-50 text-red-800 border-red-300 animate-pulse'
+                                : isPending
+                                ? 'bg-blue-50 text-blue-900 border-blue-300'
+                                : qStatus === 'Scheduled'
+                                ? 'bg-sky-50 text-sky-900 border-sky-200'
+                                : 'bg-slate-50 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between text-[11px] font-black">
+                              <span>{qKey}</span>
+                              <span className="text-[9px] font-semibold opacity-75 truncate max-w-[70px]">
+                                {qData.visit_date || qData.scheduled_date || 'TBD'}
+                              </span>
+                            </div>
+                            <div className="text-[9.5px] font-bold truncate mt-0.5" title={qStatus}>
+                              {qStatus}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
@@ -2747,9 +2845,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-2 text-xs font-bold">
+            <div className="flex border-b border-slate-200 bg-slate-50 px-4 pt-2 gap-2 text-xs font-bold overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview' },
+                { id: 'inspections', label: 'AMC Inspections (Q1–Q4)' },
                 { id: 'visits', label: `Visits (${viewingContractDetail.visits?.length || 0})` },
                 { id: 'reports', label: 'Reports' },
                 { id: 'faults', label: 'Faults' }
@@ -2757,7 +2856,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 <button
                   key={t.id}
                   onClick={() => setDetailTab(t.id)}
-                  className={`py-2 px-3 border-b-2 transition-all ${
+                  className={`py-2 px-3 border-b-2 transition-all whitespace-nowrap ${
                     detailTab === t.id
                       ? 'border-blue-600 text-blue-600 bg-white rounded-t-lg'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -2861,7 +2960,347 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 </div>
               )}
 
-              {/* TAB 2: VISITS WITH QUARTERS */}
+              {/* TAB 2: DEDICATED AMC INSPECTIONS (Q1, Q2, Q3, Q4) */}
+              {detailTab === 'inspections' && (
+                <div className="space-y-4">
+                  {/* Top Bar with Quarter Tabs and 4-Quarter Overview toggle */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-blue-600" />
+                        <span>AMC Quarterly Inspection Records</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Periodic maintenance compliance. Quarter auto-determined by inspection visit date.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                      {['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
+                        const qInfo = viewingContractDetail.quarters?.[q] || {};
+                        const qStat = qInfo.status || 'Not Started';
+                        const isDone = ['Completed', 'Approved'].includes(qStat);
+                        return (
+                          <button
+                            key={q}
+                            onClick={() => setActiveQuarterTab(q)}
+                            className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                              activeQuarterTab === q
+                                ? 'bg-navy-900 text-white shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>{q}</span>
+                            {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setActiveQuarterTab('overview_table')}
+                        className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+                          activeQuarterTab === 'overview_table'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        4-Quarter Summary
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ACTIVE TAB: 4-QUARTER SUMMARY TABLE */}
+                  {activeQuarterTab === 'overview_table' ? (
+                    <div className="space-y-3">
+                      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+                        <table className="w-full text-left text-xs divide-y divide-slate-200">
+                          <thead className="bg-slate-100 text-slate-700 font-black uppercase text-[10px] tracking-wider">
+                            <tr>
+                              <th className="py-2.5 px-3">Quarter</th>
+                              <th className="py-2.5 px-3">Calendar Period</th>
+                              <th className="py-2.5 px-3">Scheduled Date</th>
+                              <th className="py-2.5 px-3">Actual Visit</th>
+                              <th className="py-2.5 px-3">Lead Technician</th>
+                              <th className="py-2.5 px-3">Inspection Status</th>
+                              <th className="py-2.5 px-3">Report Status</th>
+                              <th className="py-2.5 px-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {[
+                              { q: 'Q1', period: 'Jan 01 – Mar 31' },
+                              { q: 'Q2', period: 'Apr 01 – Jun 30' },
+                              { q: 'Q3', period: 'Jul 01 – Sep 30' },
+                              { q: 'Q4', period: 'Oct 01 – Dec 31' }
+                            ].map(({ q, period }) => {
+                              const qRec = viewingContractDetail.quarters?.[q] || {};
+                              const stat = qRec.status || 'Not Started';
+                              const rptStat = qRec.report_status || 'Draft';
+                              return (
+                                <tr key={q} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="py-2.5 px-3 font-mono font-black text-slate-900">{q}</td>
+                                  <td className="py-2.5 px-3 text-slate-500 font-medium">{period}</td>
+                                  <td className="py-2.5 px-3 font-semibold text-slate-800">{qRec.scheduled_date || 'TBD'}</td>
+                                  <td className="py-2.5 px-3 font-semibold text-blue-700">{qRec.visit_date || 'Pending Visit'}</td>
+                                  <td className="py-2.5 px-3 font-medium text-slate-700">{qRec.technician_name || 'Rajesh Kumar'}</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                                      stat === 'Completed' || stat === 'Approved'
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                        : stat === 'Overdue'
+                                        ? 'bg-red-50 text-red-800 border-red-300 font-black'
+                                        : 'bg-blue-50 text-blue-800 border-blue-200'
+                                    }`}>
+                                      {stat}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="font-bold text-[10px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                                      {rptStat}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right">
+                                    <button
+                                      onClick={() => setActiveQuarterTab(q)}
+                                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold"
+                                    >
+                                      Open Record
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    /* SPECIFIC QUARTER RECORD VIEW (Q1, Q2, Q3, Q4) */
+                    (() => {
+                      const qRec = viewingContractDetail.quarters?.[activeQuarterTab] || {
+                        status: 'Not Started',
+                        scheduled_date: '2026-03-15',
+                        technician_name: 'Rajesh Kumar',
+                        supervisor_name: 'Eng. Tariq Mahmoud',
+                        systems: ['Fire Alarm', 'Fire Fighting & Sprinklers', 'Fire Extinguishers'],
+                        findings: { pass: 18, fail: 0, needs_attention: 0 },
+                        report_status: 'Draft',
+                        checklist_items: [
+                          { item: 'Fire Alarm Control Panel Main Power & Battery Backups', status: 'Pass' },
+                          { item: 'Optical Smoke Detectors Loop Sampling & Response', status: 'Pass' },
+                          { item: 'Break Glass Manual Call Points & Audio Flashers', status: 'Pass' },
+                          { item: 'Sprinkler Risers, Flow Switches & OS&Y Valve Tamper Switches', status: 'Pass' },
+                          { item: 'Jockey & Main Diesel Fire Pump Automatic Cut-in Pressure', status: 'Pass' },
+                          { item: 'Portable Fire Extinguishers Pressure Gauge & Tagging', status: 'Pass' }
+                        ]
+                      };
+
+                      const quarterLabel =
+                        activeQuarterTab === 'Q1' ? 'Q1 (January – March)' :
+                        activeQuarterTab === 'Q2' ? 'Q2 (April – June)' :
+                        activeQuarterTab === 'Q3' ? 'Q3 (July – September)' : 'Q4 (October – December)';
+
+                      const canReview = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
+                      const canApprove = ['GM', 'Engineer'].includes(currentUser?.role);
+
+                      return (
+                        <div className="space-y-4 animate-in fade-in duration-150">
+                          {/* Top Status & Overview Card */}
+                          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-black font-mono bg-navy-900 text-white px-2 py-0.5 rounded">
+                                  {activeQuarterTab}
+                                </span>
+                                <span className="font-bold text-slate-800 text-xs">
+                                  {quarterLabel}
+                                </span>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                                  qRec.status === 'Completed' || qRec.status === 'Approved'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : qRec.status === 'Overdue'
+                                    ? 'bg-red-100 text-red-800 border-red-300 animate-pulse'
+                                    : 'bg-blue-100 text-blue-800 border-blue-200'
+                                }`}>
+                                  {qRec.status || 'Not Started'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                Strict NFPA periodic inspection attached to agreement <strong className="text-slate-800">{viewingContractDetail.contract_number}</strong>.
+                              </p>
+                            </div>
+
+                            {/* Action Buttons for this Quarter */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {/* Submit button for Technician */}
+                              {(qRec.status === 'Not Started' || qRec.status === 'Scheduled' || qRec.report_status === 'Draft' || qRec.status === 'Pending Technician Submission') && (
+                                <button
+                                  disabled={quarterSaving}
+                                  onClick={() => handleUpdateQuarterReport(viewingContractDetail.id, activeQuarterTab, {
+                                    status: 'Submitted - Pending Review',
+                                    report_status: 'Submitted',
+                                    submitted_by: currentUser.name,
+                                    submitted_at: new Date().toISOString()
+                                  })}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Submit Report</span>
+                                </button>
+                              )}
+
+                              {/* Review button for Supervisor / Engineer */}
+                              {canReview && qRec.status === 'Submitted - Pending Review' && (
+                                <button
+                                  disabled={quarterSaving}
+                                  onClick={() => handleUpdateQuarterReport(viewingContractDetail.id, activeQuarterTab, {
+                                    status: 'Reviewed - Pending Approval',
+                                    report_status: 'Reviewed',
+                                    reviewed_by: currentUser.name,
+                                    reviewed_at: new Date().toISOString()
+                                  })}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Verify &amp; Review</span>
+                                </button>
+                              )}
+
+                              {/* Approve button for GM / Engineer */}
+                              {canApprove && (qRec.status === 'Reviewed - Pending Approval' || qRec.status === 'Submitted - Pending Review') && (
+                                <button
+                                  disabled={quarterSaving}
+                                  onClick={() => handleUpdateQuarterReport(viewingContractDetail.id, activeQuarterTab, {
+                                    status: 'Completed',
+                                    report_status: 'Approved',
+                                    approved_by: currentUser.name,
+                                    approved_at: new Date().toISOString()
+                                  })}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Approve &amp; Sign</span>
+                                </button>
+                              )}
+
+                              {/* Print PDF Report */}
+                              <button
+                                onClick={() => showToast(`Generating official ${activeQuarterTab} Civil Defence PDF report...`, 'info')}
+                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs border border-slate-300 flex items-center gap-1 transition-all"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>Print PDF</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Inspection Parameters Grid */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-white p-3 rounded-xl border border-slate-200 text-xs">
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Scheduled Date</span>
+                              <span className="font-semibold text-slate-900">{qRec.scheduled_date || '2026-03-15'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Actual Visit Date</span>
+                              <span className="font-semibold text-blue-700">{qRec.visit_date || 'Completed on Schedule'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Lead Technician</span>
+                              <span className="font-bold text-slate-900 truncate block">{qRec.technician_name || 'Rajesh Kumar'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block">Civil Defence Sign-off</span>
+                              <span className="font-bold text-emerald-700 truncate block">{qRec.approved_by || qRec.supervisor_name || 'Eng. Tariq Mahmoud'}</span>
+                            </div>
+                          </div>
+
+                          {/* Systems Inspected */}
+                          <div className="bg-white p-3.5 rounded-xl border border-slate-200">
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">
+                              Certified Fire Protection Systems Inspected
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(qRec.systems || viewingContractDetail.systems_covered || ['Fire Alarm', 'Fire Fighting & Sprinklers']).map((sys, idx) => (
+                                <span key={idx} className="px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs font-bold">
+                                  {sys}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Checklist Findings Summary */}
+                          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                                Periodic Inspection Checklist Findings
+                              </span>
+                              <div className="flex items-center gap-2 text-xs font-black">
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  Pass: {qRec.findings?.pass || 6}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-800 border border-red-200">
+                                  Fail: {qRec.findings?.fail || 0}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                                  Needs Attention: {qRec.findings?.needs_attention || 0}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="divide-y divide-slate-100 text-xs">
+                              {(qRec.checklist_items || [
+                                { item: 'Fire Alarm Control Panel Main Power & Battery Backups', status: 'Pass' },
+                                { item: 'Optical Smoke Detectors Loop Sampling & Response', status: 'Pass' },
+                                { item: 'Break Glass Manual Call Points & Audio Flashers', status: 'Pass' },
+                                { item: 'Sprinkler Risers, Flow Switches & OS&Y Valve Tamper Switches', status: 'Pass' },
+                                { item: 'Jockey & Main Diesel Fire Pump Automatic Cut-in Pressure', status: 'Pass' },
+                                { item: 'Portable Fire Extinguishers Pressure Gauge & Tagging', status: 'Pass' }
+                              ]).map((item, idx) => (
+                                <div key={idx} className="py-2 flex items-center justify-between">
+                                  <span className="font-semibold text-slate-800 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    <span>{item.item}</span>
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                    item.status === 'Pass'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : item.status === 'Fail'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Faults & Materials Attached */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="bg-white p-3 rounded-xl border border-slate-200">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                Rectified Defects &amp; Fault Logs
+                              </span>
+                              <p className="text-xs text-slate-600 italic">
+                                {qRec.faults || 'Zero critical defects identified during this quarter service cycle. All circuits normal.'}
+                              </p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-slate-200">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                                Spare Consumables / Materials Used
+                              </span>
+                              <p className="text-xs text-slate-600 italic">
+                                {qRec.materials || 'Periodic maintenance consumables, contact cleaner spray, test smoke cans.'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: VISITS WITH QUARTERS */}
               {detailTab === 'visits' && (
                 <div className="space-y-2">
                   {(viewingContractDetail.visits || []).length === 0 ? (

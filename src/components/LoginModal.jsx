@@ -154,7 +154,9 @@ export default function LoginModal({ isOpen, onClose }) {
                     selectedUser.role === 'Sales' ? 'bg-amber-600' :
                     selectedUser.role === 'GM' ? 'bg-purple-600' :
                     selectedUser.role === 'Engineer' ? 'bg-indigo-600' :
-                    selectedUser.role === 'Technician' ? 'bg-emerald-600' : 'bg-blue-600'
+                    selectedUser.role === 'Technician' ? 'bg-emerald-600' :
+                    selectedUser.role === 'Accounts' ? 'bg-teal-600' :
+                    selectedUser.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
                   }`}>
                     {selectedUser.avatar || selectedUser.role?.[0]}
                   </div>
@@ -166,7 +168,9 @@ export default function LoginModal({ isOpen, onClose }) {
                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                   selectedUser.role === 'Sales' ? 'bg-amber-100 text-amber-800' :
                   selectedUser.role === 'GM' ? 'bg-purple-100 text-purple-800' :
-                  selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                  selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' :
+                  selectedUser.role === 'Accounts' ? 'bg-teal-100 text-teal-800' :
+                  selectedUser.role === 'Projects Manager' ? 'bg-cyan-100 text-cyan-800' : 'bg-blue-100 text-blue-800'
                 }`}>
                   {selectedUser.role}
                 </span>

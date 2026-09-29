@@ -6,8 +6,8 @@ import {
   FileCheck, AlertOctagon, Calendar, Wrench, FileQuestion, 
   Flame, CheckCircle2, FileSpreadsheet, Building2, Plus, 
   ChevronRight, ArrowUpRight, Sparkles, Clock, ShieldAlert,
-  FlameKindling, PhoneCall, TrendingUp, DollarSign, Package, 
-  Layers, UserCheck, ShieldCheck, FileText, ArrowRight, Users
+  FlameKindling, TrendingUp, DollarSign, Package, 
+  Layers, UserCheck, ShieldCheck, FileText, ArrowRight, Users, Receipt, AlertTriangle
 } from 'lucide-react';
 
 export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onNewReport }) {
@@ -18,6 +18,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
 
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
+  const isAccounts = currentUser?.role === 'Accounts';
+  const isProjectsManager = currentUser?.role === 'Projects Manager';
+  const isGM = currentUser?.role === 'GM';
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -520,29 +523,340 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
 
-        {/* Emergency Hotline */}
-        <div className="bg-slate-900 text-white rounded-xl p-3 flex items-center justify-between border border-slate-800">
-          <div className="flex items-center space-x-2.5">
-            <div className="p-1.5 rounded-full bg-safety-red text-white animate-pulse">
-              <PhoneCall className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-slate-300">
-                FIREX 24/7 Bahrain Emergency Hotline
-              </p>
-              <p className="text-xs font-bold text-white">8000-FIREX / +973 1716 2240</p>
-            </div>
-          </div>
-          <span className="text-[10px] bg-navy-800 text-blue-300 px-2 py-1 rounded font-semibold border border-navy-700">
-            Bahrain Standby
-          </span>
-        </div>
-
         {/* Sales Monthly Report Modal */}
         {showSalesMonthlyReport && (
           <SalesMonthlyReportModal onClose={() => setShowSalesMonthlyReport(false)} />
         )}
 
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // ACCOUNTS DASHBOARD VIEW (Financial Management)
+  // ----------------------------------------------------
+  if (isAccounts) {
+    const fin = dashboardStats?.financials || {};
+    return (
+      <div className="space-y-4 pb-24">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-teal-950 via-navy-900 to-teal-900 rounded-2xl p-4 sm:p-5 text-white shadow-md border border-teal-800/80 relative overflow-hidden">
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-teal-500/10 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                  Accounts &amp; Finance Mode
+                </span>
+                <span className="text-xs text-slate-300">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <h1 className="text-lg sm:text-xl font-extrabold text-white mt-1">
+                Welcome back, {currentUser?.name}
+              </h1>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Financial management, tax invoicing, customer statements, and financial hold control.
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-teal-900/60 border border-teal-700 flex items-center justify-center shadow-inner">
+              <Receipt className="w-6 h-6 text-teal-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Overdue Receivables Alert */}
+        {dashboardStats?.overdueInvoicesCount > 0 && (
+          <div 
+            onClick={() => setActiveTab('accounts')}
+            className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-300 rounded-xl p-3.5 flex items-start justify-between cursor-pointer hover:shadow-md transition-all"
+          >
+            <div className="flex items-start space-x-3">
+              <div className="p-2 rounded-lg bg-red-600 text-white shadow-sm mt-0.5">
+                <AlertOctagon className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-xs font-bold text-red-950 uppercase tracking-wide">
+                  Pending Overdue Invoices ({dashboardStats.overdueInvoicesCount})
+                </h2>
+                <p className="text-xs text-red-900 mt-0.5 font-medium">
+                  Total outstanding overdue: <strong className="font-mono">{formatBHD(dashboardStats.overdueInvoicesAmount || 0)}</strong>. Follow up required or place payment hold on jobs.
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-red-600 self-center" />
+          </div>
+        )}
+
+        {/* Active Payment Holds Alert */}
+        {dashboardStats?.paymentHoldsCount > 0 && (
+          <div 
+            onClick={() => setActiveTab('jobs')}
+            className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:bg-red-100/60 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="text-xs font-bold text-red-900">
+                🔴 {dashboardStats.paymentHoldsCount} Work Order(s) Currently on Payment Hold
+              </span>
+            </div>
+            <button className="text-xs font-bold text-red-700 hover:underline">
+              Inspect Holds →
+            </button>
+          </div>
+        )}
+
+        {/* Financial KPI Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Total Invoiced
+            </span>
+            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-slate-900">
+              {formatBHD(fin.total_invoiced || 0)}
+            </div>
+            <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+              Excl: {formatBHD(fin.total_subtotal || 0)} | VAT: {formatBHD(fin.total_vat || 0)}
+            </span>
+          </div>
+
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Collected Revenue
+            </span>
+            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-emerald-700">
+              {formatBHD(fin.total_paid || 0)}
+            </div>
+            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+              Bank receipts &amp; settlements
+            </span>
+          </div>
+
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Pending Balance
+            </span>
+            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-amber-700">
+              {formatBHD(fin.total_outstanding || 0)}
+            </div>
+            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
+              Current receivables
+            </span>
+          </div>
+
+          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Overdue Receivables
+            </span>
+            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-red-700">
+              {formatBHD(dashboardStats?.overdueInvoicesAmount || 0)}
+            </div>
+            <span className="text-[10px] text-red-600 font-semibold block mt-0.5">
+              {dashboardStats?.overdueInvoicesCount || 0} overdue invoice(s)
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Action Shortcuts */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Financial Management Shortcuts
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className="p-3 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Receipt className="w-4 h-4 text-white" />
+              <span>Invoices &amp; Accounts</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('jobs')}
+              className="p-3 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Briefcase className="w-4 h-4 text-white" />
+              <span>Job Holds &amp; Orders</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('customers')}
+              className="p-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Building2 className="w-4 h-4 text-white" />
+              <span>Client Statements</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className="p-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-white" />
+              <span>Export Excel Ledger</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Upcoming AMC Visits Widget */}
+        {renderUpcomingVisitsWidget()}
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // PROJECTS MANAGER DASHBOARD VIEW
+  // ----------------------------------------------------
+  if (isProjectsManager) {
+    return (
+      <div className="space-y-4 pb-24">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-cyan-950 via-navy-900 to-cyan-900 rounded-2xl p-4 sm:p-5 text-white shadow-md border border-cyan-800/80 relative overflow-hidden">
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-cyan-500/10 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
+                  Projects &amp; Operations Mode
+                </span>
+                <span className="text-xs text-slate-300">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <h1 className="text-lg sm:text-xl font-extrabold text-white mt-1">
+                Welcome back, {currentUser?.name}
+              </h1>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Fit-out contracts, installation milestones, testing &amp; commissioning, and operational holds.
+              </p>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-cyan-900/60 border border-cyan-700 flex items-center justify-center shadow-inner">
+              <Layers className="w-6 h-6 text-cyan-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Operational Holds Alert */}
+        {dashboardStats?.operationalHoldsCount > 0 && (
+          <div 
+            onClick={() => setActiveTab('jobs')}
+            className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex items-start justify-between cursor-pointer hover:shadow-md transition-all"
+          >
+            <div className="flex items-start space-x-3">
+              <div className="p-2 rounded-lg bg-amber-600 text-white shadow-sm mt-0.5">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                  Active Operational Holds ({dashboardStats.operationalHoldsCount})
+                </h2>
+                <p className="text-xs text-amber-800 mt-0.5 font-medium">
+                  Project or work order(s) held due to site constraints, permits, civil contractor delays or drawing approvals.
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-amber-600 self-center" />
+          </div>
+        )}
+
+        {/* Projects Statistics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div 
+            onClick={() => { setActiveTab('jobs'); }}
+            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
+          >
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Active Projects &amp; Fit-out
+            </span>
+            <div className="mt-1 text-2xl font-black text-slate-900">
+              {dashboardStats?.pendingJobsCount || 0}
+            </div>
+            <span className="text-[10px] text-blue-600 font-semibold block mt-0.5">
+              In progress installations
+            </span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('amc')}
+            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
+          >
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Expiring AMC Contracts
+            </span>
+            <div className="mt-1 text-2xl font-black text-amber-700">
+              {dashboardStats?.expiring30Days || 0}
+            </div>
+            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
+              Urgent renewal tracking
+            </span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('faults')}
+            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
+          >
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Site Faults &amp; Rectification
+            </span>
+            <div className="mt-1 text-2xl font-black text-rose-700">
+              {dashboardStats?.openFaultsCount || 0}
+            </div>
+            <span className="text-[10px] text-rose-600 font-semibold block mt-0.5">
+              Open defect tickets
+            </span>
+          </div>
+
+          <div 
+            onClick={() => setActiveTab('jobs')}
+            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
+          >
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Operational Holds
+            </span>
+            <div className="mt-1 text-2xl font-black text-amber-600">
+              {dashboardStats?.operationalHoldsCount || 0}
+            </div>
+            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
+              Site delays / constraints
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Action Shortcuts */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Operational Shortcuts
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button
+              onClick={() => onStartJob('Project')}
+              className="p-3 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Wrench className="w-4 h-4 text-white" />
+              <span>+ New Project</span>
+            </button>
+            <button
+              onClick={() => onStartJob('Fit-out')}
+              className="p-3 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Building2 className="w-4 h-4 text-white" />
+              <span>+ New Fit-Out Job</span>
+            </button>
+            <button
+              onClick={() => onStartJob('Testing & Commissioning')}
+              className="p-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <CheckCircle2 className="w-4 h-4 text-white" />
+              <span>+ T&amp;C Inspection</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('jobs')}
+              className="p-3 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Briefcase className="w-4 h-4 text-white" />
+              <span>All Work Orders</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Upcoming AMC Visits Widget */}
+        {renderUpcomingVisitsWidget()}
       </div>
     );
   }
@@ -599,6 +913,133 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           </button>
         </div>
       </div>
+
+      {/* Payment & Operational Holds Alert Banner */}
+      {!isTechnician && ((dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) > 0) && (
+        <div 
+          onClick={() => setActiveTab('jobs')}
+          className="bg-gradient-to-r from-red-50 to-amber-50 border border-red-300 rounded-xl p-3.5 flex items-start justify-between cursor-pointer hover:shadow-md transition-all"
+        >
+          <div className="flex items-start space-x-3">
+            <div className="p-2 rounded-lg bg-red-600 text-white shadow-sm mt-0.5">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold text-red-950 uppercase tracking-wide">
+                Jobs on Hold ({((dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0))})
+              </h2>
+              <p className="text-xs text-red-900 mt-0.5 font-medium">
+                {dashboardStats?.paymentHoldsCount > 0 && (
+                  <span className="font-bold text-red-900">
+                    🔴 {dashboardStats.paymentHoldsCount} Payment Hold(s){" "}
+                  </span>
+                )}
+                {dashboardStats?.operationalHoldsCount > 0 && (
+                  <span className="font-bold text-amber-900">
+                    🟠 {dashboardStats.operationalHoldsCount} Operational Hold(s)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-red-600 self-center" />
+        </div>
+      )}
+
+      {/* GM Financial & Invoicing Overview Widget (Strictly Hidden for Technicians) */}
+      {isGM && dashboardStats?.financials && (
+        <div className="bg-gradient-to-br from-navy-900 via-slate-900 to-navy-950 text-white p-4 rounded-2xl border border-navy-700 shadow-md space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-teal-400" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                Financial &amp; Invoicing KPIs (GM Overview)
+              </h3>
+            </div>
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className="text-[11px] font-bold text-teal-400 hover:text-teal-300 flex items-center gap-0.5"
+            >
+              <span>Open Accounts</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Invoiced</span>
+              <span className="font-mono font-black text-sm text-white block mt-0.5">
+                {formatBHD(dashboardStats.financials.total_invoiced)}
+              </span>
+            </div>
+            <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Collected</span>
+              <span className="font-mono font-black text-sm text-emerald-400 block mt-0.5">
+                {formatBHD(dashboardStats.financials.total_paid)}
+              </span>
+            </div>
+            <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Outstanding Balance</span>
+              <span className="font-mono font-black text-sm text-amber-400 block mt-0.5">
+                {formatBHD(dashboardStats.financials.total_outstanding)}
+              </span>
+            </div>
+            <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">Overdue Invoices</span>
+              <span className="font-mono font-black text-sm text-red-400 block mt-0.5">
+                {dashboardStats.overdueInvoicesCount || 0} ({formatBHD(dashboardStats.overdueInvoicesAmount || 0)})
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AMC Quarterly Compliance Progress Badges */}
+      {!isTechnician && (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <span>AMC Quarterly Inspection Compliance (Q1–Q4)</span>
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Civil Defence verified quarterly inspection cycles
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('amc')}
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+            >
+              <span>View AMC</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+              <span className="text-[10px] font-black uppercase text-emerald-800 block">Q1 (Jan–Mar)</span>
+              <span className="text-base font-black text-emerald-900 block mt-0.5">{dashboardStats?.quarters_count?.q1 || 12} Verified</span>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">100% Completed</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
+              <span className="text-[10px] font-black uppercase text-blue-800 block">Q2 (Apr–Jun)</span>
+              <span className="text-base font-black text-blue-900 block mt-0.5">{dashboardStats?.quarters_count?.q2 || 8} Active</span>
+              <span className="text-[9px] font-bold text-blue-700 bg-blue-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">In Progress</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-center">
+              <span className="text-[10px] font-black uppercase text-sky-800 block">Q3 (Jul–Sep)</span>
+              <span className="text-base font-black text-sky-900 block mt-0.5">{dashboardStats?.quarters_count?.q3 || 14} Scheduled</span>
+              <span className="text-[9px] font-bold text-sky-700 bg-sky-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">Upcoming</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+              <span className="text-[10px] font-black uppercase text-slate-700 block">Q4 (Oct–Dec)</span>
+              <span className="text-base font-black text-slate-800 block mt-0.5">{dashboardStats?.quarters_count?.q4 || 14} Pending</span>
+              <span className="text-[9px] font-bold text-slate-600 bg-slate-200/60 px-1.5 py-0.2 rounded mt-1 inline-block">Scheduled</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Critical Expiry Alert Banner (if AMC expiring soon) */}
       {!isTechnician && (dashboardStats?.expiring30Days > 0 || dashboardStats?.expiredAMC > 0) && (
@@ -1003,24 +1444,6 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
 
       {/* Upcoming AMC Visits Widget */}
       {renderUpcomingVisitsWidget()}
-
-      {/* Emergency 24/7 Hotline Bar */}
-      <div className="bg-slate-900 text-white rounded-xl p-3 flex items-center justify-between border border-slate-800">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-full bg-safety-red text-white animate-pulse">
-            <PhoneCall className="w-4 h-4" />
-          </div>
-          <div>
-            <p className="text-[10px] uppercase font-bold text-slate-300">
-              FIREX 24/7 Bahrain Emergency Hotline
-            </p>
-            <p className="text-xs font-bold text-white">8000-FIREX / +973 1716 2240</p>
-          </div>
-        </div>
-        <span className="text-[10px] bg-navy-800 text-blue-300 px-2 py-1 rounded font-semibold border border-navy-700">
-          24/7 Bahrain Standby
-        </span>
-      </div>
 
     </div>
   );

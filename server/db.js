@@ -708,16 +708,16 @@ class Database {
       `);
       const res = await this.pgPool.query('SELECT data FROM firex_store WHERE key = $1', ['app_state']);
       if (res.rows.length > 0 && res.rows[0].data) {
-        this.memoryCache = res.rows[0].data;
+        this.memoryCache = this.ensureSchema(res.rows[0].data);
         console.log('[FIREX DB] PostgreSQL cloud database state loaded successfully.');
       } else {
         const initialData = fs.existsSync(this.filePath)
           ? JSON.parse(fs.readFileSync(this.filePath, 'utf8'))
           : initialSeed;
-        this.memoryCache = initialData;
+        this.memoryCache = this.ensureSchema(initialData);
         await this.pgPool.query(
           'INSERT INTO firex_store (key, data, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW()',
-          ['app_state', initialData]
+          ['app_state', this.memoryCache]
         );
         console.log('[FIREX DB] Initialized and seeded persistent cloud PostgreSQL database.');
       }
@@ -726,18 +726,590 @@ class Database {
     }
   }
 
+  ensureSchema(data) {
+    if (!data) return data;
+    let modified = false;
+
+    if (!data.invoices) {
+      data.invoices = [];
+      modified = true;
+    }
+    if (!data.payments) {
+      data.payments = [];
+      modified = true;
+    }
+    if (!data.job_holds) {
+      data.job_holds = [];
+      modified = true;
+    }
+
+    // Ensure Fatima Hassan (Accounts) exists in users
+    if (!data.users) data.users = [];
+    const hasAccounts = data.users.some(u => u.role === 'Accounts' || u.email === 'accounts@firexbahrain.com');
+    if (!hasAccounts) {
+      data.users.push({
+        id: 'usr-acc-101',
+        name: 'Fatima Hassan',
+        email: 'accounts@firexbahrain.com',
+        role: 'Accounts',
+        designation: 'Financial Controller / Accounts',
+        phone: '+973 3911 2233',
+        status: 'Active',
+        pin: '1234',
+        password: '1234',
+        avatar: 'FH',
+        created_at: new Date().toISOString()
+      });
+      modified = true;
+    }
+
+    // Ensure Eng. Ali Redha (Projects Manager) exists in users
+    const hasPM = data.users.some(u => u.role === 'Projects Manager' || u.email === 'projects@firexbahrain.com');
+    if (!hasPM) {
+      data.users.push({
+        id: 'usr-pm-102',
+        name: 'Eng. Ali Redha',
+        email: 'projects@firexbahrain.com',
+        role: 'Projects Manager',
+        designation: 'Senior Projects & Fit-out Manager',
+        phone: '+973 3922 4455',
+        status: 'Active',
+        pin: '1234',
+        password: '1234',
+        avatar: 'AR',
+        created_at: new Date().toISOString()
+      });
+      modified = true;
+    }
+
+    // Ensure realistic Bahrain jobs exist if jobs array is empty
+    if (!data.jobs || data.jobs.length === 0) {
+      const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'M/s SOFOOH REALESTATE W.LL' };
+      const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'HALA TOWER' };
+      const salesUser = data.users.find(u => u.role === 'Sales') || data.users[0];
+      const techUser = data.users.find(u => u.role === 'Technician') || data.users[0];
+      const supUser = data.users.find(u => u.role === 'Supervisor') || data.users[0];
+
+      data.jobs = [
+        {
+          id: 'job-1',
+          job_number: 'AMC-2026-021',
+          job_type: 'AMC',
+          customer_id: defaultCustomer.id,
+          site_id: defaultSite.id,
+          system: 'Fire Alarm',
+          system_type: 'Fire Alarm',
+          description: 'Q3 Routine Quarterly AMC Periodic Inspection for HALA TOWER. Check FACP, test 120 detection devices, test diesel fire pump auto-crank.',
+          date: '2026-09-28',
+          expected_start_date: '2026-09-28',
+          expected_completion_date: '2026-09-30',
+          amount: 450.000,
+          vat_percent: 10,
+          vat_amount: 45.000,
+          total_including_vat: 495.000,
+          currency: 'BHD',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          supervisor_id: supUser.id,
+          supervisor_name: supUser.name,
+          technician_id: techUser.id,
+          technician_name: techUser.name,
+          status: 'In Progress',
+          is_on_hold: false,
+          materials_used: [
+            { material_id: 'mat-1', name: 'Optical Smoke Detector (UL Listed)', quantity: 2 }
+          ],
+          photos: [],
+          created_at: '2026-09-28T08:00:00Z'
+        },
+        {
+          id: 'job-2',
+          job_number: 'BRK-2026-014',
+          job_type: 'Breakdown',
+          customer_id: defaultCustomer.id,
+          site_id: defaultSite.id,
+          system: 'Fire Fighting',
+          system_type: 'Fire Fighting',
+          description: 'Emergency Breakdown Callout: Diesel fire pump starting battery voltage drop and pressure switch calibration.',
+          date: '2026-09-20',
+          expected_start_date: '2026-09-20',
+          expected_completion_date: '2026-09-25',
+          amount: 820.000,
+          vat_percent: 10,
+          vat_amount: 82.000,
+          total_including_vat: 902.000,
+          currency: 'BHD',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          supervisor_id: supUser.id,
+          supervisor_name: supUser.name,
+          technician_id: techUser.id,
+          technician_name: techUser.name,
+          status: 'Pending',
+          is_on_hold: true,
+          hold_type: 'Payment Hold',
+          hold_reason: 'Payment Pending / Overdue Payment',
+          held_by_id: 'usr-acc-101',
+          held_by_name: 'Fatima Hassan',
+          held_by_role: 'Accounts',
+          hold_date: '2026-09-22T09:30:00Z',
+          expected_release_date: '2026-10-05',
+          hold_remarks: 'Client invoice INV-2026-003 is overdue (24 days overdue). Service held until payment settlement.',
+          hold_history: [
+            {
+              action: 'HOLD_PLACED',
+              hold_type: 'Payment Hold',
+              hold_reason: 'Payment Pending / Overdue Payment',
+              held_by_name: 'Fatima Hassan',
+              held_by_role: 'Accounts',
+              hold_date: '2026-09-22T09:30:00Z',
+              expected_release_date: '2026-10-05',
+              remarks: 'Overdue payment invoice INV-2026-003 for BHD 902.000.'
+            }
+          ],
+          materials_used: [],
+          photos: [],
+          created_at: '2026-09-20T08:00:00Z'
+        },
+        {
+          id: 'job-3',
+          job_number: 'FIT-2026-008',
+          job_type: 'Fit-out',
+          customer_id: defaultCustomer.id,
+          site_id: defaultSite.id,
+          system: 'Sprinkler',
+          system_type: 'Sprinkler',
+          description: 'Commercial Restaurant Renovation: Relocate 14 smoke detectors and add 6 pendant quick-response sprinkler drops.',
+          date: '2026-09-15',
+          expected_start_date: '2026-09-15',
+          expected_completion_date: '2026-10-10',
+          amount: 1650.000,
+          vat_percent: 10,
+          vat_amount: 165.000,
+          total_including_vat: 1815.000,
+          currency: 'BHD',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          supervisor_id: supUser.id,
+          supervisor_name: supUser.name,
+          technician_id: techUser.id,
+          technician_name: techUser.name,
+          status: 'In Progress',
+          is_on_hold: true,
+          hold_type: 'Operational Hold',
+          hold_reason: 'Site Not Ready / Access Denied',
+          held_by_id: 'usr-pm-102',
+          held_by_name: 'Eng. Ali Redha',
+          held_by_role: 'Projects Manager',
+          hold_date: '2026-09-25T11:00:00Z',
+          expected_release_date: '2026-10-02',
+          hold_remarks: 'Ceiling grid framing not completed by tenant general contractor. Testing deferred until site ready.',
+          hold_history: [
+            {
+              action: 'HOLD_PLACED',
+              hold_type: 'Operational Hold',
+              hold_reason: 'Site Not Ready / Access Denied',
+              held_by_name: 'Eng. Ali Redha',
+              held_by_role: 'Projects Manager',
+              hold_date: '2026-09-25T11:00:00Z',
+              expected_release_date: '2026-10-02',
+              remarks: 'Site not ready.'
+            }
+          ],
+          materials_used: [],
+          photos: [],
+          created_at: '2026-09-15T10:00:00Z'
+        },
+        {
+          id: 'job-4',
+          job_number: 'PRJ-2026-003',
+          job_type: 'Project',
+          customer_id: defaultCustomer.id,
+          site_id: defaultSite.id,
+          system: 'Suppression',
+          system_type: 'Suppression',
+          description: 'Server Room Clean Agent Novec 1230 automatic fire extinguishing system installation and room integrity fan test.',
+          date: '2026-09-10',
+          expected_start_date: '2026-09-10',
+          expected_completion_date: '2026-10-15',
+          amount: 2400.000,
+          vat_percent: 10,
+          vat_amount: 240.000,
+          total_including_vat: 2640.000,
+          currency: 'BHD',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          supervisor_id: supUser.id,
+          supervisor_name: supUser.name,
+          technician_id: techUser.id,
+          technician_name: techUser.name,
+          status: 'In Progress',
+          is_on_hold: false,
+          materials_used: [],
+          photos: [],
+          created_at: '2026-09-10T10:00:00Z'
+        }
+      ];
+      modified = true;
+    }
+
+    // Seed realistic invoices if invoices array is empty
+    if (!data.invoices || data.invoices.length === 0) {
+      const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'M/s SOFOOH REALESTATE W.LL' };
+      const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'HALA TOWER' };
+      const amc = data.amc_contracts?.[0] || { id: 'amc-1', contract_number: 'AMC-2026-005' };
+      const salesUser = data.users.find(u => u.role === 'Sales') || data.users[0];
+
+      data.invoices = [
+        {
+          id: 'inv-1',
+          invoice_number: 'INV-2026-001',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          amc_id: amc.id,
+          amc_number: amc.contract_number,
+          job_id: null,
+          job_number: null,
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          invoice_date: '2026-01-15',
+          due_date: '2026-02-15',
+          amount_before_vat: 3000.000,
+          vat_percent: 10,
+          vat_amount: 300.000,
+          total_amount: 3300.000,
+          amount_paid: 3300.000,
+          outstanding_balance: 0.000,
+          payment_status: 'Paid',
+          days_overdue: 0,
+          hold_status: 'Active',
+          description: `Annual Comprehensive Fire & Safety Maintenance Contract (${amc.contract_number})`,
+          items: [
+            { description: 'Annual Comprehensive Fire Protection Maintenance', quantity: 1, unit_price: 3000.000, total: 3000.000 }
+          ],
+          notes: 'Full payment received via BenefitPay.',
+          created_by: 'usr-acc-101',
+          created_at: '2026-01-15T09:00:00Z',
+          updated_at: '2026-02-10T11:00:00Z'
+        },
+        {
+          id: 'inv-2',
+          invoice_number: 'INV-2026-002',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          job_id: 'job-1',
+          job_number: 'AMC-2026-021',
+          amc_id: amc.id,
+          amc_number: amc.contract_number,
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          invoice_date: '2026-09-01',
+          due_date: '2026-09-15',
+          amount_before_vat: 450.000,
+          vat_percent: 10,
+          vat_amount: 45.000,
+          total_amount: 495.000,
+          amount_paid: 200.000,
+          outstanding_balance: 295.000,
+          payment_status: 'Partially Paid',
+          days_overdue: 14,
+          hold_status: 'Active',
+          description: 'Supply and replacement of faulty optical smoke sensors during Q3 maintenance',
+          items: [
+            { description: 'Optical Smoke Detector XP95 (UL Listed)', quantity: 2, unit_price: 150.000, total: 300.000 },
+            { description: 'Specialist Technical Labor & Loop Recalibration', quantity: 1, unit_price: 150.000, total: 150.000 }
+          ],
+          notes: 'Partial advance payment received. Remaining BHD 295.000 due.',
+          created_by: 'usr-acc-101',
+          created_at: '2026-09-01T10:00:00Z',
+          updated_at: '2026-09-10T14:30:00Z'
+        },
+        {
+          id: 'inv-3',
+          invoice_number: 'INV-2026-003',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          job_id: 'job-2',
+          job_number: 'BRK-2026-014',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          invoice_date: '2026-08-20',
+          due_date: '2026-09-05',
+          amount_before_vat: 820.000,
+          vat_percent: 10,
+          vat_amount: 82.000,
+          total_amount: 902.000,
+          amount_paid: 0.000,
+          outstanding_balance: 902.000,
+          payment_status: 'Overdue',
+          days_overdue: 24,
+          hold_status: 'Payment Hold',
+          description: 'Emergency Diesel Fire Pump Solenoid and starting batteries overhaul',
+          items: [
+            { description: '12V 17Ah Heavy Duty Fire Pump Starter Batteries', quantity: 2, unit_price: 220.000, total: 440.000 },
+            { description: 'Pump Controller Solenoid Relay 24V', quantity: 1, unit_price: 180.000, total: 180.000 },
+            { description: 'Emergency Callout & Pressure Testing', quantity: 1, unit_price: 200.000, total: 200.000 }
+          ],
+          notes: 'Invoice is severely overdue. Payment Hold placed on Job BRK-2026-014 by Accounts.',
+          created_by: 'usr-acc-101',
+          created_at: '2026-08-20T11:00:00Z',
+          updated_at: '2026-09-22T09:30:00Z'
+        },
+        {
+          id: 'inv-4',
+          invoice_number: 'INV-2026-004',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          site_id: defaultSite.id,
+          site_name: defaultSite.site_name,
+          job_id: 'job-4',
+          job_number: 'PRJ-2026-003',
+          sales_person_id: salesUser.id,
+          sales_person_name: salesUser.name,
+          invoice_date: '2026-09-20',
+          due_date: '2026-10-20',
+          amount_before_vat: 2400.000,
+          vat_percent: 10,
+          vat_amount: 240.000,
+          total_amount: 2640.000,
+          amount_paid: 0.000,
+          outstanding_balance: 2640.000,
+          payment_status: 'Pending',
+          days_overdue: 0,
+          hold_status: 'Active',
+          description: 'Clean Agent Novec 1230 System Installation - 50% Mobilization Advance',
+          items: [
+            { description: 'Novec 1230 Engineered Cylinder & Discharge Nozzles', quantity: 1, unit_price: 1800.000, total: 1800.000 },
+            { description: 'Engineering Design, Hydraulic Calculations & Commissioning', quantity: 1, unit_price: 600.000, total: 600.000 }
+          ],
+          notes: 'Advance invoice issued. Awaiting client finance disbursement.',
+          created_by: 'usr-acc-101',
+          created_at: '2026-09-20T12:00:00Z'
+        }
+      ];
+
+      data.payments = [
+        {
+          id: 'pay-1',
+          payment_number: 'RCPT-2026-001',
+          invoice_id: 'inv-1',
+          invoice_number: 'INV-2026-001',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          payment_date: '2026-02-10',
+          amount: 3300.000,
+          payment_method: 'BenefitPay',
+          reference_number: 'BP-992817203',
+          received_by: 'Fatima Hassan',
+          remarks: 'Settlement in full for AMC-2026-005 contract agreement.',
+          created_at: '2026-02-10T11:00:00Z'
+        },
+        {
+          id: 'pay-2',
+          payment_number: 'RCPT-2026-002',
+          invoice_id: 'inv-2',
+          invoice_number: 'INV-2026-002',
+          customer_id: defaultCustomer.id,
+          customer_name: defaultCustomer.name,
+          payment_date: '2026-09-10',
+          amount: 200.000,
+          payment_method: 'Bank Transfer',
+          reference_number: 'NBB-TX-440192',
+          received_by: 'Fatima Hassan',
+          remarks: 'Part-payment 50% for material supply.',
+          created_at: '2026-09-10T14:30:00Z'
+        }
+      ];
+
+      data.job_holds = [
+        {
+          id: 'hld-1',
+          job_id: 'job-2',
+          job_number: 'BRK-2026-014',
+          customer_name: defaultCustomer.name,
+          site_name: defaultSite.site_name,
+          hold_type: 'Payment Hold',
+          hold_reason: 'Payment Pending / Overdue Payment',
+          held_by_id: 'usr-acc-101',
+          held_by_name: 'Fatima Hassan',
+          held_by_role: 'Accounts',
+          hold_date: '2026-09-22T09:30:00Z',
+          expected_release_date: '2026-10-05',
+          remarks: 'Overdue invoice INV-2026-003 for BHD 902.000.'
+        },
+        {
+          id: 'hld-2',
+          job_id: 'job-3',
+          job_number: 'FIT-2026-008',
+          customer_name: defaultCustomer.name,
+          site_name: defaultSite.site_name,
+          hold_type: 'Operational Hold',
+          hold_reason: 'Site Not Ready / Access Denied',
+          held_by_id: 'usr-pm-102',
+          held_by_name: 'Eng. Ali Redha',
+          held_by_role: 'Projects Manager',
+          hold_date: '2026-09-25T11:00:00Z',
+          expected_release_date: '2026-10-02',
+          remarks: 'Ceiling grid work incomplete. Site access rescheduled.'
+        }
+      ];
+
+      modified = true;
+    }
+
+    // Ensure amc_contracts have quarters_data initialized
+    if (data.amc_contracts && data.amc_contracts.length > 0) {
+      data.amc_contracts.forEach(contract => {
+        if (!contract.quarters) {
+          contract.quarters = {
+            Q1: {
+              quarter: 'Q1',
+              name: 'Q1 (Jan - Mar)',
+              months: 'Jan - Mar',
+              status: 'Completed',
+              scheduled_date: '2026-02-15',
+              actual_visit_date: '2026-02-16',
+              technician_name: 'Abdul Majeed',
+              supervisor_name: 'Sarath Kr',
+              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
+              checklist: {
+                'FACP Main Power & Battery Standby': { status: 'Pass' },
+                'Detector Smoke Chamber Sensitivity': { status: 'Pass' },
+                'Manual Call Point Glass & Microswitch': { status: 'Pass' },
+                'Main Diesel Fire Pump Auto-Start': { status: 'Pass' },
+                'Sprinkler Zone Valve Tamper Switch': { status: 'Pass' }
+              },
+              faults_count: 0,
+              faults_details: 'Routine periodic quarterly maintenance successfully completed with no critical faults.',
+              corrective_action: 'Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.',
+              materials_used: [],
+              photos: [
+                { id: 'q1-p1', url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600', tag: 'After', caption: 'FACP Morley Panel Verified Normal' }
+              ],
+              technician_remarks: 'All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.',
+              customer_rep_name: 'KHALIL EBRAHIM',
+              customer_rep_designation: 'Facilities Supervisor',
+              customer_signature: 'Verified & Signed Electronically',
+              report_id: 'rpt-amc-q1',
+              report_number: 'RPT-2026-Q1-001',
+              report_status: 'Approved',
+              approved_by: 'Eng. Mohamed Hweidi (GM)'
+            },
+            Q2: {
+              quarter: 'Q2',
+              name: 'Q2 (Apr - Jun)',
+              months: 'Apr - Jun',
+              status: 'Completed',
+              scheduled_date: '2026-05-18',
+              actual_visit_date: '2026-05-19',
+              technician_name: 'Abdul Majeed',
+              supervisor_name: 'Sarath Kr',
+              systems_inspected: ['Fire Alarm', 'Fire Fighting', 'Emergency Light'],
+              checklist: {
+                'FACP Main Power & Battery Standby': { status: 'Pass' },
+                'Detector Smoke Chamber Sensitivity': { status: 'Pass' },
+                'Sprinkler Flow Switch & Valves': { status: 'Pass' }
+              },
+              faults_count: 1,
+              faults_details: 'Level 2 MCP frangible glass cracked by freight cart.',
+              corrective_action: 'Replaced cracked element with genuine Notifier glass.',
+              materials_used: [
+                { part_number: 'MCP-GL-01', description: 'Notifier Call Point Replacement Glass', quantity: 1 }
+              ],
+              photos: [],
+              technician_remarks: 'Q2 inspection completed. System restored to 100% normal.',
+              customer_rep_name: 'KHALIL EBRAHIM',
+              customer_rep_designation: 'Facilities Supervisor',
+              customer_signature: 'Verified & Signed Electronically',
+              report_id: 'rpt-amc-q2',
+              report_number: 'RPT-2026-Q2-002',
+              report_status: 'Approved',
+              approved_by: 'Eng. Chandiramohan Karunanithi (Engineer)'
+            },
+            Q3: {
+              quarter: 'Q3',
+              name: 'Q3 (Jul - Sep)',
+              months: 'Jul - Sep',
+              status: 'In Progress',
+              scheduled_date: '2026-08-20',
+              actual_visit_date: '2026-09-28',
+              technician_name: 'Abdul Majeed',
+              supervisor_name: 'Sarath Kr',
+              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
+              checklist: {
+                'FACP Main Power & Battery Standby': { status: 'Pass' },
+                'Detector Smoke Chamber Sensitivity': { status: 'Pass' }
+              },
+              faults_count: 0,
+              faults_details: '',
+              corrective_action: '',
+              materials_used: [],
+              photos: [],
+              technician_remarks: 'Technician on site executing Q3 testing and loop checks.',
+              customer_rep_name: 'KHALIL EBRAHIM',
+              customer_rep_designation: 'Facilities Supervisor',
+              customer_signature: null,
+              report_id: null,
+              report_number: null,
+              report_status: 'Draft'
+            },
+            Q4: {
+              quarter: 'Q4',
+              name: 'Q4 (Oct - Dec)',
+              months: 'Oct - Dec',
+              status: 'Scheduled',
+              scheduled_date: '2026-11-15',
+              actual_visit_date: null,
+              technician_name: 'Abdul Majeed',
+              supervisor_name: 'Sarath Kr',
+              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
+              checklist: {},
+              faults_count: 0,
+              faults_details: '',
+              corrective_action: '',
+              materials_used: [],
+              photos: [],
+              technician_remarks: '',
+              customer_rep_name: '',
+              customer_rep_designation: '',
+              customer_signature: null,
+              report_id: null,
+              report_number: null,
+              report_status: 'Not Started'
+            }
+          };
+          modified = true;
+        }
+      });
+    }
+
+    if (modified) {
+      this.write(data);
+    }
+    return data;
+  }
+
   read() {
+    let data;
     if (this.isPostgres && this.memoryCache) {
-      return this.memoryCache;
+      data = this.memoryCache;
+    } else {
+      try {
+        const raw = fs.readFileSync(this.filePath, 'utf8');
+        data = JSON.parse(raw);
+      } catch (e) {
+        console.error('Error reading DB, restoring initial seed:', e);
+        this.write(initialSeed);
+        data = initialSeed;
+      }
     }
-    try {
-      const data = fs.readFileSync(this.filePath, 'utf8');
-      return JSON.parse(data);
-    } catch (e) {
-      console.error('Error reading DB, restoring initial seed:', e);
-      this.write(initialSeed);
-      return initialSeed;
-    }
+    return this.ensureSchema(data);
   }
 
   write(data) {
@@ -864,6 +1436,602 @@ class Database {
     });
     const nextSeq = String(maxSeq + 1).padStart(3, '0');
     return `${prefix}-${year}-${nextSeq}`;
+  }
+
+  // Generate unique invoice number: e.g. INV-2026-001
+  generateInvoiceNumber() {
+    const db = this.read();
+    const invoices = db.invoices || [];
+    const year = new Date().getFullYear();
+    let maxSeq = 0;
+    const regex = new RegExp(`^INV-${year}-(\\d+)$`);
+    invoices.forEach(inv => {
+      if (inv.invoice_number) {
+        const match = inv.invoice_number.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+    return `INV-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+  }
+
+  // Generate unique receipt / payment number: e.g. RCPT-2026-001
+  generatePaymentNumber() {
+    const db = this.read();
+    const payments = db.payments || [];
+    const year = new Date().getFullYear();
+    let maxSeq = 0;
+    const regex = new RegExp(`^RCPT-${year}-(\\d+)$`);
+    payments.forEach(p => {
+      if (p.payment_number) {
+        const match = p.payment_number.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+    return `RCPT-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+  }
+
+  // Get Invoices with full enriched relations, days overdue, and role filtering
+  getInvoices(filters = {}, user = null) {
+    const db = this.read();
+    let invoices = db.invoices || [];
+    const customers = db.customers || [];
+    const sites = db.sites || [];
+    const users = db.users || [];
+    const jobs = db.jobs || [];
+    const amcs = db.amc_contracts || [];
+
+    // Role-based filtering: Sales only sees their own customers/invoices
+    if (user && user.role === 'Sales') {
+      invoices = invoices.filter(inv => inv.sales_person_id === user.id);
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const today = new Date(todayStr);
+
+    let enriched = invoices.map(inv => {
+      const cust = customers.find(c => c.id === inv.customer_id);
+      const site = sites.find(s => s.id === inv.site_id);
+      const sp = users.find(u => u.id === inv.sales_person_id);
+      const linkedJob = jobs.find(j => j.id === inv.job_id || j.job_number === inv.job_number);
+      const linkedAmc = amcs.find(a => a.id === inv.amc_id || a.contract_number === inv.amc_number);
+
+      const numAmount = Number(inv.amount_before_vat) || 0;
+      const vatPct = inv.vat_percent !== undefined ? Number(inv.vat_percent) : 10;
+      const vatAmt = inv.vat_amount !== undefined ? Number(inv.vat_amount) : Math.round(numAmount * (vatPct / 100) * 1000) / 1000;
+      const totalAmt = inv.total_amount !== undefined ? Number(inv.total_amount) : Math.round((numAmount + vatAmt) * 1000) / 1000;
+      const paidAmt = Number(inv.amount_paid) || 0;
+      const balance = Math.max(0, Math.round((totalAmt - paidAmt) * 1000) / 1000);
+
+      let payment_status = inv.payment_status || 'Pending';
+      let days_overdue = 0;
+
+      if (payment_status !== 'Cancelled' && payment_status !== 'Void') {
+        if (balance <= 0) {
+          payment_status = 'Paid';
+        } else if (paidAmt > 0) {
+          payment_status = 'Partially Paid';
+        }
+
+        if (balance > 0 && inv.due_date && inv.due_date < todayStr) {
+          const due = new Date(inv.due_date);
+          days_overdue = Math.max(0, Math.ceil((today - due) / (1000 * 60 * 60 * 24)));
+          if (days_overdue > 0 && payment_status !== 'Partially Paid') {
+            payment_status = 'Overdue';
+          }
+        }
+      }
+
+      // Check linked hold status
+      let hold_status = inv.hold_status || 'Active';
+      if (linkedJob && linkedJob.is_on_hold) {
+        hold_status = linkedJob.hold_type || 'On Hold';
+      }
+
+      return {
+        ...inv,
+        amount_before_vat: numAmount,
+        vat_percent: vatPct,
+        vat_amount: vatAmt,
+        total_amount: totalAmt,
+        amount_paid: paidAmt,
+        outstanding_balance: balance,
+        payment_status,
+        days_overdue,
+        hold_status,
+        customer_name: cust ? cust.name : (inv.customer_name || 'Customer'),
+        site_name: site ? site.site_name : (inv.site_name || 'Site'),
+        sales_person_name: sp ? sp.name : (inv.sales_person_name || 'Unassigned'),
+        job_status: linkedJob ? linkedJob.status : null,
+        is_job_on_hold: linkedJob ? !!linkedJob.is_on_hold : false,
+        job_hold_reason: linkedJob ? linkedJob.hold_reason : null,
+        currency: 'BHD'
+      };
+    });
+
+    // Apply query filters
+    if (filters.status && filters.status !== 'all' && filters.status !== 'All') {
+      enriched = enriched.filter(i => i.payment_status === filters.status);
+    }
+    if (filters.customer_id && filters.customer_id !== 'all') {
+      enriched = enriched.filter(i => i.customer_id === filters.customer_id);
+    }
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      enriched = enriched.filter(i =>
+        (i.invoice_number && i.invoice_number.toLowerCase().includes(q)) ||
+        (i.customer_name && i.customer_name.toLowerCase().includes(q)) ||
+        (i.site_name && i.site_name.toLowerCase().includes(q)) ||
+        (i.job_number && i.job_number.toLowerCase().includes(q)) ||
+        (i.amc_number && i.amc_number.toLowerCase().includes(q))
+      );
+    }
+
+    return enriched;
+  }
+
+  // Get single invoice by ID with linked payment records
+  getInvoiceById(id, user = null) {
+    const invoices = this.getInvoices({}, user);
+    const invoice = invoices.find(inv => inv.id === id);
+    if (!invoice) return null;
+
+    const db = this.read();
+    const payments = (db.payments || []).filter(p => p.invoice_id === id);
+    return {
+      ...invoice,
+      payments
+    };
+  }
+
+  // Create new invoice
+  createInvoice(invoiceData, user = null) {
+    const db = this.read();
+    if (!db.invoices) db.invoices = [];
+
+    const numAmount = Number(invoiceData.amount_before_vat) || 0;
+    const vatPct = invoiceData.vat_percent !== undefined ? Number(invoiceData.vat_percent) : 10;
+    const vatCalc = this.calculateVat(numAmount, vatPct);
+
+    const invoiceNumber = invoiceData.invoice_number || this.generateInvoiceNumber();
+
+    const customers = db.customers || [];
+    const sites = db.sites || [];
+    const users = db.users || [];
+    const cust = customers.find(c => c.id === invoiceData.customer_id);
+    const site = sites.find(s => s.id === invoiceData.site_id);
+    const sp = users.find(u => u.id === (invoiceData.sales_person_id || (user ? user.id : '')));
+
+    const newInvoice = {
+      id: `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      invoice_number: invoiceNumber,
+      customer_id: invoiceData.customer_id,
+      customer_name: cust ? cust.name : (invoiceData.customer_name || 'Customer'),
+      site_id: invoiceData.site_id,
+      site_name: site ? site.site_name : (invoiceData.site_name || 'Site'),
+      job_id: invoiceData.job_id || null,
+      job_number: invoiceData.job_number || null,
+      amc_id: invoiceData.amc_id || null,
+      amc_number: invoiceData.amc_number || null,
+      project_id: invoiceData.project_id || null,
+      project_number: invoiceData.project_number || null,
+      sales_person_id: invoiceData.sales_person_id || (sp ? sp.id : null),
+      sales_person_name: sp ? sp.name : (invoiceData.sales_person_name || 'Unassigned'),
+      invoice_date: invoiceData.invoice_date || new Date().toISOString().slice(0, 10),
+      due_date: invoiceData.due_date || this.addMonthsToDate(invoiceData.invoice_date, 1),
+      amount_before_vat: vatCalc.amount,
+      vat_percent: vatCalc.vat_percent,
+      vat_amount: vatCalc.vat_amount,
+      total_amount: vatCalc.total_including_vat,
+      amount_paid: 0,
+      outstanding_balance: vatCalc.total_including_vat,
+      payment_status: 'Pending',
+      days_overdue: 0,
+      hold_status: 'Active',
+      description: invoiceData.description || 'Fire & Safety Maintenance Services',
+      items: invoiceData.items || [
+        { description: invoiceData.description || 'Fire Protection Services', quantity: 1, unit_price: vatCalc.amount, total: vatCalc.amount }
+      ],
+      notes: invoiceData.notes || '',
+      created_by: user ? user.id : 'system',
+      created_at: new Date().toISOString()
+    };
+
+    db.invoices.unshift(newInvoice);
+    this.write(db);
+    this.logAudit(user ? user.id : 'system', 'CREATE_INVOICE', 'invoices', newInvoice.id, `Created invoice ${newInvoice.invoice_number} for BHD ${newInvoice.total_amount}`);
+    return newInvoice;
+  }
+
+  // Record a payment against an invoice
+  recordPayment(invoiceId, paymentData, user = null) {
+    const db = this.read();
+    if (!db.invoices) db.invoices = [];
+    if (!db.payments) db.payments = [];
+
+    const index = db.invoices.findIndex(inv => inv.id === invoiceId);
+    if (index === -1) return null;
+
+    const invoice = db.invoices[index];
+    const payAmount = Number(paymentData.amount) || 0;
+    if (payAmount <= 0) return null;
+
+    const paymentNumber = paymentData.payment_number || this.generatePaymentNumber();
+
+    const newPayment = {
+      id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      payment_number: paymentNumber,
+      invoice_id: invoiceId,
+      invoice_number: invoice.invoice_number,
+      customer_id: invoice.customer_id,
+      customer_name: invoice.customer_name,
+      payment_date: paymentData.payment_date || new Date().toISOString().slice(0, 10),
+      amount: Math.round(payAmount * 1000) / 1000,
+      payment_method: paymentData.payment_method || 'Bank Transfer',
+      reference_number: paymentData.reference_number || '',
+      received_by: user ? user.name : (paymentData.received_by || 'Accounts'),
+      remarks: paymentData.remarks || 'Payment received',
+      created_at: new Date().toISOString()
+    };
+
+    db.payments.unshift(newPayment);
+
+    // Recompute invoice amounts
+    const currentPaid = Number(invoice.amount_paid) || 0;
+    const newPaid = Math.round((currentPaid + payAmount) * 1000) / 1000;
+    const totalAmount = Number(invoice.total_amount) || 0;
+    const newBalance = Math.max(0, Math.round((totalAmount - newPaid) * 1000) / 1000);
+
+    invoice.amount_paid = newPaid;
+    invoice.outstanding_balance = newBalance;
+    invoice.payment_status = newBalance <= 0 ? 'Paid' : 'Partially Paid';
+    invoice.updated_at = new Date().toISOString();
+
+    db.invoices[index] = invoice;
+    this.write(db);
+    this.logAudit(user ? user.id : 'system', 'RECORD_PAYMENT', 'payments', newPayment.id, `Recorded payment ${newPayment.payment_number} of BHD ${newPayment.amount} for invoice ${invoice.invoice_number}`);
+    return {
+      payment: newPayment,
+      invoice
+    };
+  }
+
+  // Place Job on Hold (with RBAC enforcement and audit trail)
+  holdJob(jobId, holdData, user = null) {
+    const db = this.read();
+    if (!db.jobs) return null;
+
+    const index = db.jobs.findIndex(j => j.id === jobId);
+    if (index === -1) return null;
+
+    const job = db.jobs[index];
+    const holdType = holdData.hold_type || 'Operational Hold';
+    const holdReason = holdData.hold_reason || 'Other';
+    const remarks = holdData.remarks || holdData.hold_remarks || '';
+    const expDate = holdData.expected_release_date || null;
+
+    job.is_on_hold = true;
+    job.hold_type = holdType;
+    job.hold_reason = holdReason;
+    job.held_by_id = user ? user.id : 'system';
+    job.held_by_name = user ? user.name : 'Management';
+    job.held_by_role = user ? user.role : 'GM';
+    job.hold_date = new Date().toISOString();
+    job.expected_release_date = expDate;
+    job.hold_remarks = remarks;
+
+    job.hold_history = job.hold_history || [];
+    job.hold_history.unshift({
+      action: 'HOLD_PLACED',
+      hold_type: holdType,
+      hold_reason: holdReason,
+      held_by_name: job.held_by_name,
+      held_by_role: job.held_by_role,
+      hold_date: job.hold_date,
+      expected_release_date: expDate,
+      remarks: remarks
+    });
+
+    // Also add to global job_holds collection
+    if (!db.job_holds) db.job_holds = [];
+    db.job_holds.unshift({
+      id: `hld-${Date.now()}`,
+      job_id: job.id,
+      job_number: job.job_number,
+      customer_name: job.customer_name,
+      site_name: job.site_name,
+      hold_type: holdType,
+      hold_reason: holdReason,
+      held_by_id: job.held_by_id,
+      held_by_name: job.held_by_name,
+      held_by_role: job.held_by_role,
+      hold_date: job.hold_date,
+      expected_release_date: expDate,
+      remarks: remarks
+    });
+
+    db.jobs[index] = job;
+    this.write(db);
+    this.logAudit(user ? user.id : 'system', 'HOLD_JOB', 'jobs', job.id, `Placed job ${job.job_number} on ${holdType}: ${holdReason}`);
+    return job;
+  }
+
+  // Release Job Hold (with audit history)
+  releaseJobHold(jobId, releaseData, user = null) {
+    const db = this.read();
+    if (!db.jobs) return null;
+
+    const index = db.jobs.findIndex(j => j.id === jobId);
+    if (index === -1) return null;
+
+    const job = db.jobs[index];
+    if (!job.is_on_hold) return job;
+
+    const previousType = job.hold_type;
+    const previousReason = job.hold_reason;
+    const releaseReason = releaseData.release_reason || 'Condition Resolved';
+    const releaseRemarks = releaseData.remarks || releaseData.release_remarks || '';
+
+    job.hold_history = job.hold_history || [];
+    job.hold_history.unshift({
+      action: 'HOLD_RELEASED',
+      previous_hold_type: previousType,
+      previous_hold_reason: previousReason,
+      released_by_name: user ? user.name : 'Management',
+      released_by_role: user ? user.role : 'GM',
+      released_at: new Date().toISOString(),
+      release_reason: releaseReason,
+      release_remarks: releaseRemarks
+    });
+
+    job.is_on_hold = false;
+    job.hold_type = null;
+    job.hold_reason = null;
+    job.released_at = new Date().toISOString();
+    job.released_by_name = user ? user.name : 'Management';
+    job.release_reason = releaseReason;
+
+    db.jobs[index] = job;
+    this.write(db);
+    this.logAudit(user ? user.id : 'system', 'RELEASE_HOLD', 'jobs', job.id, `Released hold on job ${job.job_number}. Reason: ${releaseReason}`);
+    return job;
+  }
+
+  // Get full Quarterly inspection data for AMC Contract
+  getContractQuarters(contractId) {
+    const db = this.read();
+    const contract = (db.amc_contracts || []).find(c => c.id === contractId);
+    if (!contract) return null;
+
+    // If already stored in contract.quarters, return enriched
+    if (contract.quarters && contract.quarters.Q1) {
+      return contract.quarters;
+    }
+
+    // Otherwise generate standard quarterly records for Q1-Q4
+    const visits = (db.amc_visits || []).filter(v => v.amc_contract_id === contractId || v.amc_id === contractId);
+    const reports = (db.reports || []).filter(r => r.amc_id === contractId || r.amc_contract_id === contractId);
+
+    const quarters = {};
+    const qNames = {
+      Q1: 'Q1 (Jan - Mar)',
+      Q2: 'Q2 (Apr - Jun)',
+      Q3: 'Q3 (Jul - Sep)',
+      Q4: 'Q4 (Oct - Dec)'
+    };
+    const qMonths = {
+      Q1: 'Jan - Mar',
+      Q2: 'Apr - Jun',
+      Q3: 'Jul - Sep',
+      Q4: 'Oct - Dec'
+    };
+
+    ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+      const qVisits = visits.filter(v => v.quarter === q);
+      const qReports = reports.filter(r => r.quarter === q || (r.report_number && r.report_number.includes(q)));
+      const approvedRpt = qReports.find(r => r.status === 'Approved');
+      const submittedRpt = qReports.find(r => r.status === 'Submitted' || r.status === 'Reviewed');
+
+      let status = 'Not Started';
+      if (approvedRpt) status = 'Completed';
+      else if (submittedRpt) status = 'Report Submitted';
+      else if (qVisits.some(v => v.status === 'Completed')) status = 'Completed';
+      else if (qVisits.some(v => v.status === 'In Progress')) status = 'In Progress';
+      else if (qVisits.some(v => v.status === 'Scheduled')) status = 'Scheduled';
+
+      const firstVisit = qVisits[0];
+
+      quarters[q] = {
+        quarter: q,
+        name: qNames[q],
+        months: qMonths[q],
+        status,
+        scheduled_date: firstVisit ? firstVisit.scheduled_date : null,
+        actual_visit_date: firstVisit && firstVisit.status === 'Completed' ? firstVisit.scheduled_date : null,
+        technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : 'Abdul Majeed',
+        supervisor_name: firstVisit ? (firstVisit.supervisor_name || 'Sarath Kr') : 'Sarath Kr',
+        systems_inspected: contract.systems || ['Fire Alarm', 'Fire Fighting'],
+        checklist: {},
+        faults_count: 0,
+        faults_details: '',
+        corrective_action: '',
+        materials_used: [],
+        photos: [],
+        technician_remarks: '',
+        customer_rep_name: '',
+        customer_rep_designation: '',
+        customer_signature: null,
+        report_id: approvedRpt ? approvedRpt.id : (submittedRpt ? submittedRpt.id : null),
+        report_number: approvedRpt ? approvedRpt.report_number : (submittedRpt ? submittedRpt.report_number : null),
+        report_status: approvedRpt ? 'Approved' : (submittedRpt ? 'Submitted' : 'Not Started')
+      };
+    });
+
+    return quarters;
+  }
+
+  // Update Quarter Inspection & Report Status
+  updateQuarterInspection(contractId, quarterKey, inspectionData, user = null) {
+    const db = this.read();
+    if (!db.amc_contracts) return null;
+
+    const index = db.amc_contracts.findIndex(c => c.id === contractId);
+    if (index === -1) return null;
+
+    const contract = db.amc_contracts[index];
+    contract.quarters = contract.quarters || this.getContractQuarters(contractId);
+
+    if (!contract.quarters[quarterKey]) {
+      contract.quarters[quarterKey] = { quarter: quarterKey, name: `${quarterKey} Inspection` };
+    }
+
+    contract.quarters[quarterKey] = {
+      ...contract.quarters[quarterKey],
+      ...inspectionData,
+      quarter: quarterKey,
+      updated_at: new Date().toISOString()
+    };
+
+    // If report is approved, record approval metadata
+    if (inspectionData.status === 'Report Approved' || inspectionData.report_status === 'Approved') {
+      contract.quarters[quarterKey].status = 'Completed';
+      contract.quarters[quarterKey].report_status = 'Approved';
+      contract.quarters[quarterKey].approved_by = user ? user.name : 'Engineering Management';
+      contract.quarters[quarterKey].approved_at = new Date().toISOString();
+    }
+
+    db.amc_contracts[index] = contract;
+    this.write(db);
+    this.logAudit(user ? user.id : 'system', 'UPDATE_QUARTER_INSPECTION', 'amc_contracts', contractId, `Updated ${quarterKey} inspection for AMC ${contract.contract_number}. Status: ${contract.quarters[quarterKey].status}`);
+    return contract.quarters[quarterKey];
+  }
+
+  // Financial KPI Summary for Accounts & GM
+  getFinancialSummary(user = null) {
+    const invoices = this.getInvoices({}, user);
+
+    const total_invoiced = Math.round(invoices.reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0) * 1000) / 1000;
+    const total_received = Math.round(invoices.reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0) * 1000) / 1000;
+    const total_outstanding = Math.max(0, Math.round((total_invoiced - total_received) * 1000) / 1000);
+
+    const overdueInvoices = invoices.filter(inv => inv.payment_status === 'Overdue');
+    const overdue_count = overdueInvoices.length;
+    const overdue_amount = Math.round(overdueInvoices.reduce((sum, inv) => sum + (Number(inv.outstanding_balance) || 0), 0) * 1000) / 1000;
+
+    const pendingInvoices = invoices.filter(inv => inv.payment_status === 'Pending');
+    const pending_count = pendingInvoices.length;
+    const pending_amount = Math.round(pendingInvoices.reduce((sum, inv) => sum + (Number(inv.outstanding_balance) || 0), 0) * 1000) / 1000;
+
+    const partiallyPaidInvoices = invoices.filter(inv => inv.payment_status === 'Partially Paid');
+    const partially_paid_count = partiallyPaidInvoices.length;
+    const partially_paid_amount = Math.round(partiallyPaidInvoices.reduce((sum, inv) => sum + (Number(inv.outstanding_balance) || 0), 0) * 1000) / 1000;
+
+    const paid_count = invoices.filter(inv => inv.payment_status === 'Paid').length;
+
+    // Unique customers with outstanding balance > 0
+    const outstandingCustSet = new Set(
+      invoices.filter(inv => inv.outstanding_balance > 0).map(inv => inv.customer_id)
+    );
+    const outstanding_customers_count = outstandingCustSet.size;
+
+    // Holds count
+    const db = this.read();
+    const jobs = db.jobs || [];
+    const payment_holds_count = jobs.filter(j => j.is_on_hold && j.hold_type === 'Payment Hold').length;
+    const operational_holds_count = jobs.filter(j => j.is_on_hold && j.hold_type === 'Operational Hold').length;
+
+    // VAT Summary
+    const total_before_vat = Math.round(invoices.reduce((sum, inv) => sum + (Number(inv.amount_before_vat) || 0), 0) * 1000) / 1000;
+    const total_vat = Math.round(invoices.reduce((sum, inv) => sum + (Number(inv.vat_amount) || 0), 0) * 1000) / 1000;
+
+    return {
+      total_invoiced,
+      total_received,
+      total_outstanding,
+      overdue_count,
+      overdue_amount,
+      pending_count,
+      pending_amount,
+      partially_paid_count,
+      partially_paid_amount,
+      paid_count,
+      outstanding_customers_count,
+      payment_holds_count,
+      operational_holds_count,
+      currency: 'BHD',
+      vat_summary: {
+        total_before_vat,
+        total_vat,
+        total_including_vat: total_invoiced,
+        vat_rate: '10%'
+      }
+    };
+  }
+
+  // Full Customer Statement Ledger
+  getCustomerStatement(customerId) {
+    const db = this.read();
+    const customer = (db.customers || []).find(c => c.id === customerId);
+    if (!customer) return null;
+
+    const invoices = this.getInvoices({ customer_id: customerId });
+    const payments = (db.payments || []).filter(p => p.customer_id === customerId);
+
+    const totalBilled = invoices.reduce((sum, i) => sum + (Number(i.total_amount) || 0), 0);
+    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const outstandingBalance = Math.max(0, Math.round((totalBilled - totalPaid) * 1000) / 1000);
+
+    // Build timeline ledger rows
+    const ledger = [];
+    invoices.forEach(inv => {
+      ledger.push({
+        date: inv.invoice_date,
+        type: 'Invoice',
+        reference: inv.invoice_number,
+        description: inv.description,
+        debit: Number(inv.total_amount) || 0,
+        credit: 0,
+        status: inv.payment_status
+      });
+    });
+
+    payments.forEach(pay => {
+      ledger.push({
+        date: pay.payment_date,
+        type: 'Payment Receipt',
+        reference: pay.payment_number,
+        description: `Payment via ${pay.payment_method} (${pay.reference_number || 'N/A'})`,
+        debit: 0,
+        credit: Number(pay.amount) || 0,
+        status: 'Cleared'
+      });
+    });
+
+    ledger.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // Compute running balance
+    let running = 0;
+    const enrichedLedger = ledger.map(item => {
+      running += (item.debit - item.credit);
+      return {
+        ...item,
+        running_balance: Math.round(running * 1000) / 1000
+      };
+    });
+
+    return {
+      customer,
+      total_billed: Math.round(totalBilled * 1000) / 1000,
+      total_paid: Math.round(totalPaid * 1000) / 1000,
+      outstanding_balance: outstandingBalance,
+      currency: 'BHD',
+      ledger: enrichedLedger
+    };
   }
 
   // Generate unique AMC contract number: e.g. AMC-2026-006

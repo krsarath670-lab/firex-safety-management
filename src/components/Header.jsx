@@ -29,6 +29,8 @@ export default function Header() {
     { role: 'Supervisor', label: 'Supervisor (Field Lead)', badgeColor: 'bg-blue-600' },
     { role: 'Technician', label: 'Technician (No Finances)', badgeColor: 'bg-emerald-600' },
     { role: 'Sales', label: 'Sales (Own Work Only)', badgeColor: 'bg-amber-600' },
+    { role: 'Accounts', label: 'Accounts (Finance & Billing)', badgeColor: 'bg-teal-600' },
+    { role: 'Projects Manager', label: 'Projects Manager (Operations)', badgeColor: 'bg-cyan-600' },
   ];
 
   const salesUsers = [
@@ -211,7 +213,7 @@ export default function Header() {
               className="flex items-center space-x-1.5 bg-navy-800 hover:bg-navy-700 border border-navy-700 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white transition-all shadow-sm"
             >
               <div className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] text-white ${
-                currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : 'bg-blue-600'
+                currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : currentUser?.role === 'Accounts' ? 'bg-teal-600' : currentUser?.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
               }`}>
                 {currentUser?.avatar || currentUser?.role?.[0] || 'U'}
               </div>
@@ -220,7 +222,7 @@ export default function Header() {
                   {currentUser?.name?.split(' ')[0]}
                 </span>
                 <span className={`block text-[9px] font-semibold uppercase leading-none ${
-                  currentUser?.role === 'Sales' ? 'text-amber-400' : 'text-blue-300'
+                  currentUser?.role === 'Sales' ? 'text-amber-400' : currentUser?.role === 'Accounts' ? 'text-teal-400' : currentUser?.role === 'Projects Manager' ? 'text-cyan-400' : 'text-blue-300'
                 }`}>
                   {currentUser?.role}
                 </span>
@@ -240,6 +242,8 @@ export default function Header() {
                       currentUser?.role === 'Sales' ? 'bg-amber-500/20 text-amber-300' :
                       currentUser?.role === 'GM' ? 'bg-purple-500/20 text-purple-300' :
                       currentUser?.role === 'Technician' ? 'bg-emerald-500/20 text-emerald-300' :
+                      currentUser?.role === 'Accounts' ? 'bg-teal-500/20 text-teal-300' :
+                      currentUser?.role === 'Projects Manager' ? 'bg-cyan-500/20 text-cyan-300' :
                       'bg-blue-500/20 text-blue-300'
                     }`}>
                       {currentUser?.role}

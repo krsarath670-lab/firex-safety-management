@@ -1,12 +1,15 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, Briefcase, FileText, Grid, ShieldCheck, Building2, Users } from 'lucide-react';
+import { Home, Briefcase, FileText, Grid, ShieldCheck, Building2, Users, Receipt } from 'lucide-react';
 
 export default function BottomNav() {
   const { activeTab, setActiveTab, dashboardStats, currentUser } = useApp();
 
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
+  const isAccounts = currentUser?.role === 'Accounts';
+  const isProjectsManager = currentUser?.role === 'Projects Manager';
+  const isGM = currentUser?.role === 'GM';
 
   let navItems = [];
 
@@ -25,8 +28,34 @@ export default function BottomNav() {
       { id: 'reports', label: 'Reports', icon: FileText, badge: dashboardStats?.pendingReportsCount > 0 ? dashboardStats.pendingReportsCount : null },
       { id: 'more', label: 'More', icon: Grid, badge: null }
     ];
+  } else if (isAccounts) {
+    navItems = [
+      { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
+      { id: 'customers', label: 'Statements', icon: Building2, badge: null },
+      { id: 'jobs', label: 'Holds & Jobs', icon: Briefcase, badge: dashboardStats?.paymentHoldsCount > 0 ? dashboardStats.paymentHoldsCount : null },
+      { id: 'more', label: 'More', icon: Grid, badge: null }
+    ];
+  } else if (isProjectsManager) {
+    navItems = [
+      { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'jobs', label: 'Projects', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
+      { id: 'customers', label: 'Sites', icon: Building2, badge: null },
+      { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
+      { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.operationalHoldsCount > 0 ? dashboardStats.operationalHoldsCount : null }
+    ];
+  } else if (isGM) {
+    // GM: Full overview with direct Accounts link
+    navItems = [
+      { id: 'dashboard', label: 'Home', icon: Home, badge: null },
+      { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
+      { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
+      { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
+      { id: 'users', label: 'Staff', icon: Users, badge: null },
+      { id: 'more', label: 'More', icon: Grid, badge: (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) > 0 ? (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) : null }
+    ];
   } else {
-    // GM, Engineer, Supervisor
+    // Engineer, Supervisor
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
       { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
