@@ -287,7 +287,7 @@ export default function PDFReportGenerator({ report, onClose }) {
           </div>
           <div>
             <span className="text-[9px] font-bold uppercase text-slate-400 block">Job Reference #</span>
-            <span className="font-mono font-bold text-blue-700">{report.job_number || 'JOB-2026-001'}</span>
+            <span className="font-mono font-bold text-blue-700">{report.job_number || 'FX-AMC-2026-001'}</span>
           </div>
           <div>
             <span className="text-[9px] font-bold uppercase text-slate-400 block">Lead Inspector / Tech</span>

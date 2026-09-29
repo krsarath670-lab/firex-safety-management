@@ -20,7 +20,7 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     site_id: initialData?.site_id || '',
     amc_id: initialData?.amc_id || '',
     amc_contract_number: initialData?.amc_contract_number || '',
-    job_number: initialData?.job_number || 'AMC-2026-021',
+    job_number: initialData?.job_number || '',
     date: initialData?.date || new Date().toISOString().slice(0, 10),
     amc_start_date: initialData?.amc_start_date || '',
     amc_end_date: initialData?.amc_end_date || '',

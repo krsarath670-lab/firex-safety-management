@@ -1754,35 +1754,80 @@ class Database {
     this.write(db);
   }
 
-  // Generate unique job number based on type and year: e.g. FIT-2026-003
-  generateJobNumber(jobType) {
-    const db = this.read();
-    const jobs = db.jobs || [];
-    const prefixMap = {
+  // Job type code mapper for FIREX job numbering: FX-[JOB TYPE]-[YEAR]-[SEQUENCE]
+  getJobTypeCode(jobType) {
+    if (!jobType) return 'OTH';
+    const raw = String(jobType).trim();
+    const directMap = {
       'AMC': 'AMC',
+      'Breakdown': 'BRK',
       'Fit-out': 'FIT',
+      'Fit-Out': 'FIT',
+      'Fitout': 'FIT',
+      'Fit Out': 'FIT',
       'Supply': 'SUP',
       'Project': 'PRJ',
-      'Breakdown': 'BRK',
-      'Installation': 'INS',
+      'Inspection': 'INS',
       'Testing & Commissioning': 'TST',
-      'Inspection': 'INSP'
+      'Testing and Commissioning': 'TST',
+      'Installation': 'INST',
+      'Emergency Call-Out': 'ECO',
+      'Emergency Callout': 'ECO',
+      'Emergency': 'ECO',
+      'Other': 'OTH'
     };
-    const prefix = prefixMap[jobType] || 'JOB';
-    const year = new Date().getFullYear();
-    const regex = new RegExp(`^${prefix}-${year}-(\\d+)$`);
+    if (directMap[raw]) return directMap[raw];
+
+    const norm = raw.toLowerCase();
+    if (norm === 'amc') return 'AMC';
+    if (norm.includes('breakdown') || norm === 'brk') return 'BRK';
+    if (norm.includes('fit') || norm === 'fit-out' || norm === 'fitout') return 'FIT';
+    if (norm.includes('supply') || norm === 'sup') return 'SUP';
+    if (norm.includes('project') || norm === 'prj') return 'PRJ';
+    // Must check install BEFORE inspect because "inst" vs "ins"
+    if (norm.includes('install') || norm === 'inst') return 'INST';
+    if (norm.includes('inspect') || norm === 'ins' || norm === 'insp') return 'INS';
+    if (norm.includes('test') || norm.includes('commission') || norm === 'tst') return 'TST';
+    if (norm.includes('emergency') || norm.includes('eco') || norm.includes('call-out') || norm.includes('callout')) return 'ECO';
+    if (norm === 'other' || norm === 'oth') return 'OTH';
+    return 'OTH';
+  }
+
+  // Generate unique job number based on type and year: e.g. FX-AMC-2026-001, FX-FIT-2026-001
+  generateJobNumber(jobType, targetYear = null) {
+    const db = this.read();
+    const jobs = db.jobs || [];
+    const typeCode = this.getJobTypeCode(jobType);
+    const year = targetYear || new Date().getFullYear();
+    const regex = new RegExp(`^FX-${typeCode}-${year}-(\\d+)$`);
     let maxSeq = 0;
+
     jobs.forEach(j => {
       if (j.job_number) {
-        const m = j.job_number.match(regex);
+        const m = String(j.job_number).trim().match(regex);
         if (m) {
           const num = parseInt(m[1], 10);
           if (num > maxSeq) maxSeq = num;
         }
       }
     });
+
+    // If type is ECO, also check emergency_calls table to avoid duplicate sequence
+    if (typeCode === 'ECO' && db.emergency_calls) {
+      db.emergency_calls.forEach(c => {
+        const numStr = c.call_number || c.job_number;
+        if (numStr) {
+          const m = String(numStr).trim().match(regex);
+          if (m) {
+            const num = parseInt(m[1], 10);
+            if (num > maxSeq) maxSeq = num;
+          }
+        }
+      });
+    }
+
     const nextSeq = String(maxSeq + 1).padStart(3, '0');
-    return `${prefix}-${year}-${nextSeq}`;
+    return `FX-${typeCode}-${year}-${nextSeq}`;
   }
 
   // Generate unique invoice number: e.g. INV-2026-001
@@ -3533,22 +3578,8 @@ class Database {
     return calls.find(c => c.id === id || c.call_number === id);
   }
 
-  generateEmergencyCallNumber() {
-    const db = this.read();
-    const calls = db.emergency_calls || [];
-    const year = new Date().getFullYear();
-    let maxSeq = 0;
-    const regex = new RegExp(`^ECO-${year}-(\\d+)$`);
-    calls.forEach(c => {
-      if (c.call_number) {
-        const match = c.call_number.match(regex);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxSeq) maxSeq = num;
-        }
-      }
-    });
-    return `ECO-${year}-${String(maxSeq + 1).padStart(3, '0')}`;
+  generateEmergencyCallNumber(targetYear = null) {
+    return this.generateJobNumber('Emergency Call-Out', targetYear);
   }
 
   generateEmergencyReportNumber() {
@@ -3573,7 +3604,8 @@ class Database {
     const db = this.read();
     if (!db.emergency_calls) db.emergency_calls = [];
 
-    const callNumber = callData.call_number || this.generateEmergencyCallNumber();
+    // Automatically generate unique Emergency Call-Out job number: FX-ECO-YYYY-SEQ
+    const callNumber = this.generateEmergencyCallNumber();
     const reportNumber = callData.report_number || this.generateEmergencyReportNumber();
     const id = `eco-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const nowIso = new Date().toISOString();
@@ -3581,6 +3613,7 @@ class Database {
     const newCall = {
       id,
       call_number: callNumber,
+      job_number: callNumber,
       report_number: reportNumber,
       customer_id: callData.customer_id || null,
       customer_name: callData.customer_name || 'Client Premises',

@@ -1789,6 +1789,14 @@ app.post('/api/jobs', (req, res) => {
   res.status(201).json(newJob);
 });
 
+// Preview next job number (FX-[JOB TYPE]-[YEAR]-[SEQUENCE])
+app.get('/api/jobs/next-number', (req, res) => {
+  const { job_type, year } = req.query;
+  const targetYear = year ? parseInt(year, 10) : null;
+  const nextNumber = db.generateJobNumber(job_type || 'AMC', targetYear);
+  res.json({ job_number: nextNumber, job_type: job_type || 'AMC', year: targetYear || new Date().getFullYear() });
+});
+
 app.put('/api/jobs/:id', (req, res) => {
   const existing = db.getById('jobs', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Job not found' });
@@ -1802,6 +1810,10 @@ app.put('/api/jobs/:id', (req, res) => {
   }
 
   const updates = { ...req.body };
+  // Job numbers must NEVER be manually edited or overridden
+  delete updates.job_number;
+  delete updates.id;
+
   if (updates.amount !== undefined || updates.vat_percent !== undefined) {
     const numAmount = updates.amount !== undefined ? Number(updates.amount) : (Number(existing.amount) || 0);
     const numVatPercent = updates.vat_percent !== undefined ? Number(updates.vat_percent) : (existing.vat_percent !== undefined ? Number(existing.vat_percent) : 10);
@@ -2785,6 +2797,9 @@ app.put('/api/emergency-calls/:id', (req, res) => {
 
     // Role-specific field authorization
     let allowedUpdates = { ...req.body };
+    delete allowedUpdates.call_number;
+    delete allowedUpdates.job_number;
+    delete allowedUpdates.id;
 
     if (isTech) {
       // Technicians cannot approve or review reports

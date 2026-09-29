@@ -74,7 +74,7 @@ function AppContent() {
   const handleCompleteInspection = ({ checklist, faultCount, system }) => {
     const reportDraft = {
       report_type: 'AMC Service Report',
-      job_number: activeJobForInspection?.job_number || 'AMC-2026-021',
+      job_number: activeJobForInspection?.job_number || 'FX-AMC-2026-001',
       site_id: activeJobForInspection?.site_id || 'site-1',
       site_name: activeJobForInspection?.site_name || 'Address Downtown Hotel & Residences',
       customer_id: activeJobForInspection?.customer_id || 'cust-1',

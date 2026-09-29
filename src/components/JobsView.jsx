@@ -326,6 +326,13 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
         return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'Installation':
         return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 'Testing & Commissioning':
+        return 'bg-teal-50 text-teal-700 border-teal-200';
+      case 'Inspection':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'Emergency Call-Out':
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'Other':
       default:
         return 'bg-slate-50 text-slate-700 border-slate-200';
     }
@@ -418,13 +425,15 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
           {[
             'all', 
             'AMC', 
+            'Breakdown', 
             'Fit-out', 
             'Supply', 
             'Project', 
-            'Breakdown', 
-            'Installation', 
+            'Inspection', 
             'Testing & Commissioning', 
-            'Inspection'
+            'Installation', 
+            'Emergency Call-Out', 
+            'Other'
           ].map((t) => (
             <button
               key={t}
@@ -792,13 +801,15 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
                   >
                     <option value="AMC">AMC Maintenance</option>
+                    <option value="Breakdown">Breakdown (Callout)</option>
                     <option value="Fit-out">Fit-out Works</option>
                     <option value="Supply">Supply of Items</option>
                     <option value="Project">Project Installation</option>
-                    <option value="Breakdown">Breakdown (Callout)</option>
-                    <option value="Installation">Installation</option>
-                    <option value="Testing & Commissioning">Testing &amp; Commissioning</option>
                     <option value="Inspection">Site Inspection</option>
+                    <option value="Testing & Commissioning">Testing &amp; Commissioning</option>
+                    <option value="Installation">Installation</option>
+                    <option value="Emergency Call-Out">Emergency Call-Out</option>
+                    <option value="Other">Other Works</option>
                   </select>
                 </div>
                 <div>
@@ -1091,11 +1102,16 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                     onChange={(e) => setEditingJob(p => ({ ...p, job_type: e.target.value }))}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Fit-out">Fit-out (Civil Defense / Modification)</option>
-                    <option value="Project">Project (Complete System Installation)</option>
-                    <option value="Breakdown">Breakdown (Emergency Repair)</option>
-                    <option value="AMC">AMC (Maintenance Service)</option>
-                    <option value="Supply">Supply (Equipment &amp; Materials Delivery)</option>
+                    <option value="AMC">AMC Maintenance</option>
+                    <option value="Breakdown">Breakdown (Callout)</option>
+                    <option value="Fit-out">Fit-out Works</option>
+                    <option value="Supply">Supply of Items</option>
+                    <option value="Project">Project Installation</option>
+                    <option value="Inspection">Site Inspection</option>
+                    <option value="Testing & Commissioning">Testing &amp; Commissioning</option>
+                    <option value="Installation">Installation</option>
+                    <option value="Emergency Call-Out">Emergency Call-Out</option>
+                    <option value="Other">Other Works</option>
                   </select>
                 </div>
 
