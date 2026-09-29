@@ -43,9 +43,10 @@ export default function EmergencyCalloutView() {
   const isAccounts = role === 'Accounts';
   const isPM = role === 'Projects Manager';
 
+  const canPrepareReport = isPM || isEngineer || isSupervisor || isTech;
   const canCreate = isGM || isEngineer || isSupervisor || isPM;
-  const canApprove = isGM || isEngineer;
-  const canReview = isGM || isEngineer || isSupervisor;
+  const canApprove = (isGM || isEngineer || isPM || isSupervisor) && !isTech;
+  const canReview = (isGM || isEngineer || isSupervisor || isPM) && !isTech;
   const canClose = isGM;
 
   // Load emergency calls from backend
@@ -683,7 +684,7 @@ export default function EmergencyCalloutView() {
                   <div className="flex flex-wrap items-center gap-1.5">
                     
                     {/* Record Arrival 1-Tap button */}
-                    {!c.arrival_time && (isTech || isSupervisor || isGM) && (
+                    {!c.arrival_time && canPrepareReport && (
                       <button
                         onClick={() => handleRecordArrival(c.id)}
                         className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
@@ -702,8 +703,8 @@ export default function EmergencyCalloutView() {
                       <span>{isApproved && !isGM ? 'View Details' : 'Field Findings & Action'}</span>
                     </button>
 
-                    {/* Submit Report */}
-                    {isDraft && !isApproved && (isTech || isSupervisor || isGM) && (
+                    {/* Submit Report (Only authorized report preparers: PM, Engineer, Supervisor, Tech) */}
+                    {isDraft && !isApproved && canPrepareReport && (
                       <button
                         onClick={() => handleSubmitReport(c.id)}
                         className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-purple-200 transition-all"

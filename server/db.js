@@ -35,12 +35,12 @@ const initialSeed = {
   users: [
     {
       id: "usr-gm",
-      name: "Ahmed Al-Mansoor",
-      email: "gm@firexbahrain.com",
+      name: "Eng. Mohamed Hweidi",
+      email: "eng..mohamed.hweidi@firexbahrain.com",
       role: "GM",
       phone: "+973 3944 1122",
       designation: "General Manager",
-      avatar: "AM"
+      avatar: "MH"
     },
     {
       id: "usr-eng",
@@ -753,7 +753,6 @@ class Database {
 
     // User requested: Delete Accounts and Projects Manager pre-seeded names (GM will add them manually)
     if (data.users && Array.isArray(data.users)) {
-      const prevUsersCount = data.users.length;
       data.users = data.users.filter(u => 
         u.id !== 'usr-acc-101' && 
         u.id !== 'usr-pm-102' && 
@@ -762,10 +761,130 @@ class Database {
         u.email !== 'accounts@firexbahrain.com' &&
         u.email !== 'projects@firexbahrain.com'
       );
-      if (data.users.length !== prevUsersCount) {
+
+      // Ensure authenticated accounts exist for Projects Manager, Accounts, and test profiles
+      if (!data.users.some(u => u.role === 'Projects Manager')) {
+        data.users.push({
+          id: 'usr-pm-sarah',
+          name: 'Sarah Ali',
+          email: 'sarah.ali@firexbahrain.com',
+          role: 'Projects Manager',
+          phone: '+973 3999 1100',
+          designation: 'Projects & Operations Manager',
+          status: 'Active',
+          pin: '1234',
+          password: '1234',
+          avatar: 'SA',
+          created_by: 'system',
+          created_at: new Date().toISOString()
+        });
         modified = true;
-        console.log('[FIREX DB] Removed pre-seeded Accounts and Projects Manager names. GM will add them via Staff Management.');
       }
+
+      if (!data.users.some(u => u.role === 'Accounts')) {
+        data.users.push({
+          id: 'usr-acc-zahra',
+          name: 'Zahra Hasan',
+          email: 'zahra.hasan@firexbahrain.com',
+          role: 'Accounts',
+          phone: '+973 3999 2200',
+          designation: 'Finance & Accounts Specialist',
+          status: 'Active',
+          pin: '1234',
+          password: '1234',
+          avatar: 'ZH',
+          created_by: 'system',
+          created_at: new Date().toISOString()
+        });
+        modified = true;
+      }
+
+      if (!data.users.some(u => u.name === 'Ahmed Mohammed')) {
+        data.users.push({
+          id: 'usr-tech-ahmed',
+          name: 'Ahmed Mohammed',
+          email: 'ahmed.mohammed@firexbahrain.com',
+          role: 'Technician',
+          phone: '+973 3999 3300',
+          designation: 'Senior Fire Protection Technician',
+          status: 'Active',
+          pin: '1234',
+          password: '1234',
+          avatar: 'AM',
+          created_by: 'system',
+          created_at: new Date().toISOString()
+        });
+        modified = true;
+      }
+
+      if (!data.users.some(u => u.name === 'John Smith')) {
+        data.users.push({
+          id: 'usr-eng-john',
+          name: 'John Smith',
+          email: 'john.smith@firexbahrain.com',
+          role: 'Engineer',
+          phone: '+973 3999 4400',
+          designation: 'Fire Protection Engineer',
+          status: 'Active',
+          pin: '1234',
+          password: '1234',
+          avatar: 'JS',
+          created_by: 'system',
+          created_at: new Date().toISOString()
+        });
+        modified = true;
+      }
+
+      if (!data.users.some(u => u.name === 'David Thomas')) {
+        data.users.push({
+          id: 'usr-sup-david',
+          name: 'David Thomas',
+          email: 'david.thomas@firexbahrain.com',
+          role: 'Supervisor',
+          phone: '+973 3999 5500',
+          designation: 'Field Operations Supervisor',
+          status: 'Active',
+          pin: '1234',
+          password: '1234',
+          avatar: 'DT',
+          created_by: 'system',
+          created_at: new Date().toISOString()
+        });
+        modified = true;
+      }
+
+      const gmUser = (data.users || []).find(u => u.role === 'GM' || u.id === 'usr-gm');
+      if (gmUser && gmUser.name !== 'Eng. Mohamed Hweidi') {
+        gmUser.name = 'Eng. Mohamed Hweidi';
+        gmUser.email = 'eng..mohamed.hweidi@firexbahrain.com';
+        modified = true;
+      }
+    }
+
+    if (data.reports && Array.isArray(data.reports)) {
+      data.reports.forEach(r => {
+        if (!r.created_by_user_id) {
+          r.created_by_user_id = r.created_by || 'usr-tech-ahmed';
+          modified = true;
+        }
+        if (!r.prepared_by_user_id) {
+          r.prepared_by_user_id = r.created_by_user_id;
+          modified = true;
+        }
+        if (!r.prepared_by_name) {
+          const user = (data.users || []).find(u => u.id === r.prepared_by_user_id);
+          r.prepared_by_name = user ? user.name : (r.technician_name || 'Ahmed Mohammed');
+          r.prepared_by_role = user ? user.role : 'Technician';
+          modified = true;
+        }
+        if (!r.prepared_date) {
+          r.prepared_date = r.date || '29 September 2026';
+          r.prepared_time = '10:35 AM';
+          r.created_date = r.prepared_date;
+          r.created_time = r.prepared_time;
+          modified = true;
+        }
+      });
     }
 
     // Clean up any historical hold / payment names referencing the deleted names
@@ -3081,6 +3200,14 @@ class Database {
       ],
       created_by_id: user?.id || null,
       created_by_name: user?.name || 'Staff',
+      created_by_user_id: user?.id || null,
+      prepared_by_user_id: user?.id || null,
+      prepared_by_name: user?.name || 'Staff',
+      prepared_by_role: user?.role || 'Technician',
+      prepared_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+      prepared_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+      created_date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+      created_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
       created_at: nowIso,
       updated_at: nowIso
     };
@@ -3101,6 +3228,23 @@ class Database {
     const current = db.emergency_calls[index];
     const nowIso = new Date().toISOString();
     const audit_trail = Array.isArray(current.audit_trail) ? [...current.audit_trail] : [];
+
+    // Immutable Prepared By preservation
+    delete updates.prepared_by_user_id;
+    delete updates.prepared_by_name;
+    delete updates.prepared_by_role;
+    delete updates.prepared_date;
+    delete updates.prepared_time;
+    delete updates.created_by_id;
+    delete updates.created_by_user_id;
+    delete updates.created_by_name;
+    delete updates.created_at;
+
+    // Record last modified
+    updates.last_modified_by_id = user?.id;
+    updates.last_modified_by_name = user?.name;
+    updates.last_modified_by_role = user?.role;
+    updates.last_modified_at = nowIso;
 
     // Track status transitions
     if (updates.status && updates.status !== current.status) {
@@ -3123,21 +3267,36 @@ class Database {
         timestamp: nowIso,
         details: `Report status updated from ${current.report_status} to ${updates.report_status}`
       });
+      const nowFormatted = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const timeFormatted = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
       if (updates.report_status === 'Submitted') {
         updates.submitted_by_id = user?.id;
         updates.submitted_by_name = user?.name;
+        updates.submitted_by_role = user?.role;
+        updates.submitted_date = nowFormatted;
+        updates.submitted_time = timeFormatted;
         updates.submitted_at = nowIso;
       } else if (updates.report_status === 'Reviewed') {
         updates.reviewed_by_id = user?.id;
         updates.reviewed_by_name = user?.name;
+        updates.reviewed_by_role = user?.role;
+        updates.reviewed_date = nowFormatted;
+        updates.reviewed_time = timeFormatted;
         updates.reviewed_at = nowIso;
       } else if (updates.report_status === 'Approved') {
         updates.approved_by_id = user?.id;
         updates.approved_by_name = user?.name;
+        updates.approved_by_role = user?.role;
+        updates.approved_date = nowFormatted;
+        updates.approved_time = timeFormatted;
         updates.approved_at = nowIso;
       } else if (updates.report_status === 'Closed') {
         updates.closed_by_id = user?.id;
         updates.closed_by_name = user?.name;
+        updates.closed_by_role = user?.role;
+        updates.closed_date = nowFormatted;
+        updates.closed_time = timeFormatted;
         updates.closed_at = nowIso;
       }
     }

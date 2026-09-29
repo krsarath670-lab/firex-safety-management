@@ -468,45 +468,168 @@ export default function PDFReportGenerator({ report, onClose }) {
           )}
         </div>
 
-        {/* Signatures Section (Dual: Customer Rep + Service Supervisor) */}
-        <div className="mt-6 pt-4 border-t-2 border-slate-300 grid grid-cols-2 gap-6 text-xs">
-          
-          {/* Customer Signature Box */}
-          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
-              Customer Sign-off &amp; Acceptance
+        {/* ========================================================================= */}
+        {/* FORMAL REPORT PREPARATION & APPROVAL AUDIT SECTION                        */}
+        {/* ========================================================================= */}
+        <div className="mt-6 pt-4 border-t-2 border-slate-300">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-200">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-navy-900" />
+              <span>Official Report Preparation &amp; Multi-Tier Sign-off</span>
+            </h3>
+            <span className="text-[10px] font-mono text-slate-500">
+              Doc Ref: {report.report_number}
             </span>
-            <div className="h-20 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1 overflow-hidden">
-              {report.customer_signature ? (
-                <img src={report.customer_signature} alt="Customer signature" className="max-h-full object-contain" />
-              ) : (
-                <span className="text-slate-300 text-[10px] italic">Signed digitally on site</span>
-              )}
-            </div>
-            <div className="mt-2 space-y-0.5">
-              <p className="font-bold text-slate-900">{report.customer_rep_name || 'Omar Farooq'}</p>
-              <p className="text-[10px] text-slate-500">{report.customer_rep_designation || 'Director of Facilities'}</p>
-            </div>
           </div>
 
-          {/* Supervisor / Technician Signature Box */}
-          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
-              Certified Supervisor / Engineer
-            </span>
-            <div className="h-20 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1 overflow-hidden">
-              {report.supervisor_signature ? (
-                <img src={report.supervisor_signature} alt="Supervisor signature" className="max-h-full object-contain" />
-              ) : (
-                <span className="text-slate-300 text-[10px] italic">Signed by Tariq Mahmoud</span>
-              )}
-            </div>
-            <div className="mt-2 space-y-0.5">
-              <p className="font-bold text-slate-900">{report.supervisor_name || 'Tariq Mahmoud'}</p>
-              <p className="text-[10px] text-slate-500">FIREX Certified Safety Engineer / Inspector</p>
-            </div>
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            
+            {/* Box 1: PREPARED BY (Mandatory, dynamically resolved from authenticated user) */}
+            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 flex flex-col justify-between min-h-[140px]">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                  1. Prepared By (Technical Lead)
+                </span>
+                <p className="font-bold text-slate-900 text-xs">
+                  {report.prepared_by_name || report.technician_name || 'Rajesh Kumar'}
+                </p>
+                <p className="text-[10px] text-blue-700 font-semibold">
+                  Role: {report.prepared_by_role || 'Technician'}
+                </p>
+              </div>
 
+              {/* Signature / Verification badge */}
+              <div className="h-14 my-1.5 border border-dashed border-slate-300 rounded bg-white flex items-center justify-center p-1 overflow-hidden">
+                {report.supervisor_signature || report.technician_signature ? (
+                  <img
+                    src={report.supervisor_signature || report.technician_signature}
+                    alt="Preparer signature"
+                    className="max-h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <span className="text-[9px] text-emerald-700 font-bold block">✓ System Verified &amp; Recorded</span>
+                    <span className="text-[8px] font-mono text-slate-400">UID: {report.prepared_by_user_id || report.created_by_user_id || 'usr-tech-01'}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-1 border-t border-slate-200 text-[9.5px] text-slate-600 flex justify-between">
+                <span>Date: {report.prepared_date || report.date}</span>
+                <span>Time: {report.prepared_time || '10:30 AM'}</span>
+              </div>
+            </div>
+
+            {/* Box 2: REVIEWED BY (Shown only if reviewed, or shows "Pending Review") */}
+            {(report.reviewed_at || report.status === 'Reviewed' || report.status === 'Approved') ? (
+              <div className="border border-indigo-100 rounded-xl p-3 bg-indigo-50/40 flex flex-col justify-between min-h-[140px]">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-indigo-700 block mb-1">
+                    2. Reviewed By (Supervisory Review)
+                  </span>
+                  <p className="font-bold text-slate-900 text-xs">
+                    {report.reviewed_by_name || report.supervisor_name || 'David Thomas'}
+                  </p>
+                  <p className="text-[10px] text-indigo-700 font-semibold">
+                    Role: {report.reviewed_by_role || 'Supervisor'}
+                  </p>
+                </div>
+
+                <div className="h-14 my-1.5 border border-indigo-200 rounded bg-white/80 flex flex-col items-center justify-center p-1">
+                  <span className="text-[9px] font-bold text-indigo-800">✓ Technical Review Confirmed</span>
+                  <span className="text-[8px] text-slate-500">Civil Defence &amp; Quality Check</span>
+                </div>
+
+                <div className="pt-1 border-t border-indigo-200 text-[9.5px] text-slate-600 flex justify-between">
+                  <span>Reviewed: {report.reviewed_at ? report.reviewed_at.slice(0, 10) : report.date}</span>
+                  <span className="text-indigo-700 font-bold font-mono">STATUS: {report.status}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between min-h-[140px] opacity-75">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                    2. Supervisory Review
+                  </span>
+                  <p className="font-semibold text-slate-500 text-xs italic">
+                    Engineering Review Pending
+                  </p>
+                </div>
+                <div className="h-14 my-1.5 flex items-center justify-center text-center p-1">
+                  <span className="text-[9px] text-slate-400 italic">Scheduled after initial submission</span>
+                </div>
+                <div className="pt-1 border-t border-slate-200 text-[9px] text-slate-400">
+                  Status: {report.status || 'Draft'}
+                </div>
+              </div>
+            )}
+
+            {/* Box 3: APPROVED BY (Only show approved details if approved; NO blank fake approvals) */}
+            {(report.approved_at || report.status === 'Approved') ? (
+              <div className="border border-emerald-200 rounded-xl p-3 bg-emerald-50/40 flex flex-col justify-between min-h-[140px]">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 block mb-1">
+                    3. Approved By (Management Sign-off)
+                  </span>
+                  <p className="font-bold text-slate-900 text-xs">
+                    {report.approved_by_name || 'Eng. Mohamed Hweidi'}
+                  </p>
+                  <p className="text-[10px] text-emerald-700 font-semibold">
+                    Role: {report.approved_by_role || 'General Manager'}
+                  </p>
+                </div>
+
+                <div className="h-14 my-1.5 border border-emerald-200 rounded bg-white/80 flex flex-col items-center justify-center p-1">
+                  <span className="text-[9px] font-black text-emerald-800">✓ OFFICIAL APPROVAL SIGN-OFF</span>
+                  <span className="text-[8px] text-slate-500">Authorized for Legal Issuance</span>
+                </div>
+
+                <div className="pt-1 border-t border-emerald-200 text-[9.5px] text-slate-600 flex justify-between">
+                  <span>Approved: {report.approved_at ? report.approved_at.slice(0, 10) : report.date}</span>
+                  <span className="text-emerald-700 font-bold font-mono">OFFICIAL</span>
+                </div>
+              </div>
+            ) : (
+              <div className="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between min-h-[140px] opacity-75">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                    3. Management Approval
+                  </span>
+                  <p className="font-semibold text-slate-500 text-xs italic">
+                    Final Sign-off Pending
+                  </p>
+                </div>
+                <div className="h-14 my-1.5 flex items-center justify-center text-center p-1">
+                  <span className="text-[9px] text-slate-400 italic">Locked until reviewed &amp; approved</span>
+                </div>
+                <div className="pt-1 border-t border-slate-200 text-[9px] text-slate-400">
+                  Approval Status: Pending
+                </div>
+              </div>
+            )}
+
+            {/* Customer Sign-off & Acceptance Box */}
+            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/60 sm:col-span-2 md:col-span-3 mt-1">
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                Customer Facility Sign-off &amp; Acceptance
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                <div className="h-16 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1 overflow-hidden">
+                  {report.customer_signature ? (
+                    <img src={report.customer_signature} alt="Customer signature" className="max-h-full object-contain" />
+                  ) : (
+                    <span className="text-slate-300 text-[10px] italic">Signed digitally on site</span>
+                  )}
+                </div>
+                <div className="space-y-0.5 text-xs">
+                  <p className="font-bold text-slate-900">{report.customer_rep_name || 'Omar Farooq'}</p>
+                  <p className="text-[10px] text-slate-500">{report.customer_rep_designation || 'Director of Facilities Management'}</p>
+                  <p className="text-[9.5px] text-slate-400">Client Acknowledgement of Service Execution &amp; Testing</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* Legal Disclaimer & Footer */}

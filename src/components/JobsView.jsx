@@ -13,6 +13,7 @@ import QuickAddCustomerModal from './QuickAddCustomerModal';
 
 export default function JobsView({ onStartJob, onStartInspectionForJob, onNewReportForJob, initialJobType = null }) {
   const { currentUser, showToast, allUsers } = useApp();
+  const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
   const [jobs, setJobs] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);
@@ -739,14 +740,16 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
                   </button>
                 )}
 
-                {/* Complete Report */}
-                <button
-                  onClick={() => onNewReportForJob(j)}
-                  className="px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
-                >
-                  <FileText className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Create Report</span>
-                </button>
+                {/* Complete Report (Guarded by canPrepareReports) */}
+                {canPrepareReports && (
+                  <button
+                    onClick={() => onNewReportForJob(j)}
+                    className="px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Create Report</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

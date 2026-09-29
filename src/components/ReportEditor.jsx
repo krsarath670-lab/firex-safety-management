@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   FileText, Sparkles, PenTool, Check, Camera, Plus, 
-  Trash2, Shield, Calendar, Building2, User, ArrowLeft
+  Trash2, Shield, Calendar, Building2, User, ArrowLeft, UserCheck
 } from 'lucide-react';
 import SignaturePad from './SignaturePad';
 
@@ -150,6 +150,35 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     });
   };
 
+  const canPrepare = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+
+  // If user is not authorized to prepare reports and this is a new report draft, block access
+  if (!canPrepare && !initialData?.id) {
+    return (
+      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm text-center space-y-4 max-w-lg mx-auto mt-6">
+        <div className="w-14 h-14 bg-red-50 text-safety-red rounded-full flex items-center justify-center mx-auto border border-red-200">
+          <Shield className="w-7 h-7" />
+        </div>
+        <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Report Preparation Restricted</h2>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Operational reports in the FIREX Safety Management System can strictly only be prepared by authorized technical and project roles:
+          <span className="block font-black text-navy-900 mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            Projects Manager • Engineer • Supervisor • Technician
+          </span>
+        </p>
+        <p className="text-[11px] text-slate-500">
+          Your current authenticated role is <strong className="text-slate-800">{currentUser?.role}</strong> ({currentUser?.name}). You have view/review/approval access according to system permissions, but cannot create operational reports.
+        </p>
+        <button
+          onClick={onCancel}
+          className="px-5 py-2.5 bg-navy-900 text-white rounded-xl text-xs font-bold hover:bg-navy-800 transition-colors shadow-sm"
+        >
+          Return to Reports
+        </button>
+      </div>
+    );
+  }
+
   const handleSubmit = (targetStatus) => {
     if (!formData.site_id) {
       showToast('Please select a customer and site', 'error');
@@ -158,11 +187,30 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     const finalReport = {
       ...formData,
       status: targetStatus,
-      technician_name: currentUser.role === 'Technician' ? currentUser.name : (formData.technician_name || 'Rajesh Kumar'),
+      // Immutable Prepared By Identity
+      prepared_by_name: initialData?.prepared_by_name || currentUser.name,
+      prepared_by_role: initialData?.prepared_by_role || currentUser.role,
+      prepared_by_user_id: initialData?.prepared_by_user_id || currentUser.id,
+      created_by_user_id: initialData?.created_by_user_id || currentUser.id,
+      technician_name: currentUser.role === 'Technician' ? currentUser.name : (formData.technician_name || currentUser.name),
       supervisor_name: currentUser.role === 'Supervisor' ? currentUser.name : (formData.supervisor_name || 'Tariq Mahmoud')
     };
     onSave(finalReport);
   };
+
+  const ALL_REPORT_TYPES = [
+    'AMC Service Report',
+    'Work Completion Report',
+    'Fault Report',
+    'Inspection Report',
+    'Testing & Commissioning Report',
+    'Emergency Call-Out Report',
+    'Project Report',
+    'Fit-Out Report',
+    'Installation Report',
+    'Breakdown Report',
+    'Supply Report'
+  ];
 
   return (
     <div className="space-y-4 pb-28">
@@ -187,17 +235,46 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
       {/* Main Form Fields */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4 text-xs">
         
+        {/* Creator Identity & Audit Card (Automatic Server-Side Capture) */}
+        <div className="bg-gradient-to-r from-navy-950 via-slate-900 to-navy-900 text-white p-3.5 rounded-xl border border-slate-800 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 block">Report Preparation Identity</span>
+                <span className="text-xs font-bold text-white">
+                  {initialData?.prepared_by_name || currentUser?.name}
+                </span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white/10 text-white border border-white/20">
+              {initialData?.prepared_by_role || currentUser?.role}
+            </span>
+          </div>
+          <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] text-slate-300">
+            <div>
+              <span className="text-slate-400 block">User ID Reference:</span>
+              <span className="font-mono text-white">{initialData?.prepared_by_user_id || currentUser?.id}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block">Prepared Date:</span>
+              <span className="font-mono text-emerald-400 font-bold">
+                {initialData?.prepared_date || new Date().toISOString().slice(0, 10)} {initialData?.prepared_time ? `(${initialData.prepared_time})` : '(Auto-Recorded)'}
+              </span>
+            </div>
+          </div>
+          <p className="text-[9px] text-slate-400 italic">
+            * Identity is automatically captured server-side from your authenticated account and locked into the permanent audit trail. Manual name entry is strictly disallowed.
+          </p>
+        </div>
+
         {/* Report Type Selector */}
         <div>
           <label className="block font-bold text-slate-700 mb-1">Report Document Type *</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
-            {[
-              'AMC Service Report',
-              'Work Completion Report',
-              'Fault Report',
-              'Inspection Report',
-              'Testing & Commissioning Report'
-            ].map((type) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
+            {ALL_REPORT_TYPES.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -540,14 +617,14 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
             </button>
           </div>
 
-          {/* Supervisor Signature Card */}
+          {/* Supervisor / Engineer Sign-off Card */}
           <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-            <span className="font-bold text-slate-800 block">Supervisor Sign-off</span>
+            <span className="font-bold text-slate-800 block">Supervisor / Engineer Sign-off</span>
             <div className="h-16 border border-dashed border-slate-300 rounded-lg bg-white flex items-center justify-center p-1">
               {formData.supervisor_signature ? (
                 <img src={formData.supervisor_signature} alt="Supervisor signature" className="max-h-full object-contain" />
               ) : (
-                <span className="text-slate-300 text-[11px]">Signed by Tariq Mahmoud</span>
+                <span className="text-slate-400 text-[11px] italic">Sign-off pending</span>
               )}
             </div>
             <button
@@ -556,10 +633,10 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
                 setSignatureTarget('supervisor');
                 setShowSignatureModal(true);
               }}
-              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1"
+              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1 shadow-sm"
             >
               <PenTool className="w-3.5 h-3.5" />
-              <span>Sign as Supervisor</span>
+              <span>Sign as Supervisor / Engineer</span>
             </button>
           </div>
 
@@ -592,9 +669,9 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
       {showSignatureModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <SignaturePad
-            title={signatureTarget === 'customer' ? "Customer Sign-off" : "Supervisor Approval"}
-            initialName={signatureTarget === 'customer' ? formData.customer_rep_name : 'Tariq Mahmoud'}
-            initialDesignation={signatureTarget === 'customer' ? formData.customer_rep_designation : 'Senior Field Supervisor'}
+            title={signatureTarget === 'customer' ? "Customer Sign-off" : "Supervisor / Engineer Sign-off"}
+            initialName={signatureTarget === 'customer' ? formData.customer_rep_name : (currentUser?.role === 'Supervisor' || currentUser?.role === 'Engineer' || currentUser?.role === 'Projects Manager' ? currentUser.name : (formData.supervisor_name || 'David Thomas'))}
+            initialDesignation={signatureTarget === 'customer' ? formData.customer_rep_designation : (currentUser?.role || 'Senior Field Supervisor')}
             onSave={({ signatureDataUrl, repName, designation }) => {
               if (signatureTarget === 'customer') {
                 setFormData((p) => ({

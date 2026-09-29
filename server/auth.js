@@ -28,6 +28,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: true,
     canManageMaterials: true,
     canManageReports: 'full',
+    canPrepareReports: false,
+    canViewReports: true,
     canDeleteReports: true,
     canReviewReports: true,
     canApproveReports: true,
@@ -78,6 +80,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: true,
     canManageMaterials: true,
     canManageReports: 'full',
+    canPrepareReports: true,
+    canViewReports: true,
     canDeleteReports: true,
     canReviewReports: true,
     canApproveReports: true,
@@ -123,6 +127,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: true,
     canManageMaterials: true,
     canManageReports: 'full',
+    canPrepareReports: true,
+    canViewReports: true,
     canDeleteReports: true,
     canReviewReports: true,
     canApproveReports: true,
@@ -168,6 +174,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: false,
     canManageMaterials: false,
     canManageReports: 'assigned_only',
+    canPrepareReports: true,
+    canViewReports: true,
     canDeleteReports: false,
     canReviewReports: false,
     canApproveReports: false,
@@ -212,6 +220,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: false,
     canManageMaterials: false,
     canManageReports: 'own_work',
+    canPrepareReports: false,
+    canViewReports: 'own_work',
     canDeleteReports: false,
     canReviewReports: false,
     canApproveReports: false,
@@ -264,6 +274,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: false,
     canManageMaterials: false,
     canManageReports: false,
+    canPrepareReports: false,
+    canViewReports: true,
     canDeleteReports: false,
     canReviewReports: false,
     canApproveReports: false,
@@ -305,6 +317,8 @@ const ROLE_PERMISSIONS = {
     canManageFaults: true,
     canManageMaterials: true,
     canManageReports: 'full',
+    canPrepareReports: true,
+    canViewReports: true,
     canDeleteReports: false,
     canReviewReports: true,
     canApproveReports: true,
@@ -392,8 +406,26 @@ function authMiddleware(req, res, next) {
     currentUser = db.getById('users', userId);
   }
   if (!currentUser && userRole) {
-    const users = db.get('users');
+    const users = db.get('users') || [];
     currentUser = users.find(u => u.role.toLowerCase() === userRole.toLowerCase());
+  }
+
+  // If role is explicitly provided in headers (e.g. for testing or API integration), but no user exists in DB with that role, construct valid role user:
+  if (!currentUser && userRole) {
+    const roleCapitalized = Object.keys(ROLE_PERMISSIONS).find(r => r.toLowerCase() === userRole.toLowerCase()) || userRole;
+    currentUser = {
+      id: userId || `usr-${roleCapitalized.toLowerCase().replace(/\s+/g, '-')}-1`,
+      name: roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
+            roleCapitalized === 'Accounts' ? 'Zahra Hasan' :
+            roleCapitalized === 'Engineer' ? 'John Smith' :
+            roleCapitalized === 'Supervisor' ? 'David Thomas' :
+            roleCapitalized === 'Technician' ? 'Ahmed Mohammed' :
+            roleCapitalized === 'Sales' ? 'Mohammed Alwadhi' :
+            'Eng. Mohamed Hweidi',
+      role: roleCapitalized,
+      email: `${roleCapitalized.toLowerCase().replace(/\s+/g, '')}@firexbahrain.com`,
+      designation: roleCapitalized
+    };
   }
 
   // Fallback to default Supervisor if none provided for testing, or safe guest object if no users exist

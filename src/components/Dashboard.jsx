@@ -21,6 +21,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = currentUser?.role === 'Projects Manager';
   const isGM = currentUser?.role === 'GM';
+  const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -1456,18 +1457,22 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             <span className="text-xs font-bold text-white tracking-tight">Emergency Call-Out</span>
           </button>
 
-          {/* Generate Report */}
+          {/* Generate Report (for Preparers) or View Reports (for GM/Sales/Accounts) */}
           <button
-            onClick={onNewReport}
+            onClick={canPrepareReports ? onNewReport : () => setActiveTab('reports')}
             className="h-16 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-black text-white p-2.5 flex flex-col justify-between transition-all shadow-sm text-left"
           >
             <div className="flex items-center justify-between w-full">
               <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
                 <FileSpreadsheet className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-semibold text-slate-300">A4 PDF</span>
+              <span className="text-[10px] font-semibold text-slate-300">
+                {canPrepareReports ? 'A4 PDF' : 'Review'}
+              </span>
             </div>
-            <span className="text-xs font-bold text-white tracking-tight">Generate Report</span>
+            <span className="text-xs font-bold text-white tracking-tight">
+              {canPrepareReports ? 'Generate Report' : 'View Reports'}
+            </span>
           </button>
 
           {/* New AMC Contract (Hidden for Tech) */}

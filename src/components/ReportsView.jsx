@@ -11,9 +11,17 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [preparedByFilter, setPreparedByFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const isTechnician = currentUser?.role === 'Technician';
+  const role = currentUser?.role || 'Technician';
+  const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
+  const canReviewReports = ['Projects Manager', 'Engineer', 'Supervisor', 'GM'].includes(role);
+  const canApproveReports = ['Projects Manager', 'Engineer', 'Supervisor', 'GM'].includes(role);
+  const isTechnician = role === 'Technician';
+  const isSales = role === 'Sales';
+  const isAccounts = role === 'Accounts';
+  const isGM = role === 'GM';
 
   const loadReports = async () => {
     try {
@@ -85,15 +93,30 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
     }
   };
 
+  // Distinct list of users who prepared reports
+  const uniquePreparers = Array.from(
+    new Set(
+      reports
+        .map((r) => r.prepared_by_name || r.technician_name)
+        .filter(Boolean)
+    )
+  );
+
   const filteredReports = reports.filter((r) => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (preparedByFilter !== 'all') {
+      const pName = r.prepared_by_name || r.technician_name || '';
+      if (pName !== preparedByFilter) return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
         r.report_number?.toLowerCase().includes(q) ||
         r.customer_name?.toLowerCase().includes(q) ||
         r.site_name?.toLowerCase().includes(q) ||
-        r.system?.toLowerCase().includes(q)
+        r.system?.toLowerCase().includes(q) ||
+        (r.prepared_by_name && r.prepared_by_name.toLowerCase().includes(q)) ||
+        (r.prepared_by_role && r.prepared_by_role.toLowerCase().includes(q))
       );
     }
     return true;
@@ -128,13 +151,19 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
             Official field reports, digital approvals, and FIREX A4 PDFs.
           </p>
         </div>
-        <button
-          onClick={onNewReport}
-          className="px-3 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Report</span>
-        </button>
+        {canPrepareReports ? (
+          <button
+            onClick={onNewReport}
+            className="px-3 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Report</span>
+          </button>
+        ) : (
+          <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+            {role} • View &amp; Review Mode
+          </span>
+        )}
       </div>
 
       {/* Search and Status Pipeline Filters */}
@@ -143,34 +172,53 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Search reports by #, customer, site, system..."
+            placeholder="Search reports by #, customer, site, system, preparer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-600 focus:bg-white"
           />
         </div>
 
-        {/* Status Pipeline Filter Buttons */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs">
-          {[
-            { id: 'all', label: 'All Reports' },
-            { id: 'Draft', label: 'Draft' },
-            { id: 'Submitted', label: 'Submitted' },
-            { id: 'Reviewed', label: 'Reviewed' },
-            { id: 'Approved', label: 'Approved (Official)' }
-          ].map((st) => (
-            <button
-              key={st.id}
-              onClick={() => setStatusFilter(st.id)}
-              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors ${
-                statusFilter === st.id
-                  ? 'bg-navy-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+        {/* Status Pipeline & Prepared By Filter Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+            {[
+              { id: 'all', label: 'All Reports' },
+              { id: 'Draft', label: 'Draft' },
+              { id: 'Submitted', label: 'Submitted' },
+              { id: 'Reviewed', label: 'Reviewed' },
+              { id: 'Approved', label: 'Approved (Official)' }
+            ].map((st) => (
+              <button
+                key={st.id}
+                onClick={() => setStatusFilter(st.id)}
+                className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors ${
+                  statusFilter === st.id
+                    ? 'bg-navy-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Prepared By Filter Dropdown */}
+          <div className="flex items-center gap-1.5 shrink-0 text-xs">
+            <span className="text-[11px] font-bold text-slate-500">Prepared By:</span>
+            <select
+              value={preparedByFilter}
+              onChange={(e) => setPreparedByFilter(e.target.value)}
+              className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-blue-600"
             >
-              {st.label}
-            </button>
-          ))}
+              <option value="all">All Preparers ({reports.length})</option>
+              {uniquePreparers.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -216,6 +264,23 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
 
               {/* Meta details */}
               <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                {/* Prepared By Identity Badge */}
+                <div className="col-span-2 p-2 bg-blue-50/80 rounded-lg border border-blue-100 flex items-center justify-between flex-wrap gap-1 text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="text-slate-600 font-medium">Prepared By:</span>
+                    <strong className="text-navy-900">{r.prepared_by_name || r.technician_name || 'N/A'}</strong>
+                    <span className="text-blue-800 font-bold bg-blue-100/80 px-1.5 py-0.5 rounded text-[10px]">
+                      {r.prepared_by_role || 'Technician'}
+                    </span>
+                  </div>
+                  {(r.prepared_date || r.date) && (
+                    <span className="text-slate-500 font-mono text-[10px]">
+                      {r.prepared_date || r.date} {r.prepared_time ? `• ${r.prepared_time}` : ''}
+                    </span>
+                  )}
+                </div>
+
                 <div>
                   <span className="text-[9px] font-bold uppercase text-slate-400 block">System</span>
                   <span className="font-semibold text-slate-800">{r.system || 'Fire Alarm & Firefighting'}</span>
@@ -236,14 +301,28 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                 </div>
               </div>
 
-              {/* Audit Trail Pipeline Breakdown (Requirement 18) */}
+              {/* Audit Trail Pipeline Breakdown */}
               <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-bold text-slate-700">Audit Trail:</span>
-                  <span className="bg-slate-100 px-1.5 py-0.5 rounded">Created by {r.technician_name || 'Rajesh'}</span>
-                  {r.submitted_at && <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">Submitted {r.submitted_at.slice(0, 10)}</span>}
-                  {r.reviewed_at && <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">Reviewed {r.reviewed_at.slice(0, 10)}</span>}
-                  {r.approved_at && <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Approved {r.approved_at.slice(0, 10)}</span>}
+                  <span className="bg-slate-100 px-1.5 py-0.5 rounded font-medium text-slate-700">
+                    Prepared by {r.prepared_by_name || r.technician_name || 'Staff'} ({r.prepared_by_role || 'Technician'})
+                  </span>
+                  {r.submitted_at && (
+                    <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                      Submitted by {r.submitted_by_name || 'Preparer'} ({r.submitted_by_role || 'Technician'}) • {r.submitted_at.slice(0, 10)}
+                    </span>
+                  )}
+                  {r.reviewed_at && (
+                    <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">
+                      Reviewed by {r.reviewed_by_name || 'Lead'} ({r.reviewed_by_role || 'Supervisor'}) • {r.reviewed_at.slice(0, 10)}
+                    </span>
+                  )}
+                  {r.approved_at && (
+                    <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">
+                      Approved by {r.approved_by_name || 'GM'} ({r.approved_by_role || 'GM'}) • {r.approved_at.slice(0, 10)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -260,8 +339,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                 </button>
 
                 <div className="flex items-center gap-1.5">
-                  {/* Status Progression Button */}
-                  {isDraft && (
+                  {/* Status Progression Button: Submit for Review */}
+                  {isDraft && canPrepareReports && (
                     <button
                       onClick={() => handleTransitionStatus(r.id, 'Submitted')}
                       className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
@@ -270,7 +349,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {!isTechnician && isSubmitted && (
+                  {/* Status Progression Button: Mark Reviewed */}
+                  {!isTechnician && !isSales && !isAccounts && isSubmitted && canReviewReports && (
                     <button
                       onClick={() => handleTransitionStatus(r.id, 'Reviewed')}
                       className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
@@ -279,7 +359,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {!isTechnician && (isSubmitted || isReviewed) && (
+                  {/* Status Progression Button: Approve (Technicians can NEVER approve) */}
+                  {!isTechnician && !isSales && !isAccounts && (isSubmitted || isReviewed) && canApproveReports && (
                     <button
                       onClick={() => handleTransitionStatus(r.id, 'Approved')}
                       className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
@@ -289,8 +370,12 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {/* Edit Draft */}
-                  {(!isTechnician || isDraft) && (
+                  {/* Edit Draft: Technicians can only edit draft; Supervisor/PM/GM can edit draft or submitted; Approved is locked */}
+                  {!isSales && !isAccounts && (
+                    (isDraft && (isTechnician ? (!r.prepared_by_user_id || r.prepared_by_user_id === currentUser?.id) : true)) ||
+                    (isSubmitted && !isTechnician) ||
+                    (isApproved && isGM)
+                  ) && (
                     <button
                       onClick={() => onEditReport(r)}
                       className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
@@ -300,8 +385,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {/* Delete Report */}
-                  {!isTechnician && (
+                  {/* Delete Report: GM / PM only */}
+                  {(isGM || role === 'Projects Manager') && !isApproved && (
                     <button
                       onClick={() => handleDeleteReport(r.id)}
                       className="p-1.5 rounded-lg border border-slate-200 text-red-500 hover:bg-red-50"

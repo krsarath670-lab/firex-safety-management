@@ -271,8 +271,10 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
               </span>
             </div>
             <div className="grid grid-cols-3 gap-1">
-              <span className="text-slate-500 font-semibold">Technician:</span>
-              <span className="col-span-2 font-bold text-navy-900">{call.assigned_technician_name || 'Assigned Duty Tech'}</span>
+              <span className="text-slate-500 font-semibold">Prepared By:</span>
+              <span className="col-span-2 font-bold text-navy-900">
+                {call.prepared_by_name || call.assigned_technician_name || 'Assigned Duty Tech'} ({call.prepared_by_role || 'Technician'})
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-1">
               <span className="text-slate-500 font-semibold">Supervisor:</span>
@@ -444,81 +446,143 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
         {/* SIGNATURES SECTION (Strictly 3 Signatures: Technician, Supervisor, Customer) */}
         {/* ========================================================================= */}
         <div className="border-t-2 border-slate-200 pt-4 mt-6">
-          <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs mb-3 text-center sm:text-left">
-            Official Approvals &amp; Client Sign-off
-          </h4>
+          <div className="flex items-center justify-between mb-3 pb-1 border-b border-slate-200">
+            <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">
+              Official Multi-Tier Approvals &amp; Client Sign-off
+            </h4>
+            <span className="text-[10px] font-mono text-slate-500">
+              Report Ref: {call.report_number || call.call_number}
+            </span>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             
-            {/* Technician Sign-off */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between h-40">
+            {/* Box 1: PREPARED BY */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between h-44">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                  Field Technician
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block">
+                  1. Prepared By (Field Tech)
                 </span>
-                <p className="font-bold text-slate-900 mt-0.5">{call.assigned_technician_name || 'Attending Tech'}</p>
+                <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
+                  {call.prepared_by_name || call.assigned_technician_name || 'Attending Tech'}
+                </p>
+                <p className="text-[10px] text-blue-700 font-semibold">{call.prepared_by_role || 'Technician'}</p>
               </div>
 
-              <div className="h-16 flex items-center justify-center my-1 bg-white rounded-lg border border-dashed border-slate-200 overflow-hidden">
+              <div className="h-14 flex items-center justify-center my-1 bg-white rounded-lg border border-dashed border-slate-200 overflow-hidden">
                 {call.technician_signature ? (
                   <img src={call.technician_signature} alt="Technician Signature" className="max-h-full object-contain p-1" />
                 ) : (
-                  <span className="text-[10px] text-slate-400 italic">Signature on Record</span>
+                  <div className="text-center">
+                    <span className="text-[9px] text-emerald-700 font-bold block">✓ System Verified</span>
+                    <span className="text-[8px] font-mono text-slate-400">UID: {call.prepared_by_user_id || 'tech-01'}</span>
+                  </div>
                 )}
               </div>
 
-              <div className="text-[10px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
-                <span>Date: {call.technician_signed_date || call.completion_date || call.call_date}</span>
-                <span className="font-bold text-emerald-700">✓ Completed</span>
+              <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
+                <span>Date: {call.prepared_date || call.completion_date || call.call_date}</span>
+                <span className="font-bold text-emerald-700">✓ Done</span>
               </div>
             </div>
 
-            {/* Supervisor Sign-off */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between h-40">
+            {/* Box 2: REVIEWED BY */}
+            <div className={`p-3 rounded-xl border flex flex-col justify-between h-44 ${
+              (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+                ? 'bg-indigo-50/40 border-indigo-200'
+                : 'bg-slate-50/50 border-dashed border-slate-200 opacity-75'
+            }`}>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                  Service Supervisor / Engineer
+                <span className="text-[9px] font-black uppercase tracking-wider text-indigo-700 block">
+                  2. Reviewed By (Supervisor)
                 </span>
-                <p className="font-bold text-slate-900 mt-0.5">{call.assigned_supervisor_name || 'Lead Supervisor'}</p>
+                <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
+                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+                    ? (call.reviewed_by_name || call.assigned_supervisor_name || 'David Thomas')
+                    : 'Engineering Review Pending'}
+                </p>
+                <p className="text-[10px] text-indigo-700 font-semibold">
+                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+                    ? (call.reviewed_by_role || 'Supervisor')
+                    : 'Awaiting submission'}
+                </p>
               </div>
 
-              <div className="h-16 flex items-center justify-center my-1 bg-white rounded-lg border border-dashed border-slate-200 overflow-hidden">
+              <div className="h-14 flex items-center justify-center my-1 bg-white/80 rounded-lg border border-indigo-100 overflow-hidden text-center p-1">
                 {call.supervisor_signature ? (
                   <img src={call.supervisor_signature} alt="Supervisor Signature" className="max-h-full object-contain p-1" />
+                ) : (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved') ? (
+                  <span className="text-[9px] font-bold text-indigo-800">✓ Technical Review Verified</span>
                 ) : (
-                  <span className="text-[10px] text-slate-400 italic">Technical Review</span>
+                  <span className="text-[9px] text-slate-400 italic">Review Pending</span>
                 )}
               </div>
 
-              <div className="text-[10px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
-                <span>Date: {call.supervisor_signed_date || call.call_date}</span>
-                <span className="font-bold text-blue-700">✓ Verified</span>
+              <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
+                <span>Date: {call.reviewed_at ? call.reviewed_at.slice(0, 10) : (call.supervisor_signed_date || 'Pending')}</span>
+                <span className="font-bold text-indigo-700">✓ Verified</span>
               </div>
             </div>
 
-            {/* Customer Representative Sign-off */}
-            <div className="p-3 bg-red-50/50 rounded-xl border border-red-200 flex flex-col justify-between h-40">
+            {/* Box 3: APPROVED BY */}
+            <div className={`p-3 rounded-xl border flex flex-col justify-between h-44 ${
+              (call.approved_at || call.report_status === 'Approved')
+                ? 'bg-emerald-50/40 border-emerald-200'
+                : 'bg-slate-50/50 border-dashed border-slate-200 opacity-75'
+            }`}>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-red-700 block">
-                  Customer Representative
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 block">
+                  3. Approved By (GM / Lead)
                 </span>
-                <p className="font-bold text-slate-900 mt-0.5 truncate">
+                <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
+                  {(call.approved_at || call.report_status === 'Approved')
+                    ? (call.approved_by_name || 'Eng. Mohamed Hweidi')
+                    : 'Approval Pending'}
+                </p>
+                <p className="text-[10px] text-emerald-700 font-semibold">
+                  {(call.approved_at || call.report_status === 'Approved')
+                    ? (call.approved_by_role || 'General Manager')
+                    : 'Locked'}
+                </p>
+              </div>
+
+              <div className="h-14 flex items-center justify-center my-1 bg-white/80 rounded-lg border border-emerald-100 overflow-hidden text-center p-1">
+                {(call.approved_at || call.report_status === 'Approved') ? (
+                  <span className="text-[9px] font-black text-emerald-800">✓ OFFICIAL APPROVAL SIGN-OFF</span>
+                ) : (
+                  <span className="text-[9px] text-slate-400 italic">Requires Review Sign-off</span>
+                )}
+              </div>
+
+              <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
+                <span>Date: {call.approved_at ? call.approved_at.slice(0, 10) : 'Pending'}</span>
+                <span className="font-bold text-emerald-700">OFFICIAL</span>
+              </div>
+            </div>
+
+            {/* Box 4: Customer Representative Sign-off */}
+            <div className="p-3 bg-red-50/50 rounded-xl border border-red-200 flex flex-col justify-between h-44">
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-red-700 block">
+                  4. Customer Acceptance
+                </span>
+                <p className="font-bold text-slate-900 mt-0.5 truncate text-xs">
                   {call.customer_rep_name || call.contact_person || 'Client Authorized Signatory'}
                 </p>
                 <p className="text-[10px] text-slate-500 truncate">{call.customer_rep_designation || 'Site Contact'}</p>
               </div>
 
-              <div className="h-16 flex items-center justify-center my-1 bg-white rounded-lg border border-dashed border-red-300 overflow-hidden">
+              <div className="h-14 flex items-center justify-center my-1 bg-white rounded-lg border border-dashed border-red-300 overflow-hidden">
                 {call.customer_signature ? (
                   <img src={call.customer_signature} alt="Customer Signature" className="max-h-full object-contain p-1" />
                 ) : (
-                  <span className="text-[10px] text-slate-400 italic">Client Signature</span>
+                  <span className="text-[9px] text-slate-400 italic">Client Signature</span>
                 )}
               </div>
 
-              <div className="text-[10px] text-slate-600 border-t border-red-200 pt-1 flex justify-between">
+              <div className="text-[9.5px] text-slate-600 border-t border-red-200 pt-1 flex justify-between">
                 <span>Date: {call.customer_signature_date || call.call_date}</span>
-                <span className="font-bold text-red-700">✓ Client Sign-off</span>
+                <span className="font-bold text-red-700">✓ Signed</span>
               </div>
             </div>
 

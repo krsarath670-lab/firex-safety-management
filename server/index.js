@@ -2133,7 +2133,14 @@ app.post('/api/materials', requirePermission('canManageMaterials'), (req, res) =
 });
 
 // --- REPORTS MANAGEMENT & STRICT APPROVAL PIPELINE ---
-// Status pipeline: Draft -> Submitted -> Reviewed -> Approved
+// Status pipeline: Draft -> Submitted -> Reviewed -> Approved -> Closed
+function getAuditDateTime(isoStr) {
+  const d = isoStr ? new Date(isoStr) : new Date();
+  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return { date, time, iso: d.toISOString() };
+}
+
 app.get('/api/reports', (req, res) => {
   const reports = db.get('reports') || [];
   const customers = db.get('customers') || [];
@@ -2145,7 +2152,13 @@ app.get('/api/reports', (req, res) => {
   let filtered = reports;
   if (req.user.role === 'Technician') {
     // Technician can only see reports assigned to or created by them
-    filtered = reports.filter(r => r.created_by === req.user.id || r.assigned_by === req.user.id || r.technician_name === req.user.name);
+    filtered = reports.filter(r => 
+      r.created_by === req.user.id || 
+      r.created_by_user_id === req.user.id ||
+      r.prepared_by_user_id === req.user.id ||
+      r.assigned_by === req.user.id || 
+      r.technician_name === req.user.name
+    );
   } else if (req.user.role === 'Sales') {
     // Sales Person data isolation: only their own assigned contracts / jobs / reports (Requirement 2 & 3)
     const userJobNumbers = new Set(jobs.filter(j => j.sales_person_id === req.user.id).map(j => j.job_number));
@@ -2156,6 +2169,8 @@ app.get('/api/reports', (req, res) => {
     filtered = reports.filter(r => 
       r.sales_person_id === req.user.id ||
       r.created_by === req.user.id ||
+      r.created_by_user_id === req.user.id ||
+      r.prepared_by_user_id === req.user.id ||
       (r.job_id && userJobIds.has(r.job_id)) ||
       (r.job_number && userJobNumbers.has(r.job_number)) ||
       (r.amc_id && userAmcIds.has(r.amc_id)) ||
@@ -2177,6 +2192,20 @@ app.get('/api/reports', (req, res) => {
     const contractEnd = r.contract_end_date || (amc ? amc.end_date : '');
     const contractPeriod = r.contract_period || (contractStart && contractEnd ? `${contractStart} to ${contractEnd}` : '');
 
+    // Resolve Prepared By and Audit Trail (Requirements 3, 4, 5, 7, 8)
+    const preparedUser = users.find(u => u.id === r.prepared_by_user_id || u.id === r.created_by_user_id || u.id === r.created_by);
+    const submittedUser = users.find(u => u.id === r.submitted_by_user_id || u.id === r.submitted_by);
+    const reviewedUser = users.find(u => u.id === r.reviewed_by_user_id || u.id === r.reviewed_by);
+    const approvedUser = users.find(u => u.id === r.approved_by_user_id || u.id === r.approved_by);
+
+    const preparedByName = preparedUser ? preparedUser.name : (r.prepared_by_name || r.technician_name || 'Staff');
+    const preparedByRole = preparedUser ? preparedUser.role : (r.prepared_by_role || 'Technician');
+    const preparedByUserId = preparedUser ? preparedUser.id : (r.prepared_by_user_id || r.created_by_user_id || r.created_by || null);
+
+    const dt = getAuditDateTime(r.created_at || r.date);
+    const preparedDate = r.prepared_date || r.created_date || dt.date;
+    const preparedTime = r.prepared_time || r.created_time || dt.time;
+
     return {
       ...r,
       customer_name: cust ? cust.name : (r.customer_name || 'Customer / Client'),
@@ -2190,7 +2219,23 @@ app.get('/api/reports', (req, res) => {
       contract_start_date: contractStart,
       contract_end_date: contractEnd,
       contract_period: contractPeriod,
-      quarter: r.quarter || db.getQuarter(r.date || r.created_at)
+      quarter: r.quarter || db.getQuarter(r.date || r.created_at),
+      prepared_by_user_id: preparedByUserId,
+      created_by_user_id: r.created_by_user_id || preparedByUserId,
+      prepared_by_name: preparedByName,
+      prepared_by_role: preparedByRole,
+      prepared_date: preparedDate,
+      prepared_time: preparedTime,
+      created_date: r.created_date || preparedDate,
+      submitted_by_user_id: r.submitted_by_user_id || (submittedUser ? submittedUser.id : null),
+      submitted_by_name: submittedUser ? submittedUser.name : (r.submitted_by_name || null),
+      submitted_by_role: submittedUser ? submittedUser.role : (r.submitted_by_role || null),
+      reviewed_by_user_id: r.reviewed_by_user_id || (reviewedUser ? reviewedUser.id : null),
+      reviewed_by_name: reviewedUser ? reviewedUser.name : (r.reviewed_by_name || (r.reviewed_at ? (r.supervisor_name || 'Supervisor') : null)),
+      reviewed_by_role: reviewedUser ? reviewedUser.role : (r.reviewed_by_role || (r.reviewed_at ? 'Supervisor' : null)),
+      approved_by_user_id: r.approved_by_user_id || r.approved_by || (approvedUser ? approvedUser.id : null),
+      approved_by_name: approvedUser ? approvedUser.name : (r.approved_by_name || (r.status === 'Approved' ? 'GM' : null)),
+      approved_by_role: approvedUser ? approvedUser.role : (r.approved_by_role || (r.status === 'Approved' ? 'GM' : null))
     };
   });
 
@@ -2202,8 +2247,11 @@ app.get('/api/reports/:id', (req, res) => {
   if (!report) return res.status(404).json({ error: 'Report not found' });
 
   // Security check for Technician
-  if (req.user.role === 'Technician' && report.created_by !== req.user.id && report.technician_name !== req.user.name) {
-    return res.status(403).json({ error: 'Access Denied', message: 'You can only view your own assigned reports.' });
+  if (req.user.role === 'Technician') {
+    const isOwn = report.created_by === req.user.id || report.created_by_user_id === req.user.id || report.prepared_by_user_id === req.user.id || report.technician_name === req.user.name;
+    if (!isOwn) {
+      return res.status(403).json({ error: 'Access Denied', message: 'You can only view your own assigned reports.' });
+    }
   }
 
   const amcs = db.get('amc_contracts') || [];
@@ -2216,6 +2264,8 @@ app.get('/api/reports/:id', (req, res) => {
   if (req.user.role === 'Sales') {
     const isAuthorized = report.sales_person_id === req.user.id ||
       report.created_by === req.user.id ||
+      report.created_by_user_id === req.user.id ||
+      report.prepared_by_user_id === req.user.id ||
       (job && job.sales_person_id === req.user.id) ||
       (amc && amc.sales_person_id === req.user.id);
     if (!isAuthorized) {
@@ -2235,6 +2285,20 @@ app.get('/api/reports/:id', (req, res) => {
   const contractEnd = report.contract_end_date || (amc ? amc.end_date : '');
   const contractPeriod = report.contract_period || (contractStart && contractEnd ? `${contractStart} to ${contractEnd}` : '');
 
+  // Resolve Prepared By and Audit Trail (Requirements 3, 4, 5, 7, 8)
+  const preparedUser = users.find(u => u.id === report.prepared_by_user_id || u.id === report.created_by_user_id || u.id === report.created_by);
+  const submittedUser = users.find(u => u.id === report.submitted_by_user_id || u.id === report.submitted_by);
+  const reviewedUser = users.find(u => u.id === report.reviewed_by_user_id || u.id === report.reviewed_by);
+  const approvedUser = users.find(u => u.id === report.approved_by_user_id || u.id === report.approved_by);
+
+  const preparedByName = preparedUser ? preparedUser.name : (report.prepared_by_name || report.technician_name || 'Staff');
+  const preparedByRole = preparedUser ? preparedUser.role : (report.prepared_by_role || 'Technician');
+  const preparedByUserId = preparedUser ? preparedUser.id : (report.prepared_by_user_id || report.created_by_user_id || report.created_by || null);
+
+  const dt = getAuditDateTime(report.created_at || report.date);
+  const preparedDate = report.prepared_date || report.created_date || dt.date;
+  const preparedTime = report.prepared_time || report.created_time || dt.time;
+
   res.json({
     ...report,
     customer_name: customer ? customer.name : (report.customer_name || 'Customer / Client'),
@@ -2251,16 +2315,46 @@ app.get('/api/reports/:id', (req, res) => {
     quarter: report.quarter || db.getQuarter(report.date || report.created_at),
     customer,
     site,
-    company_settings: settings
+    company_settings: settings,
+    prepared_by_user_id: preparedByUserId,
+    created_by_user_id: report.created_by_user_id || preparedByUserId,
+    prepared_by_name: preparedByName,
+    prepared_by_role: preparedByRole,
+    prepared_date: preparedDate,
+    prepared_time: preparedTime,
+    created_date: report.created_date || preparedDate,
+    created_time: report.created_time || preparedTime,
+    submitted_by_user_id: report.submitted_by_user_id || (submittedUser ? submittedUser.id : null),
+    submitted_by_name: submittedUser ? submittedUser.name : (report.submitted_by_name || null),
+    submitted_by_role: submittedUser ? submittedUser.role : (report.submitted_by_role || null),
+    reviewed_by_user_id: report.reviewed_by_user_id || (reviewedUser ? reviewedUser.id : null),
+    reviewed_by_name: reviewedUser ? reviewedUser.name : (report.reviewed_by_name || (report.reviewed_at ? (report.supervisor_name || 'Supervisor') : null)),
+    reviewed_by_role: reviewedUser ? reviewedUser.role : (report.reviewed_by_role || (report.reviewed_at ? 'Supervisor' : null)),
+    approved_by_user_id: report.approved_by_user_id || report.approved_by || (approvedUser ? approvedUser.id : null),
+    approved_by_name: approvedUser ? approvedUser.name : (report.approved_by_name || (report.status === 'Approved' ? 'GM' : null)),
+    approved_by_role: approvedUser ? approvedUser.role : (report.approved_by_role || (report.status === 'Approved' ? 'GM' : null))
   });
 });
 
 app.post('/api/reports', (req, res) => {
+  // STRICT PERMISSION CHECK (Requirement 1 & 14):
+  // Only Projects Manager, Engineer, Supervisor, and Technician can prepare reports
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: `Users with role '${req.user.role}' are not permitted to prepare reports. Reports can only be prepared by Projects Manager, Engineer, Supervisor, or Technician.`
+    });
+  }
+
   const body = req.body;
-  const count = db.get('reports').length + 1;
+  const count = (db.get('reports') || []).length + 1;
   const amcs = db.get('amc_contracts') || [];
   const jobs = db.get('jobs') || [];
   const users = db.get('users') || [];
+
+  const authUser = users.find(u => u.id === req.user.id) || req.user;
+  const nowAudit = getAuditDateTime();
 
   const amc = amcs.find(c => c.id === body.amc_id || c.id === body.amc_contract_id || c.contract_number === body.amc_number);
   const job = jobs.find(j => j.id === body.job_id || j.job_number === body.job_number);
@@ -2294,11 +2388,17 @@ app.post('/api/reports', (req, res) => {
   else if (body.report_type === 'Fault Report') typeCode = 'FLT';
   else if (body.report_type === 'Inspection Report') typeCode = 'INSP';
   else if (body.report_type === 'Testing & Commissioning Report') typeCode = 'TCR';
+  else if (body.report_type === 'Project Report') typeCode = 'PRJ';
+  else if (body.report_type === 'Fit-Out Report') typeCode = 'FIT';
+  else if (body.report_type === 'Installation Report') typeCode = 'INST';
+  else if (body.report_type === 'Breakdown Report') typeCode = 'BRK';
+  else if (body.report_type === 'Supply Report') typeCode = 'SUP';
 
   const cust = body.customer_id ? db.getById('customers', body.customer_id) : null;
   const site = body.site_id ? db.getById('sites', body.site_id) : null;
 
   const report_number = body.report_number || `RPT-${typeCode}-${new Date().getFullYear()}-${String(count).padStart(3, '0')}`;
+  const isSubmitted = body.status === 'Submitted';
 
   const newReport = db.insert('reports', {
     ...body,
@@ -2309,16 +2409,46 @@ app.post('/api/reports', (req, res) => {
     contact_person: cust ? (cust.contact_person || cust.contact_mobile) : (body.contact_person || ''),
     contact_number: cust ? (cust.contact_mobile || cust.phone) : (body.contact_number || ''),
     report_number,
-    quarter: db.getQuarter(body.date || new Date().toISOString()),
+    quarter: db.getQuarter(body.date || nowAudit.iso),
     status: body.status || 'Draft',
-    created_by: req.user.id,
-    created_at: new Date().toISOString(),
-    submitted_by: body.status === 'Submitted' ? req.user.id : null,
-    submitted_at: body.status === 'Submitted' ? new Date().toISOString() : null,
-    reviewed_by: null,
+
+    // Automatic Server-Side Creator & Prepared By identity (Requirements 3, 6, 7)
+    created_by_user_id: authUser.id,
+    prepared_by_user_id: authUser.id,
+    prepared_by_name: authUser.name,
+    prepared_by_role: authUser.role,
+    prepared_date: nowAudit.date,
+    prepared_time: nowAudit.time,
+    created_date: nowAudit.date,
+    created_time: nowAudit.time,
+    created_at: nowAudit.iso,
+    created_by: authUser.id,
+
+    // Submitted By audit (Requirement 8 & 12)
+    submitted_by_user_id: isSubmitted ? authUser.id : null,
+    submitted_by_name: isSubmitted ? authUser.name : null,
+    submitted_by_role: isSubmitted ? authUser.role : null,
+    submitted_date: isSubmitted ? nowAudit.date : null,
+    submitted_time: isSubmitted ? nowAudit.time : null,
+    submitted_at: isSubmitted ? nowAudit.iso : null,
+    submitted_by: isSubmitted ? authUser.id : null,
+
+    // Review & Approval initialized strictly to null
+    reviewed_by_user_id: null,
+    reviewed_by_name: null,
+    reviewed_by_role: null,
+    reviewed_date: null,
+    reviewed_time: null,
     reviewed_at: null,
-    approved_by: null,
-    approved_at: null
+    reviewed_by: null,
+
+    approved_by_user_id: null,
+    approved_by_name: null,
+    approved_by_role: null,
+    approved_date: null,
+    approved_time: null,
+    approved_at: null,
+    approved_by: null
   });
 
   // Link to job if provided
@@ -2326,7 +2456,7 @@ app.post('/api/reports', (req, res) => {
     db.update('jobs', body.job_id, { report_id: newReport.id });
   }
 
-  db.logAudit(req.user.id, 'CREATE_REPORT', 'reports', newReport.id, `Created ${body.report_type} ${report_number}`);
+  db.logAudit(req.user.id, 'CREATE_REPORT', 'reports', newReport.id, `Created ${body.report_type} ${report_number} (Prepared By: ${authUser.name}, ${authUser.role})`);
   res.status(201).json(newReport);
 });
 
@@ -2337,7 +2467,8 @@ app.put('/api/reports/:id', (req, res) => {
 
   // If technician, can only edit if status is Draft or if submitting it
   if (req.user.role === 'Technician') {
-    if (existing.created_by !== req.user.id && existing.technician_name !== req.user.name) {
+    const isOwn = existing.created_by === req.user.id || existing.created_by_user_id === req.user.id || existing.prepared_by_user_id === req.user.id || existing.technician_name === req.user.name;
+    if (!isOwn) {
       return res.status(403).json({ error: 'Access Denied', message: 'You cannot edit another technician\'s report.' });
     }
     if (existing.status !== 'Draft' && req.body.status !== 'Submitted') {
@@ -2345,32 +2476,76 @@ app.put('/api/reports/:id', (req, res) => {
     }
   }
 
+  // Technician cannot approve their own or any report (Requirement 14)
+  if (req.body.status === 'Approved' && req.user.role === 'Technician') {
+    return res.status(403).json({ error: 'Access Denied', message: 'Technicians are not authorized to approve reports.' });
+  }
+
   const updates = { ...req.body };
+
+  // STRICT IMMUTABILITY (Requirement 11): Never overwrite original creator / prepared by
+  delete updates.created_by_user_id;
+  delete updates.prepared_by_user_id;
+  delete updates.prepared_by_name;
+  delete updates.prepared_by_role;
+  delete updates.created_date;
+  delete updates.created_time;
+  delete updates.prepared_date;
+  delete updates.prepared_time;
+  delete updates.created_at;
+  delete updates.created_by;
+
+  const nowAudit = getAuditDateTime();
+  const users = db.get('users') || [];
+  const authUser = users.find(u => u.id === req.user.id) || req.user;
+
+  // Record Last Modified By (Requirement 11)
+  updates.last_modified_by_user_id = authUser.id;
+  updates.last_modified_by_name = authUser.name;
+  updates.last_modified_by_role = authUser.role;
+  updates.last_modified_date = nowAudit.date;
+  updates.last_modified_time = nowAudit.time;
+  updates.last_modified_at = nowAudit.iso;
 
   // Track status transitions: Draft -> Submitted -> Reviewed -> Approved
   if (updates.status === 'Submitted' && existing.status !== 'Submitted') {
-    updates.submitted_by = req.user.id;
-    updates.submitted_at = new Date().toISOString();
+    updates.submitted_by_user_id = authUser.id;
+    updates.submitted_by_name = authUser.name;
+    updates.submitted_by_role = authUser.role;
+    updates.submitted_date = nowAudit.date;
+    updates.submitted_time = nowAudit.time;
+    updates.submitted_at = nowAudit.iso;
+    updates.submitted_by = authUser.id;
   }
 
   if (updates.status === 'Reviewed' && existing.status !== 'Reviewed') {
     if (req.user.role === 'Technician') {
       return res.status(403).json({ error: 'Technicians cannot mark reports as Reviewed.' });
     }
-    updates.reviewed_by = req.user.id;
-    updates.reviewed_at = new Date().toISOString();
+    updates.reviewed_by_user_id = authUser.id;
+    updates.reviewed_by_name = authUser.name;
+    updates.reviewed_by_role = authUser.role;
+    updates.reviewed_date = nowAudit.date;
+    updates.reviewed_time = nowAudit.time;
+    updates.reviewed_at = nowAudit.iso;
+    updates.reviewed_by = authUser.id;
   }
 
   if (updates.status === 'Approved' && existing.status !== 'Approved') {
     if (req.user.role === 'Technician') {
       return res.status(403).json({ error: 'Technicians cannot approve reports.' });
     }
-    updates.approved_by = req.user.id;
-    updates.approved_at = new Date().toISOString();
+    updates.approved_by_user_id = authUser.id;
+    updates.approved_by_name = authUser.name;
+    updates.approved_by_role = authUser.role;
+    updates.approved_date = nowAudit.date;
+    updates.approved_time = nowAudit.time;
+    updates.approved_at = nowAudit.iso;
+    updates.approved_by = authUser.id;
   }
 
   const updated = db.update('reports', req.params.id, updates);
-  db.logAudit(req.user.id, 'UPDATE_REPORT', 'reports', req.params.id, `Updated report to ${updates.status || existing.status}`);
+  db.logAudit(req.user.id, 'UPDATE_REPORT', 'reports', req.params.id, `Updated report to ${updates.status || existing.status} (Last modified by: ${authUser.name})`);
   res.json(updated);
 });
 
