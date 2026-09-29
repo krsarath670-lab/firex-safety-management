@@ -321,17 +321,19 @@ export default function UserManagementView() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Provision and control mobile app access for <strong className="text-emerald-700">Technicians</strong> and <strong className="text-amber-700">Sales Personnel</strong>.
+            {isGM 
+              ? 'Provision and control mobile app access for Accounts, Projects Manager, Technicians, Sales, and Engineers.'
+              : 'Provision and control mobile app access for Technicians and Sales Personnel.'}
           </p>
         </div>
 
-        {/* Primary Action Button: + ADD TECHNICIAN / SALES */}
+        {/* Primary Action Button */}
         <button
           onClick={handleOpenAdd}
           className="h-11 px-4 bg-navy-900 hover:bg-navy-800 active:bg-black text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 border border-navy-800"
         >
           <UserPlus className="w-4 h-4 text-emerald-400" />
-          <span>+ ADD TECHNICIAN / SALES</span>
+          <span>{isGM ? '+ ADD STAFF MEMBER' : '+ ADD TECHNICIAN / SALES'}</span>
         </button>
       </div>
 

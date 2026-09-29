@@ -710,6 +710,10 @@ class Database {
       if (res.rows.length > 0 && res.rows[0].data) {
         this.memoryCache = this.ensureSchema(res.rows[0].data);
         console.log('[FIREX DB] PostgreSQL cloud database state loaded successfully.');
+        await this.pgPool.query(
+          'UPDATE firex_store SET data = $1, updated_at = NOW() WHERE key = $2',
+          [this.memoryCache, 'app_state']
+        );
       } else {
         const initialData = fs.existsSync(this.filePath)
           ? JSON.parse(fs.readFileSync(this.filePath, 'utf8'))
@@ -743,43 +747,71 @@ class Database {
       modified = true;
     }
 
-    // Ensure Fatima Hassan (Accounts) exists in users
-    if (!data.users) data.users = [];
-    const hasAccounts = data.users.some(u => u.role === 'Accounts' || u.email === 'accounts@firexbahrain.com');
-    if (!hasAccounts) {
-      data.users.push({
-        id: 'usr-acc-101',
-        name: 'Fatima Hassan',
-        email: 'accounts@firexbahrain.com',
-        role: 'Accounts',
-        designation: 'Financial Controller / Accounts',
-        phone: '+973 3911 2233',
-        status: 'Active',
-        pin: '1234',
-        password: '1234',
-        avatar: 'FH',
-        created_at: new Date().toISOString()
-      });
-      modified = true;
+    // User requested: Delete Accounts and Projects Manager pre-seeded names (GM will add them manually)
+    if (data.users && Array.isArray(data.users)) {
+      const prevUsersCount = data.users.length;
+      data.users = data.users.filter(u => 
+        u.id !== 'usr-acc-101' && 
+        u.id !== 'usr-pm-102' && 
+        u.name !== 'Fatima Hassan' && 
+        u.name !== 'Eng. Ali Redha' &&
+        u.email !== 'accounts@firexbahrain.com' &&
+        u.email !== 'projects@firexbahrain.com'
+      );
+      if (data.users.length !== prevUsersCount) {
+        modified = true;
+        console.log('[FIREX DB] Removed pre-seeded Accounts and Projects Manager names. GM will add them via Staff Management.');
+      }
     }
 
-    // Ensure Eng. Ali Redha (Projects Manager) exists in users
-    const hasPM = data.users.some(u => u.role === 'Projects Manager' || u.email === 'projects@firexbahrain.com');
-    if (!hasPM) {
-      data.users.push({
-        id: 'usr-pm-102',
-        name: 'Eng. Ali Redha',
-        email: 'projects@firexbahrain.com',
-        role: 'Projects Manager',
-        designation: 'Senior Projects & Fit-out Manager',
-        phone: '+973 3922 4455',
-        status: 'Active',
-        pin: '1234',
-        password: '1234',
-        avatar: 'AR',
-        created_at: new Date().toISOString()
+    // Clean up any historical hold / payment names referencing the deleted names
+    if (data.jobs && Array.isArray(data.jobs)) {
+      data.jobs.forEach(j => {
+        if (j.held_by_name === 'Fatima Hassan' || j.held_by_name === 'Eng. Ali Redha') {
+          j.held_by_name = 'Eng. Mohamed Hweidi';
+          j.held_by_id = 'usr-gm-1790621464394';
+          j.held_by_role = 'GM';
+          modified = true;
+        }
+        if (j.hold_history && Array.isArray(j.hold_history)) {
+          j.hold_history.forEach(h => {
+            if (h.held_by_name === 'Fatima Hassan' || h.held_by_name === 'Eng. Ali Redha') {
+              h.held_by_name = 'Eng. Mohamed Hweidi';
+              h.held_by_role = 'GM';
+              modified = true;
+            }
+          });
+        }
       });
-      modified = true;
+    }
+
+    if (data.payments && Array.isArray(data.payments)) {
+      data.payments.forEach(p => {
+        if (p.received_by === 'Fatima Hassan' || p.received_by === 'Eng. Ali Redha') {
+          p.received_by = 'Eng. Mohamed Hweidi';
+          modified = true;
+        }
+      });
+    }
+
+    if (data.job_holds && Array.isArray(data.job_holds)) {
+      data.job_holds.forEach(h => {
+        if (h.held_by_name === 'Fatima Hassan' || h.held_by_name === 'Eng. Ali Redha') {
+          h.held_by_name = 'Eng. Mohamed Hweidi';
+          h.held_by_id = 'usr-gm-1790621464394';
+          h.held_by_role = 'GM';
+          modified = true;
+        }
+      });
+    }
+
+    if (data.invoices && Array.isArray(data.invoices)) {
+      data.invoices.forEach(inv => {
+        if (inv.created_by === 'usr-acc-101' || inv.created_by === 'usr-pm-102') {
+          inv.created_by = 'usr-gm-1790621464394';
+          modified = true;
+        }
+      });
     }
 
     // Ensure realistic Bahrain jobs exist if jobs array is empty
@@ -849,9 +881,9 @@ class Database {
           is_on_hold: true,
           hold_type: 'Payment Hold',
           hold_reason: 'Payment Pending / Overdue Payment',
-          held_by_id: 'usr-acc-101',
-          held_by_name: 'Fatima Hassan',
-          held_by_role: 'Accounts',
+          held_by_id: 'usr-gm-1790621464394',
+          held_by_name: 'Eng. Mohamed Hweidi',
+          held_by_role: 'GM',
           hold_date: '2026-09-22T09:30:00Z',
           expected_release_date: '2026-10-05',
           hold_remarks: 'Client invoice INV-2026-003 is overdue (24 days overdue). Service held until payment settlement.',
@@ -860,8 +892,8 @@ class Database {
               action: 'HOLD_PLACED',
               hold_type: 'Payment Hold',
               hold_reason: 'Payment Pending / Overdue Payment',
-              held_by_name: 'Fatima Hassan',
-              held_by_role: 'Accounts',
+              held_by_name: 'Eng. Mohamed Hweidi',
+              held_by_role: 'GM',
               hold_date: '2026-09-22T09:30:00Z',
               expected_release_date: '2026-10-05',
               remarks: 'Overdue payment invoice INV-2026-003 for BHD 902.000.'
@@ -898,9 +930,9 @@ class Database {
           is_on_hold: true,
           hold_type: 'Operational Hold',
           hold_reason: 'Site Not Ready / Access Denied',
-          held_by_id: 'usr-pm-102',
-          held_by_name: 'Eng. Ali Redha',
-          held_by_role: 'Projects Manager',
+          held_by_id: 'usr-gm-1790621464394',
+          held_by_name: 'Eng. Mohamed Hweidi',
+          held_by_role: 'GM',
           hold_date: '2026-09-25T11:00:00Z',
           expected_release_date: '2026-10-02',
           hold_remarks: 'Ceiling grid framing not completed by tenant general contractor. Testing deferred until site ready.',
@@ -909,8 +941,8 @@ class Database {
               action: 'HOLD_PLACED',
               hold_type: 'Operational Hold',
               hold_reason: 'Site Not Ready / Access Denied',
-              held_by_name: 'Eng. Ali Redha',
-              held_by_role: 'Projects Manager',
+              held_by_name: 'Eng. Mohamed Hweidi',
+              held_by_role: 'GM',
               hold_date: '2026-09-25T11:00:00Z',
               expected_release_date: '2026-10-02',
               remarks: 'Site not ready.'
@@ -990,7 +1022,7 @@ class Database {
             { description: 'Annual Comprehensive Fire Protection Maintenance', quantity: 1, unit_price: 3000.000, total: 3000.000 }
           ],
           notes: 'Full payment received via BenefitPay.',
-          created_by: 'usr-acc-101',
+          created_by: 'usr-gm-1790621464394',
           created_at: '2026-01-15T09:00:00Z',
           updated_at: '2026-02-10T11:00:00Z'
         },
@@ -1024,7 +1056,7 @@ class Database {
             { description: 'Specialist Technical Labor & Loop Recalibration', quantity: 1, unit_price: 150.000, total: 150.000 }
           ],
           notes: 'Partial advance payment received. Remaining BHD 295.000 due.',
-          created_by: 'usr-acc-101',
+          created_by: 'usr-gm-1790621464394',
           created_at: '2026-09-01T10:00:00Z',
           updated_at: '2026-09-10T14:30:00Z'
         },
@@ -1057,7 +1089,7 @@ class Database {
             { description: 'Emergency Callout & Pressure Testing', quantity: 1, unit_price: 200.000, total: 200.000 }
           ],
           notes: 'Invoice is severely overdue. Payment Hold placed on Job BRK-2026-014 by Accounts.',
-          created_by: 'usr-acc-101',
+          created_by: 'usr-gm-1790621464394',
           created_at: '2026-08-20T11:00:00Z',
           updated_at: '2026-09-22T09:30:00Z'
         },
@@ -1089,7 +1121,7 @@ class Database {
             { description: 'Engineering Design, Hydraulic Calculations & Commissioning', quantity: 1, unit_price: 600.000, total: 600.000 }
           ],
           notes: 'Advance invoice issued. Awaiting client finance disbursement.',
-          created_by: 'usr-acc-101',
+          created_by: 'usr-gm-1790621464394',
           created_at: '2026-09-20T12:00:00Z'
         }
       ];
@@ -1106,7 +1138,7 @@ class Database {
           amount: 3300.000,
           payment_method: 'BenefitPay',
           reference_number: 'BP-992817203',
-          received_by: 'Fatima Hassan',
+          received_by: 'Eng. Mohamed Hweidi',
           remarks: 'Settlement in full for AMC-2026-005 contract agreement.',
           created_at: '2026-02-10T11:00:00Z'
         },
@@ -1121,7 +1153,7 @@ class Database {
           amount: 200.000,
           payment_method: 'Bank Transfer',
           reference_number: 'NBB-TX-440192',
-          received_by: 'Fatima Hassan',
+          received_by: 'Eng. Mohamed Hweidi',
           remarks: 'Part-payment 50% for material supply.',
           created_at: '2026-09-10T14:30:00Z'
         }
@@ -1136,9 +1168,9 @@ class Database {
           site_name: defaultSite.site_name,
           hold_type: 'Payment Hold',
           hold_reason: 'Payment Pending / Overdue Payment',
-          held_by_id: 'usr-acc-101',
-          held_by_name: 'Fatima Hassan',
-          held_by_role: 'Accounts',
+          held_by_id: 'usr-gm-1790621464394',
+          held_by_name: 'Eng. Mohamed Hweidi',
+          held_by_role: 'GM',
           hold_date: '2026-09-22T09:30:00Z',
           expected_release_date: '2026-10-05',
           remarks: 'Overdue invoice INV-2026-003 for BHD 902.000.'
@@ -1151,9 +1183,9 @@ class Database {
           site_name: defaultSite.site_name,
           hold_type: 'Operational Hold',
           hold_reason: 'Site Not Ready / Access Denied',
-          held_by_id: 'usr-pm-102',
-          held_by_name: 'Eng. Ali Redha',
-          held_by_role: 'Projects Manager',
+          held_by_id: 'usr-gm-1790621464394',
+          held_by_name: 'Eng. Mohamed Hweidi',
+          held_by_role: 'GM',
           hold_date: '2026-09-25T11:00:00Z',
           expected_release_date: '2026-10-02',
           remarks: 'Ceiling grid work incomplete. Site access rescheduled.'
