@@ -34,6 +34,155 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     return 'bg-purple-50 text-purple-700 border-purple-200';
   };
 
+  // Reusable AMC Service Cards Widget (Requirement 9)
+  const renderAmcServiceCardsWidget = () => {
+    const cards = dashboardStats?.amc_service_cards || [];
+    if (!cards || cards.length === 0) return null;
+
+    return (
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>AMC Service Cards — Active Contracts &amp; Dynamic Cycles</span>
+            </h2>
+            <p className="text-[11px] text-slate-500">
+              Contract service cycle tracking (Q1–Q4), actual completion dates &amp; next scheduled visits
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('amc')}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+          >
+            <span>View All AMC Contracts</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {cards.map(card => {
+            const isOverdue = card.is_overdue;
+            const daysRemaining = card.days_remaining;
+
+            return (
+              <div
+                key={card.contract_id}
+                className={`rounded-xl p-3.5 border transition-all flex flex-col justify-between ${
+                  isOverdue 
+                    ? 'bg-red-50/50 border-red-200 shadow-xs' 
+                    : 'bg-slate-50/70 border-slate-200 hover:border-blue-300 hover:bg-blue-50/20'
+                }`}
+              >
+                <div>
+                  {/* Card Header: Contract # & Status */}
+                  <div className="flex items-center justify-between gap-1 mb-2">
+                    <span className="font-mono font-black text-xs text-navy-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      {card.contract_number}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {isOverdue && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-100 text-red-800 border border-red-300 flex items-center gap-0.5 animate-pulse">
+                          <AlertTriangle className="w-3 h-3 text-red-600" />
+                          <span>OVERDUE ({Math.abs(daysRemaining)}d)</span>
+                        </span>
+                      )}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {card.status || 'Active'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Customer & Site */}
+                  <div className="mb-2.5">
+                    <h4 className="text-xs font-black text-slate-900 truncate" title={card.customer_name}>
+                      {card.customer_name}
+                    </h4>
+                    <p className="text-[11px] text-slate-600 flex items-center gap-1 truncate" title={card.site_name}>
+                      <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>{card.site_name}</span>
+                    </p>
+                  </div>
+
+                  {/* Systems */}
+                  {card.systems && card.systems.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {card.systems.map((sys, idx) => (
+                        <span key={idx} className="text-[9px] font-bold px-1.5 py-0.5 bg-white border border-slate-200 rounded text-slate-700">
+                          {sys}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Key Metrics Grid (Requirement 9) */}
+                  <div className="grid grid-cols-2 gap-2 text-left mb-3">
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Current Cycle</span>
+                      <span className="text-xs font-black text-blue-700 font-mono">
+                        {card.current_cycle}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Days Remaining</span>
+                      <span className={`text-xs font-black ${
+                        isOverdue ? 'text-red-700' : (daysRemaining !== null && daysRemaining <= 7 ? 'text-amber-600' : 'text-slate-800')
+                      }`}>
+                        {daysRemaining !== null 
+                          ? (isOverdue ? `${Math.abs(daysRemaining)}d Overdue` : `${daysRemaining} days`)
+                          : 'Completed'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Next Service Date</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {card.next_service_date || 'N/A'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Next Scheduled</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {card.next_scheduled_date || 'N/A'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Last Completed</span>
+                      <span className="text-xs font-bold text-slate-700">
+                        {card.last_completed_date 
+                          ? `${card.last_completed_date} (${card.last_completed_cycle || 'Done'})` 
+                          : 'Not Started'}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Contract Expiry</span>
+                      <span className="text-xs font-bold text-slate-700">
+                        {card.expiry_date || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Action */}
+                <button
+                  onClick={() => setActiveTab('amc')}
+                  className="w-full mt-1 py-1.5 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>Open AMC Contract &amp; Cycles</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Reusable Upcoming AMC Visits Widget
   const renderUpcomingVisitsWidget = () => (
     <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
@@ -106,16 +255,24 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-mono font-black text-white bg-navy-900 px-1.5 py-0.5 rounded">
+                    {v.service_cycle || v.quarter || 'Q1'}
+                  </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSystemColor(v.system_type || v.system)}`}>
                     {v.system_type || v.system}
                   </span>
                   <span className="text-[10px] font-mono font-bold text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                    Visit #{v.visit_number}
+                    Visit #{v.service_sequence || v.visit_number}
                   </span>
                   <span className="text-[10px] font-semibold text-slate-600 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
                     <span>{v.scheduled_date}</span>
                   </span>
+                  {v.is_overdue && (
+                    <span className="text-[9.5px] font-black text-red-700 bg-red-100 px-1.5 py-0.5 rounded border border-red-300 animate-pulse">
+                      OVERDUE ({Math.abs(v.days_remaining)}d)
+                    </span>
+                  )}
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{v.site_name}</h4>
@@ -621,6 +778,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
         {/* Emergency Call-Outs & Rapid Response */}
         {renderEmergencyCalloutWidget()}
 
+        {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
+        {renderAmcServiceCardsWidget()}
+
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
 
@@ -798,6 +958,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
         {/* Emergency Call-Outs & Rapid Response */}
         {renderEmergencyCalloutWidget()}
 
+        {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
+        {renderAmcServiceCardsWidget()}
+
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
       </div>
@@ -961,6 +1124,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
 
         {/* Emergency Call-Outs & Rapid Response */}
         {renderEmergencyCalloutWidget()}
+
+        {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
+        {renderAmcServiceCardsWidget()}
 
         {/* Upcoming AMC Visits Widget */}
         {renderUpcomingVisitsWidget()}
@@ -1555,6 +1721,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
 
         </div>
       </div>
+
+      {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
+      {renderAmcServiceCardsWidget()}
 
       {/* Upcoming AMC Visits Widget */}
       {renderUpcomingVisitsWidget()}

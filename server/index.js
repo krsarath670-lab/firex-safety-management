@@ -364,6 +364,7 @@ app.get('/api/dashboard/stats', (req, res) => {
       role: 'Sales',
       ...salesStats,
       upcoming_amc: upcomingAmc,
+      amc_service_cards: db.getAmcDashboardCards(req.user),
       emergencyStats: db.getEmergencyDashboardStats()
     });
   }
@@ -463,6 +464,8 @@ app.get('/api/dashboard/stats', (req, res) => {
       q4Done,
       totalContracts: amcsList.length
     },
+    // AMC Service Cards & Radar (Requirement 9)
+    amc_service_cards: db.getAmcDashboardCards(null),
     // Emergency Call-Outs (Module Stats)
     emergencyStats: db.getEmergencyDashboardStats()
   });
@@ -970,14 +973,17 @@ const getAmcContractsHandler = (req, res) => {
       }
     }
 
+    // Fetch and sort all contract visits
+    const contractVisits = allVisits.filter(v => v.amc_contract_id === contract.id || v.amc_id === contract.id);
+    contractVisits.sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || '') || (a.service_sequence || 0) - (b.service_sequence || 0));
+
     // Calculate next visit
     let nextVisit = 'None scheduled';
     if (['Draft', 'Submitted', 'Returned for Correction'].includes(autoStatus)) {
       nextVisit = 'Pending Approval';
     } else {
-      const contractVisits = allVisits.filter(v => (v.amc_contract_id === contract.id || v.amc_id === contract.id) && v.status !== 'Completed');
-      contractVisits.sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''));
-      const upcoming = contractVisits.find(v => (v.scheduled_date || '') >= todayStr) || contractVisits[0];
+      const pendingVisits = contractVisits.filter(v => v.status !== 'Completed');
+      const upcoming = pendingVisits.find(v => (v.scheduled_date || '') >= todayStr) || pendingVisits[0];
       if (upcoming && upcoming.scheduled_date) {
         nextVisit = `${upcoming.scheduled_date} (${upcoming.system_type || upcoming.system || 'Inspection'})`;
       }
@@ -1024,7 +1030,8 @@ const getAmcContractsHandler = (req, res) => {
       contract_period: `${contract.start_date} to ${contract.end_date}`,
       quarter: db.getQuarter(contract.start_date),
       quarters: quartersData,
-      quarters_summary
+      quarters_summary,
+      visits: contractVisits
     };
   });
 
@@ -1464,12 +1471,59 @@ app.post('/api/amc-visits', requirePermission('canScheduleVisits'), (req, res) =
   res.status(201).json(newVisit);
 });
 
+app.post('/api/amc-visits/:id/reschedule', (req, res) => {
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'GM', 'Admin'];
+  if (!allowedRoles.includes(req.user.role) && !req.permissions?.canScheduleVisits) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or GM can reschedule visits.' });
+  }
+
+  const { new_scheduled_date, reason } = req.body;
+  if (!new_scheduled_date) {
+    return res.status(400).json({ error: 'New scheduled date is required' });
+  }
+
+  const updatedVisit = db.rescheduleAmcVisit(req.params.id, new_scheduled_date, reason, req.user);
+  if (!updatedVisit) {
+    return res.status(404).json({ error: 'Visit not found' });
+  }
+
+  res.json({ success: true, visit: updatedVisit });
+});
+
+app.post('/api/amc-visits/:id/complete', (req, res) => {
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'GM', 'Admin'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Not authorized to complete visits.' });
+  }
+
+  const result = db.completeAmcVisit(req.params.id, req.body, req.user);
+  if (!result) {
+    return res.status(404).json({ error: 'Visit not found' });
+  }
+
+  res.json({ success: true, visit: result.visit, updated_future_visits: result.updated_future_visits });
+});
+
 app.put('/api/amc-visits/:id', (req, res) => {
   const existing = db.getById('amc_visits', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Visit not found' });
 
-  // Status transition or rescheduling
   const updates = { ...req.body };
+
+  // If completion requested, run completeAmcVisit to cascade future visit dates
+  if (updates.status === 'Completed' || updates.visit_status === 'Completed' || updates.actual_service_date) {
+    const result = db.completeAmcVisit(req.params.id, updates, req.user);
+    if (result) return res.json(result.visit);
+  }
+
+  // If reschedule requested, run rescheduleAmcVisit to preserve original date
+  if (updates.status === 'Rescheduled' || updates.rescheduled_date || updates.new_scheduled_date) {
+    const newDate = updates.new_scheduled_date || updates.rescheduled_date || updates.scheduled_date;
+    const reason = updates.reason || updates.reschedule_reason || '';
+    const rescheduled = db.rescheduleAmcVisit(req.params.id, newDate, reason, req.user);
+    if (rescheduled) return res.json(rescheduled);
+  }
+
   if (updates.status && !updates.visit_status) updates.visit_status = updates.status;
   if (updates.visit_status && !updates.status) updates.status = updates.visit_status;
 

@@ -23,7 +23,8 @@ export default function CompanySettingsView() {
     cr_vat_number: 'CR No.: 96850 1 | VAT No.: 220006271900002',
     report_footer: 'FIREX • Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain • CR No.: 96850 1 • VAT No.: 220006271900002',
     report_number_prefix: 'RPT',
-    reminder_days: [90, 60, 30, 7]
+    reminder_days: [90, 60, 30, 7],
+    amc_next_service_rule: 'from_actual_date'
   });
 
   const [saving, setSaving] = useState(false);
@@ -56,7 +57,8 @@ export default function CompanySettingsView() {
           address_line_3: data.address_line_3 || prev.address_line_3,
           address: data.address || prev.address,
           report_footer: data.report_footer || prev.report_footer,
-          use_custom_letterhead: data.use_custom_letterhead !== undefined ? data.use_custom_letterhead : true
+          use_custom_letterhead: data.use_custom_letterhead !== undefined ? data.use_custom_letterhead : true,
+          amc_next_service_rule: data.amc_next_service_rule || 'from_actual_date'
         }));
       })
       .catch(err => console.error('Failed to load settings:', err));
@@ -596,6 +598,64 @@ export default function CompanySettingsView() {
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-start gap-2">
             <span className="font-bold">Multi-System AMC Support:</span>
             <span>A combined contract covering Fire Alarm, Fire Fighting, and Fire Extinguishers automatically schedules <strong>10 visits</strong> (4 + 4 + 2) spread throughout the contract term.</span>
+          </div>
+
+          {/* AMC Service Cycle Calculation Rule (Requirement 3) */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-800 block">
+                AMC Service Cycle Calculation Rule
+              </label>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Determine how subsequent AMC service dates are calculated when a service visit is completed.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5 ${
+                (settings.amc_next_service_rule || 'from_actual_date') === 'from_actual_date'
+                  ? 'bg-blue-50/70 border-blue-400 text-blue-950 shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100/50'
+              }`}>
+                <input
+                  type="radio"
+                  name="amc_next_service_rule"
+                  value="from_actual_date"
+                  checked={(settings.amc_next_service_rule || 'from_actual_date') === 'from_actual_date'}
+                  onChange={() => setSettings(s => ({ ...s, amc_next_service_rule: 'from_actual_date' }))}
+                  disabled={!canEdit}
+                  className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-xs font-bold block">From Actual Completed Service Date (Default)</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    Next Service = Actual Completed Service Date + 3 months. Ensures field maintenance cadence adapts to realistic completion timing.
+                  </span>
+                </div>
+              </label>
+
+              <label className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5 ${
+                settings.amc_next_service_rule === 'from_scheduled_date'
+                  ? 'bg-blue-50/70 border-blue-400 text-blue-950 shadow-xs'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100/50'
+              }`}>
+                <input
+                  type="radio"
+                  name="amc_next_service_rule"
+                  value="from_scheduled_date"
+                  checked={settings.amc_next_service_rule === 'from_scheduled_date'}
+                  onChange={() => setSettings(s => ({ ...s, amc_next_service_rule: 'from_scheduled_date' }))}
+                  disabled={!canEdit}
+                  className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-xs font-bold block">From Original Scheduled Date</span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    Next Service = Original Scheduled Date + 3 months. Maintains fixed calendar intervals regardless of when work is completed.
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 

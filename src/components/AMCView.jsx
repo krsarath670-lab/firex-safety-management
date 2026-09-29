@@ -119,6 +119,13 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
   // Reschedule Form State
   const [newRescheduleDate, setNewRescheduleDate] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+
+  // Complete Service Modal State (Requirement 3: Actual Completed Service Date)
+  const [completingVisit, setCompletingVisit] = useState(null);
+  const [completionActualDate, setCompletionActualDate] = useState(new Date().toISOString().slice(0, 10));
+  const [completionRemarks, setCompletionRemarks] = useState('');
+  const [completionSaving, setCompletionSaving] = useState(false);
 
   // Schedule Single Visit Form State
   const [newVisit, setNewVisit] = useState({
@@ -129,6 +136,56 @@ export default function AMCView({ onStartInspectionForVisit }) {
     system: 'Fire Alarm',
     remarks: ''
   });
+
+  // Dynamic Cycle Period Names calculated relative to AMC contract start date
+  const getContractCyclePeriods = (startDateStr) => {
+    if (!startDateStr) {
+      return {
+        Q1: { name: 'Q1 (Service 1)', shortName: 'Q1', months: 'Quarter 1', fullMonths: 'Quarter 1' },
+        Q2: { name: 'Q2 (Service 2)', shortName: 'Q2', months: 'Quarter 2', fullMonths: 'Quarter 2' },
+        Q3: { name: 'Q3 (Service 3)', shortName: 'Q3', months: 'Quarter 3', fullMonths: 'Quarter 3' },
+        Q4: { name: 'Q4 (Service 4)', shortName: 'Q4', months: 'Quarter 4', fullMonths: 'Quarter 4' }
+      };
+    }
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const parts = String(startDateStr).split('T')[0].split('-');
+    const startYear = parseInt(parts[0], 10) || new Date().getFullYear();
+    const startMonth = parseInt(parts[1], 10) || 1;
+
+    const cycles = {};
+    for (let i = 0; i < 4; i++) {
+      const qKey = `Q${i + 1}`;
+      const totalM1 = (startMonth - 1 + (i * 3));
+      const m1Index = ((totalM1 % 12) + 12) % 12;
+      const m2Index = ((m1Index + 2) % 12 + 12) % 12;
+      const y1 = startYear + Math.floor(totalM1 / 12);
+      const y2 = startYear + Math.floor((totalM1 + 2) / 12);
+
+      const m1Short = monthNames[m1Index];
+      const m2Short = monthNames[m2Index];
+      const m1Full = fullMonthNames[m1Index];
+      const m2Full = fullMonthNames[m2Index];
+
+      const rangeLabel = (y1 === y2) 
+        ? `${m1Short} – ${m2Short} ${y1}`
+        : `${m1Short} ${y1} – ${m2Short} ${y2}`;
+
+      const fullLabel = (y1 === y2)
+        ? `${m1Full} – ${m2Full} ${y1}`
+        : `${m1Full} ${y1} – ${m2Full} ${y2}`;
+
+      cycles[qKey] = {
+        name: `${qKey} (${m1Full} ${y1})`,
+        shortName: `${qKey} (${m1Short})`,
+        months: rangeLabel,
+        fullMonths: fullLabel,
+        anchorMonth: m1Full,
+        anchorYear: y1
+      };
+    }
+    return cycles;
+  };
 
   // Calculate estimated visits for selected systems
   const calculateTotalVisits = (systems) => {
@@ -564,31 +621,124 @@ export default function AMCView({ onStartInspectionForVisit }) {
     }
   };
 
-  // Handle Reschedule Visit
+  // Refresh contract quarters and updated visits
+  const refreshContractQuarters = async (contractId) => {
+    try {
+      const res = await fetch(`/api/amc-contracts/${contractId}/quarters`, {
+        headers: {
+          'x-user-id': currentUser.id,
+          'x-user-role': currentUser.role
+        }
+      });
+      if (res.ok) {
+        const quarters = await res.json();
+        setViewingContractDetail(prev => {
+          if (!prev || prev.id !== contractId) return prev;
+          return { ...prev, quarters };
+        });
+      }
+      const cRes = await fetch('/api/amc-contracts', {
+        headers: {
+          'x-user-id': currentUser.id,
+          'x-user-role': currentUser.role
+        }
+      });
+      if (cRes.ok) {
+        const all = await cRes.json();
+        const found = all.find(c => c.id === contractId);
+        if (found) {
+          setViewingContractDetail(prev => {
+            if (!prev || prev.id !== contractId) return prev;
+            return { ...prev, visits: found.visits || prev.visits };
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error refreshing quarters:', e);
+    }
+  };
+
+  // Open Contract Detail Modal helper
+  const handleOpenContractDetail = (c, initialTab = 'overview', initialQ = 'overview_table') => {
+    setViewingContractDetail(c);
+    setDetailTab(initialTab);
+    setActiveQuarterTab(initialQ);
+    refreshContractQuarters(c.id);
+  };
+
+  // Handle Reschedule Visit (Requirement 5: Preserves original date, logs audit)
   const handleRescheduleVisit = async (e) => {
     e.preventDefault();
     if (!reschedulingVisit || !newRescheduleDate) return;
     try {
-      const res = await fetch(`/api/amc-visits/${reschedulingVisit.id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/amc-visits/${reschedulingVisit.id}/reschedule`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': currentUser.id,
           'x-user-role': currentUser.role
         },
         body: JSON.stringify({
+          new_scheduled_date: newRescheduleDate,
           scheduled_date: newRescheduleDate,
-          visit_status: 'Rescheduled',
-          status: 'Rescheduled'
+          reason: rescheduleReason || 'Customer requested date modification'
         })
       });
       if (res.ok) {
         showToast(`Visit rescheduled to ${newRescheduleDate}`, 'success');
         setReschedulingVisit(null);
+        setRescheduleReason('');
+        if (viewingContractDetail) {
+          refreshContractQuarters(viewingContractDetail.id);
+        }
+        loadData();
         loadMonthlySchedule();
+      } else {
+        const err = await res.json();
+        showToast(err.error || err.message || 'Failed to reschedule visit', 'error');
       }
     } catch {
       showToast('Failed to reschedule visit', 'error');
+    }
+  };
+
+  // Handle Complete Service Visit (Requirement 3: Actual Completed Service Date & Next Service Rule)
+  const handleCompleteVisitSubmit = async (e) => {
+    e.preventDefault();
+    if (!completingVisit || !completionActualDate) return;
+    setCompletionSaving(true);
+    try {
+      const res = await fetch(`/api/amc-visits/${completingVisit.id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id,
+          'x-user-role': currentUser.role
+        },
+        body: JSON.stringify({
+          actual_service_date: completionActualDate,
+          remarks: completionRemarks,
+          completed_date: new Date().toISOString(),
+          status: 'Completed'
+        })
+      });
+      if (res.ok) {
+        showToast(`Service visit completed on ${completionActualDate}! Subsequent visits updated according to scheduling rule.`, 'success');
+        setCompletingVisit(null);
+        setCompletionRemarks('');
+        if (viewingContractDetail) {
+          refreshContractQuarters(viewingContractDetail.id);
+        }
+        loadData();
+        loadMonthlySchedule();
+      } else {
+        const err = await res.json();
+        showToast(err.error || err.message || 'Failed to complete visit', 'error');
+      }
+    } catch {
+      showToast('Failed to complete visit', 'error');
+    } finally {
+      setCompletionSaving(false);
     }
   };
 
@@ -1053,17 +1203,19 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         return (
                           <div
                             key={qKey}
-                            className={`p-2 rounded-xl border text-center transition-all ${
+                            onClick={() => handleOpenContractDetail(c, 'inspections', qKey)}
+                            className={`p-2 rounded-xl border text-center transition-all cursor-pointer hover:shadow-xs ${
                               isCompliant
-                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100/60'
                                 : isOverdue
-                                ? 'bg-red-50 text-red-800 border-red-300 animate-pulse'
+                                ? 'bg-red-50 text-red-800 border-red-300 animate-pulse hover:bg-red-100/60'
                                 : isPending
-                                ? 'bg-blue-50 text-blue-900 border-blue-300'
+                                ? 'bg-blue-50 text-blue-900 border-blue-300 hover:bg-blue-100/60'
                                 : qStatus === 'Scheduled'
-                                ? 'bg-sky-50 text-sky-900 border-sky-200'
-                                : 'bg-slate-50 text-slate-600 border-slate-200'
+                                ? 'bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100/60'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
+                            title={`Click to view ${qKey} inspection and report`}
                           >
                             <div className="flex items-center justify-between text-[11px] font-black">
                               <span>{qKey}</span>
@@ -1101,10 +1253,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {/* View Details Button (Requirement 5) */}
                       <button
-                        onClick={() => {
-                          setViewingContractDetail(c);
-                          setDetailTab('overview');
-                        }}
+                        onClick={() => handleOpenContractDetail(c, 'overview', 'overview_table')}
                         className="px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold flex items-center gap-1 transition-colors"
                         title="View Full Contract Details, Visits, Reports & Faults"
                       >
@@ -2587,16 +2736,29 @@ export default function AMCView({ onStartInspectionForVisit }) {
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-blue-600" />
-                <span>Reschedule Visit #{reschedulingVisit.visit_number}</span>
+                <span>Reschedule Visit #{reschedulingVisit.service_sequence || reschedulingVisit.visit_number}</span>
               </h3>
-              <button onClick={() => setReschedulingVisit(null)} className="text-slate-400 font-bold">✕</button>
+              <button 
+                onClick={() => {
+                  setReschedulingVisit(null);
+                  setRescheduleReason('');
+                }} 
+                className="text-slate-400 font-bold"
+              >✕</button>
             </div>
 
             <p className="text-slate-500 mt-2">
-              Facility: <span className="font-bold text-slate-800">{reschedulingVisit.site_name}</span>
+              Facility: <span className="font-bold text-slate-800">{reschedulingVisit.site_name || 'Customer Premises'}</span>
             </p>
 
             <form onSubmit={handleRescheduleVisit} className="mt-3 space-y-3">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex justify-between">
+                <span className="text-slate-500">Original Scheduled:</span>
+                <span className="font-mono font-bold text-slate-800">
+                  {reschedulingVisit.original_scheduled_date || reschedulingVisit.scheduled_date}
+                </span>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">New Scheduled Date *</label>
                 <input
@@ -2608,22 +2770,134 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 />
               </div>
 
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Reschedule Reason *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Customer site access deferred, client requested weekend"
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                />
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setReschedulingVisit(null)}
-                  className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-600"
+                  onClick={() => {
+                    setReschedulingVisit(null);
+                    setRescheduleReason('');
+                  }}
+                  className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 rounded-xl bg-navy-900 text-white font-bold"
+                  className="flex-1 py-2 rounded-xl bg-navy-900 text-white font-bold hover:bg-navy-800"
                 >
-                  Save Date
+                  Save Date &amp; Reason
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================== */}
+      {/* --- MODAL: COMPLETE SERVICE VISIT (Requirement 3) --- */}
+      {/* ========================================== */}
+      {completingVisit && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-5 text-xs animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Complete AMC Service Visit</span>
+              </h3>
+              <button onClick={() => setCompletingVisit(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Cycle &amp; Sequence</span>
+                  <span className="font-mono font-black text-slate-900">
+                    {completingVisit.service_cycle || completingVisit.quarter || 'Q1'} • Visit #{completingVisit.service_sequence || completingVisit.visit_number}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">System</span>
+                  <span className="font-bold text-slate-800">
+                    {completingVisit.system_type || completingVisit.system || 'Fire Alarm'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-200 text-blue-900 text-[11px]">
+                <div className="flex items-center justify-between font-bold mb-1">
+                  <span>Scheduled Date:</span>
+                  <span className="font-mono">{completingVisit.scheduled_date}</span>
+                </div>
+                <p className="text-[10px] text-blue-700 leading-relaxed">
+                  Notice: If completed on a different date, record the actual service date below. Under the configured AMC scheduling rule, subsequent uncompleted services in this 3-month cycle will dynamically calculate from this actual completed date.
+                </p>
+              </div>
+
+              <form onSubmit={handleCompleteVisitSubmit} className="space-y-3 pt-1">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Actual Completed Service Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={completionActualDate}
+                    onChange={(e) => setCompletionActualDate(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Lead Technician / Inspector</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={completingVisit.technician_name || completingVisit.assigned_technician || currentUser.name}
+                    className="w-full p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-medium text-xs cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Completion Remarks &amp; Inspection Findings</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter service observations, testing confirmation, or remarks..."
+                    value={completionRemarks}
+                    onChange={(e) => setCompletionRemarks(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    disabled={completionSaving}
+                    onClick={() => setCompletingVisit(null)}
+                    className="flex-1 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={completionSaving}
+                    className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1 shadow-sm"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{completionSaving ? 'Saving...' : 'Confirm Completed'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -2976,7 +3250,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     </div>
 
                     <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                      {['Q1', 'Q2', 'Q3', 'Q4'].map(q => {
+                      {['Q1', 'Q2', 'Q3', 'Q4'].map((q, idx) => {
+                        const cyclePeriods = getContractCyclePeriods(viewingContractDetail.start_date);
                         const qInfo = viewingContractDetail.quarters?.[q] || {};
                         const qStat = qInfo.status || 'Not Started';
                         const isDone = ['Completed', 'Approved'].includes(qStat);
@@ -2984,13 +3259,15 @@ export default function AMCView({ onStartInspectionForVisit }) {
                           <button
                             key={q}
                             onClick={() => setActiveQuarterTab(q)}
-                            className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                            className={`px-3 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
                               activeQuarterTab === q
                                 ? 'bg-navy-900 text-white shadow-sm'
                                 : 'text-slate-600 hover:text-slate-900'
                             }`}
+                            title={cyclePeriods[q]?.name || q}
                           >
                             <span>{q}</span>
+                            <span className="text-[10px] font-medium opacity-80 hidden md:inline">({cyclePeriods[q]?.anchorMonth?.slice(0, 3)})</span>
                             {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                           </button>
                         );
@@ -3003,72 +3280,189 @@ export default function AMCView({ onStartInspectionForVisit }) {
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        4-Quarter Summary
+                        Service Schedule Table
                       </button>
                     </div>
                   </div>
 
-                  {/* ACTIVE TAB: 4-QUARTER SUMMARY TABLE */}
+                  {/* ACTIVE TAB: 4-QUARTER SUMMARY & SERVICE SCHEDULE TABLE (Requirement 8) */}
                   {activeQuarterTab === 'overview_table' ? (
                     <div className="space-y-3">
                       <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
                         <table className="w-full text-left text-xs divide-y divide-slate-200">
                           <thead className="bg-slate-100 text-slate-700 font-black uppercase text-[10px] tracking-wider">
                             <tr>
-                              <th className="py-2.5 px-3">Quarter</th>
-                              <th className="py-2.5 px-3">Calendar Period</th>
+                              <th className="py-2.5 px-3">Cycle</th>
+                              <th className="py-2.5 px-3">Service</th>
                               <th className="py-2.5 px-3">Scheduled Date</th>
-                              <th className="py-2.5 px-3">Actual Visit</th>
-                              <th className="py-2.5 px-3">Lead Technician</th>
-                              <th className="py-2.5 px-3">Inspection Status</th>
-                              <th className="py-2.5 px-3">Report Status</th>
+                              <th className="py-2.5 px-3">Actual Date</th>
+                              <th className="py-2.5 px-3">Status</th>
+                              <th className="py-2.5 px-3">Inspection</th>
+                              <th className="py-2.5 px-3">Report</th>
                               <th className="py-2.5 px-3 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 bg-white">
-                            {[
-                              { q: 'Q1', period: 'Jan 01 – Mar 31' },
-                              { q: 'Q2', period: 'Apr 01 – Jun 30' },
-                              { q: 'Q3', period: 'Jul 01 – Sep 30' },
-                              { q: 'Q4', period: 'Oct 01 – Dec 31' }
-                            ].map(({ q, period }) => {
-                              const qRec = viewingContractDetail.quarters?.[q] || {};
-                              const stat = qRec.status || 'Not Started';
-                              const rptStat = qRec.report_status || 'Draft';
-                              return (
-                                <tr key={q} className="hover:bg-slate-50/80 transition-colors">
-                                  <td className="py-2.5 px-3 font-mono font-black text-slate-900">{q}</td>
-                                  <td className="py-2.5 px-3 text-slate-500 font-medium">{period}</td>
-                                  <td className="py-2.5 px-3 font-semibold text-slate-800">{qRec.scheduled_date || 'TBD'}</td>
-                                  <td className="py-2.5 px-3 font-semibold text-blue-700">{qRec.visit_date || 'Pending Visit'}</td>
-                                  <td className="py-2.5 px-3 font-medium text-slate-700">{qRec.technician_name || 'Rajesh Kumar'}</td>
-                                  <td className="py-2.5 px-3">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${
-                                      stat === 'Completed' || stat === 'Approved'
-                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                        : stat === 'Overdue'
-                                        ? 'bg-red-50 text-red-800 border-red-300 font-black'
-                                        : 'bg-blue-50 text-blue-800 border-blue-200'
-                                    }`}>
-                                      {stat}
-                                    </span>
-                                  </td>
-                                  <td className="py-2.5 px-3">
-                                    <span className="font-bold text-[10px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                                      {rptStat}
-                                    </span>
-                                  </td>
-                                  <td className="py-2.5 px-3 text-right">
-                                    <button
-                                      onClick={() => setActiveQuarterTab(q)}
-                                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold"
-                                    >
-                                      Open Record
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                            {(() => {
+                              const cyclePeriods = getContractCyclePeriods(viewingContractDetail.start_date);
+                              const contractVisits = viewingContractDetail.visits || [];
+                              const contractSystems = viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm'];
+
+                              return ['Q1', 'Q2', 'Q3', 'Q4'].map((q, idx) => {
+                                const qRec = viewingContractDetail.quarters?.[q] || {};
+                                const period = cyclePeriods[q] || {};
+                                const matchedVisit = contractVisits.find(v => 
+                                  v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1)
+                                );
+                                
+                                const schedDate = matchedVisit?.scheduled_date || qRec.scheduled_date || 'TBD';
+                                const origDate = matchedVisit?.original_scheduled_date;
+                                const isRescheduled = (matchedVisit?.status === 'Rescheduled') || (origDate && origDate !== schedDate);
+                                const actualDate = matchedVisit?.actual_service_date || qRec.actual_visit_date || (matchedVisit?.status === 'Completed' ? schedDate : null);
+                                const stat = matchedVisit?.status || qRec.status || 'Not Started';
+                                const rptStat = qRec.report_status || (qRec.report_id ? 'Approved' : 'Not Started');
+                                const isCompleted = stat === 'Completed' || stat === 'Approved';
+
+                                return (
+                                  <tr key={q} className="hover:bg-slate-50/80 transition-colors">
+                                    {/* Cycle */}
+                                    <td className="py-2.5 px-3">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-black text-xs text-navy-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                                          {q}
+                                        </span>
+                                        <span className="font-bold text-slate-700 text-[11px]">
+                                          {period.anchorMonth || `Service ${idx + 1}`}
+                                        </span>
+                                      </div>
+                                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                                        {period.months || 'Quarterly Cycle'}
+                                      </span>
+                                    </td>
+
+                                    {/* Service */}
+                                    <td className="py-2.5 px-3">
+                                      <span className="font-bold text-slate-800 block text-xs">
+                                        Service #{idx + 1}
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 truncate max-w-[150px] block">
+                                        {matchedVisit?.system_type || contractSystems.join(', ')}
+                                      </span>
+                                    </td>
+
+                                    {/* Scheduled Date */}
+                                    <td className="py-2.5 px-3">
+                                      <span className="font-semibold text-slate-800 block">
+                                        {schedDate}
+                                      </span>
+                                      {isRescheduled && (
+                                        <span className="text-[9.5px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-block mt-0.5" title={`Original: ${origDate}. Reason: ${matchedVisit?.reschedule_reason || 'Client request'}`}>
+                                          Orig: {origDate}
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Actual Date */}
+                                    <td className="py-2.5 px-3">
+                                      <span className={`font-semibold ${actualDate ? 'text-blue-700' : 'text-slate-400 italic'}`}>
+                                        {actualDate || 'Pending Visit'}
+                                      </span>
+                                    </td>
+
+                                    {/* Status */}
+                                    <td className="py-2.5 px-3">
+                                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                                        isCompleted
+                                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                          : stat === 'Overdue'
+                                          ? 'bg-red-50 text-red-800 border-red-300 font-black animate-pulse'
+                                          : stat === 'Rescheduled'
+                                          ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                          : stat === 'Scheduled'
+                                          ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                                      }`}>
+                                        {stat}
+                                      </span>
+                                    </td>
+
+                                    {/* Inspection */}
+                                    <td className="py-2.5 px-3">
+                                      <span className={`font-bold text-[10px] px-2 py-0.5 rounded ${
+                                        isCompleted
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : 'bg-slate-100 text-slate-600'
+                                      }`}>
+                                        {isCompleted ? 'Inspection Passed' : 'Inspection Pending'}
+                                      </span>
+                                    </td>
+
+                                    {/* Report */}
+                                    <td className="py-2.5 px-3">
+                                      <span className={`font-bold text-[10px] px-2 py-0.5 rounded ${
+                                        qRec.report_number || qRec.report_id
+                                          ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                                          : 'bg-slate-100 text-slate-500'
+                                      }`}>
+                                        {qRec.report_number ? `${qRec.report_number} (${rptStat})` : rptStat}
+                                      </span>
+                                    </td>
+
+                                    {/* Actions (Requirement 8) */}
+                                    <td className="py-2.5 px-3 text-right">
+                                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                                        <button
+                                          onClick={() => setActiveQuarterTab(q)}
+                                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-[10px] font-bold"
+                                          title={`Open ${q} Inspection and Report Form`}
+                                        >
+                                          Open {q}
+                                        </button>
+
+                                        {!isCompleted && matchedVisit && (
+                                          <button
+                                            onClick={() => {
+                                              setReschedulingVisit(matchedVisit);
+                                              setNewRescheduleDate(matchedVisit.scheduled_date || '');
+                                              setRescheduleReason('');
+                                            }}
+                                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold flex items-center gap-0.5"
+                                            title="Reschedule this service visit"
+                                          >
+                                            <Clock className="w-3 h-3" />
+                                            <span>Reschedule</span>
+                                          </button>
+                                        )}
+
+                                        {!isCompleted && (
+                                          <button
+                                            onClick={() => {
+                                              const targetVis = matchedVisit || {
+                                                id: `vis-${viewingContractDetail.id}-${q}`,
+                                                amc_contract_id: viewingContractDetail.id,
+                                                service_cycle: q,
+                                                service_sequence: idx + 1,
+                                                scheduled_date: schedDate,
+                                                system_type: contractSystems[0] || 'Fire Alarm',
+                                                technician_name: qRec.technician_name || 'Rajesh Kumar'
+                                              };
+                                              setCompletingVisit(targetVis);
+                                              setCompletionActualDate(new Date().toISOString().slice(0, 10));
+                                              setCompletionRemarks('');
+                                            }}
+                                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-0.5 shadow-xs"
+                                            title="Record actual service completion date"
+                                          >
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            <span>Complete Service</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
                           </tbody>
                         </table>
                       </div>
@@ -3094,10 +3488,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         ]
                       };
 
-                      const quarterLabel =
-                        activeQuarterTab === 'Q1' ? 'Q1 (January – March)' :
-                        activeQuarterTab === 'Q2' ? 'Q2 (April – June)' :
-                        activeQuarterTab === 'Q3' ? 'Q3 (July – September)' : 'Q4 (October – December)';
+                      const cyclePeriods = getContractCyclePeriods(viewingContractDetail.start_date);
+                      const currentCycleInfo = cyclePeriods[activeQuarterTab] || { name: `${activeQuarterTab} Periodic Inspection`, months: 'Quarterly Cycle' };
+                      const quarterLabel = currentCycleInfo.name;
+                      const quarterPeriodRange = currentCycleInfo.months;
 
                       const canReview = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
                       const canApprove = ['GM', 'Engineer'].includes(currentUser?.role);
@@ -3113,6 +3507,9 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                 </span>
                                 <span className="font-bold text-slate-800 text-xs">
                                   {quarterLabel}
+                                </span>
+                                <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                                  {quarterPeriodRange}
                                 </span>
                                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
                                   qRec.status === 'Completed' || qRec.status === 'Approved'
