@@ -1109,8 +1109,8 @@ class Database {
       modified = true;
     }
 
-    // Seed realistic invoices if invoices array is empty
-    if (!data.invoices || data.invoices.length === 0) {
+    // Seed realistic invoices if invoices array is not defined
+    if (!data.invoices) {
       const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'M/s SOFOOH REALESTATE W.LL' };
       const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'HALA TOWER' };
       const amc = data.amc_contracts?.[0] || { id: 'amc-1', contract_number: 'AMC-2026-005' };
