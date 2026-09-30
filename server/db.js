@@ -2069,14 +2069,15 @@ class Database {
     return job;
   }
 
-  // Get full Quarterly inspection data for AMC Contract (strictly anchored to contract start date & service cycle)
+  // Get full Quarterly inspection data for AMC Contract (strictly anchored to contract service starting date & service cycle)
   getContractQuarters(contractId) {
     const db = this.read();
     const contract = (db.amc_contracts || []).find(c => c.id === contractId);
     if (!contract) return null;
 
-    // Helper to get period names relative to contract start date
-    const cycleNames = this.getCyclePeriodNames(contract.start_date);
+    // Helper to get period names relative to contract service starting date
+    const anchorDate = contract.service_start_date || contract.start_date;
+    const cycleNames = this.getCyclePeriodNames(anchorDate);
     const visits = (db.amc_visits || []).filter(v => v.amc_contract_id === contractId || v.amc_id === contractId);
     const reports = (db.reports || []).filter(r => r.amc_id === contractId || r.amc_contract_id === contractId);
     const todayStr = new Date().toISOString().split('T')[0];
@@ -2084,7 +2085,7 @@ class Database {
     const quarters = {};
 
     ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, idx) => {
-      const qVisits = visits.filter(v => v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1));
+      const qVisits = visits.filter(v => v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1) || v.visit_number === (idx + 1));
       const qReports = reports.filter(r => r.quarter === q || (r.report_number && r.report_number.includes(q)) || r.service_cycle === q);
       const approvedRpt = qReports.find(r => r.status === 'Approved' || r.status === 'Completed');
       const submittedRpt = qReports.find(r => r.status === 'Submitted' || r.status === 'Reviewed');
@@ -2100,15 +2101,18 @@ class Database {
       }
 
       const firstVisit = qVisits[0];
-      const defaultDate = this.addCalendarMonths(contract.start_date, idx * 3);
+      const defaultDate = this.addCalendarMonths(anchorDate, idx * 3);
       const scheduledDate = firstVisit?.scheduled_date || defaultDate;
 
       // Existing stored quarter inspection data (e.g. from manual technician/supervisor submission)
       const savedQuarter = contract.quarters?.[q];
       const isManualUpdate = savedQuarter && (
         savedQuarter.updated_at ||
-        (savedQuarter.checklist && Object.keys(savedQuarter.checklist).length > 0 && savedQuarter.scheduled_date !== '2026-02-15')
+        (savedQuarter.checklist && Object.keys(savedQuarter.checklist).length > 0 && !['2026-02-15', '2026-05-18', '2026-08-20', '2026-11-15'].includes(savedQuarter.scheduled_date))
       );
+
+      const systemsInspected = firstVisit?.systems || contract.systems || contract.systems_covered || ['Fire Alarm', 'Fire Fighting'];
+      const systemsLabel = firstVisit?.systems_label || (Array.isArray(systemsInspected) ? systemsInspected.join(' + ') : systemsInspected);
 
       if (isManualUpdate) {
         quarters[q] = {
@@ -2118,11 +2122,12 @@ class Database {
           months: cycleNames[q]?.months || `Service ${idx + 1}`,
           fullMonths: cycleNames[q]?.fullMonths || cycleNames[q]?.months,
           status: savedQuarter.status || status,
-          // Guard against stale hardcoded seed dates from legacy demo
           scheduled_date: (savedQuarter.scheduled_date && !['2026-02-15', '2026-05-18', '2026-08-20', '2026-11-15'].includes(savedQuarter.scheduled_date))
             ? savedQuarter.scheduled_date
             : scheduledDate,
-          actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (savedQuarter.status === 'Completed' ? scheduledDate : null)
+          actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (savedQuarter.status === 'Completed' ? scheduledDate : null),
+          systems_inspected: systemsInspected,
+          systems_label: systemsLabel
         };
       } else {
         quarters[q] = {
@@ -2135,7 +2140,8 @@ class Database {
           actual_visit_date: firstVisit?.actual_service_date || (firstVisit?.status === 'Completed' ? firstVisit.scheduled_date : null),
           technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : (contract.assigned_technician || 'Abdul Majeed'),
           supervisor_name: firstVisit ? (firstVisit.supervisor_name || 'Sarath Kr') : (contract.assigned_supervisor || 'Sarath Kr'),
-          systems_inspected: contract.systems || contract.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+          systems_inspected: systemsInspected,
+          systems_label: systemsLabel,
           checklist: {},
           faults_count: 0,
           faults_details: '',
@@ -2464,104 +2470,198 @@ class Database {
     };
   }
 
-  // Automatic AMC Visit Generator anchored to Contract Start Month (Requirements 1, 2, 4, 10)
+  // Calculate AMC Schedule Dates and merge same-day services into single visits (Requirements 1, 2, 3, 4, 11)
+  calculateAmcSchedule(contract) {
+    const serviceStartDate = contract.service_start_date || contract.start_date;
+    const extinguisherStartDate = contract.extinguisher_start_date || serviceStartDate;
+    let systems = contract.systems || contract.systems_covered || ["Fire Alarm", "Fire Fighting"];
+    if (typeof systems === 'string') systems = [systems];
+
+    const hasAlarm = systems.some(s => s.toLowerCase().includes('alarm'));
+    const hasFighting = systems.some(s => s.toLowerCase().includes('fighting'));
+    const hasExtinguishers = systems.some(s => s.toLowerCase().includes('extinguish'));
+    
+    // Map of scheduled_date -> Set of systems
+    const dateMap = new Map();
+
+    const addSystemToDate = (dateStr, sysName) => {
+      if (!dateStr) return;
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, new Set());
+      }
+      dateMap.get(dateStr).add(sysName);
+    };
+
+    // 1. Fire Alarm + Fire Fighting stream: COMBINED service, exactly 4 visits per year
+    if (hasAlarm || hasFighting) {
+      for (let v = 0; v < 4; v++) {
+        const schedDate = this.addCalendarMonths(serviceStartDate, v * 3);
+        if (hasAlarm) addSystemToDate(schedDate, "Fire Alarm");
+        if (hasFighting) addSystemToDate(schedDate, "Fire Fighting");
+      }
+    }
+
+    // 2. Fire Extinguisher stream: exactly 2 visits per year
+    if (hasExtinguishers) {
+      for (let v = 0; v < 2; v++) {
+        const schedDate = this.addCalendarMonths(extinguisherStartDate, v * 6);
+        addSystemToDate(schedDate, "Fire Extinguishers");
+      }
+    }
+
+    // 3. Other systems (e.g. Emergency Lighting, etc.)
+    const otherSystems = systems.filter(s => 
+      !s.toLowerCase().includes('alarm') && 
+      !s.toLowerCase().includes('fighting') && 
+      !s.toLowerCase().includes('extinguish')
+    );
+    otherSystems.forEach(sys => {
+      for (let v = 0; v < 4; v++) {
+        const schedDate = this.addCalendarMonths(serviceStartDate, v * 3);
+        addSystemToDate(schedDate, sys);
+      }
+    });
+
+    // Sort unique dates chronologically
+    const sortedDates = Array.from(dateMap.keys()).sort();
+
+    // Helper to format combined systems display label
+    const formatSystemsLabel = (sysList) => {
+      const order = ["Fire Alarm", "Fire Fighting", "Fire Extinguishers"];
+      const sorted = [...sysList].sort((a, b) => {
+        const idxA = order.findIndex(o => a.toLowerCase().includes(o.toLowerCase().slice(0, 5)));
+        const idxB = order.findIndex(o => b.toLowerCase().includes(o.toLowerCase().slice(0, 5)));
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      });
+      return sorted.map(s => s.replace(/Extinguishers/i, 'Fire Extinguisher').replace(/Fire Fire Extinguisher/i, 'Fire Extinguisher')).join(' + ');
+    };
+
+    return sortedDates.map((dateStr, idx) => {
+      const sysArray = Array.from(dateMap.get(dateStr));
+      const sysLabel = formatSystemsLabel(sysArray);
+      const visitNum = idx + 1;
+      const quarter = idx < 4 ? `Q${visitNum}` : `Visit ${visitNum}`;
+
+      return {
+        visit_number: visitNum,
+        service_sequence: visitNum,
+        quarter: quarter,
+        service_cycle: quarter,
+        scheduled_date: dateStr,
+        day: this.getDayName(dateStr),
+        systems: sysArray,
+        systems_label: sysLabel,
+        is_combined: sysArray.length > 1
+      };
+    });
+  }
+
+  // Automatic AMC Visit Generator with Same-Day Merging (Requirements 1, 2, 3, 4, 11)
   generateAmcVisits(contract) {
     const db = this.read();
     if (!db.amc_visits) db.amc_visits = [];
-    const settings = this.getSettings();
     const users = db.users || [];
     const sp = users.find(u => u.id === contract.sales_person_id);
     const salesPersonName = sp ? sp.name : (contract.sales_person_name || 'Unassigned');
 
-    const freqs = settings.amc_frequencies || {
-      "Fire Alarm": { interval_months: 3, visits_per_year: 4 },
-      "Fire Fighting": { interval_months: 3, visits_per_year: 4 },
-      "Fire Extinguishers": { interval_months: 6, visits_per_year: 2 }
-    };
+    const calculatedSchedule = this.calculateAmcSchedule(contract);
 
-    let systems = contract.systems || contract.systems_covered || ["Fire Alarm"];
-    if (typeof systems === 'string') {
-      systems = [systems];
-    }
+    // Existing visits for this contract
+    const contractVisits = db.amc_visits.filter(
+      v => v.amc_contract_id === contract.id || v.amc_id === contract.id
+    );
 
     const createdVisits = [];
-    systems.forEach(sys => {
-      // Normalize system name to match frequency config
-      let matchedConfig = freqs[sys];
-      if (!matchedConfig) {
-        if (sys.toLowerCase().includes('alarm')) matchedConfig = freqs["Fire Alarm"];
-        else if (sys.toLowerCase().includes('extinguish')) matchedConfig = freqs["Fire Extinguishers"];
-        else matchedConfig = freqs["Fire Fighting"];
+
+    calculatedSchedule.forEach((item) => {
+      // Find matching existing visit by visit_number or scheduled_date
+      let matched = contractVisits.find(
+        v => v.visit_number === item.visit_number || v.service_sequence === item.visit_number || v.scheduled_date === item.scheduled_date
+      );
+
+      if (matched) {
+        matched.visit_number = item.visit_number;
+        matched.service_sequence = item.visit_number;
+        matched.quarter = item.quarter;
+        matched.service_cycle = item.quarter;
+        matched.scheduled_date = matched.rescheduled_date || item.scheduled_date;
+        matched.original_scheduled_date = matched.original_scheduled_date || item.scheduled_date;
+        matched.systems = item.systems;
+        matched.systems_label = item.systems_label;
+        matched.system_type = item.systems_label;
+        matched.system = item.systems_label;
+        matched.day = item.day;
+        matched.day_of_week = item.day;
+        matched.sales_person_id = contract.sales_person_id || matched.sales_person_id;
+        matched.sales_person_name = salesPersonName;
+        matched.services_status = matched.services_status || {};
+        item.systems.forEach(s => {
+          if (!matched.services_status[s]) {
+            matched.services_status[s] = {
+              completed: matched.status === 'Completed',
+              status: matched.status === 'Completed' ? 'Completed' : 'Scheduled'
+            };
+          }
+        });
+        createdVisits.push(matched);
+      } else {
+        const initialStatus = {};
+        item.systems.forEach(s => {
+          initialStatus[s] = { completed: false, status: 'Scheduled' };
+        });
+
+        const newVisit = {
+          id: `vis-${contract.id}-${item.visit_number}-${item.scheduled_date.replace(/-/g, '')}`,
+          amc_contract_id: contract.id,
+          amc_id: contract.id,
+          contract_number: contract.contract_number,
+          customer_id: contract.customer_id,
+          customer_name: contract.customer_name || 'Customer',
+          site_id: contract.site_id,
+          site_name: contract.site_name || 'Site',
+          sales_person_id: contract.sales_person_id || null,
+          sales_person_name: salesPersonName,
+          visit_number: item.visit_number,
+          service_sequence: item.visit_number,
+          quarter: item.quarter,
+          service_cycle: item.quarter,
+          scheduled_date: item.scheduled_date,
+          original_scheduled_date: item.scheduled_date,
+          actual_service_date: null,
+          completed_date: null,
+          day: item.day,
+          day_of_week: item.day,
+          systems: item.systems,
+          systems_label: item.systems_label,
+          system_type: item.systems_label,
+          system: item.systems_label,
+          services_status: initialStatus,
+          assigned_team: "Team Alpha (Tariq & Rajesh)",
+          assigned_technician: contract.technician_id || "usr-tech",
+          technician_id: contract.technician_id || "usr-tech",
+          technician_name: contract.assigned_technician || 'Abdul Majeed',
+          supervisor_id: contract.supervisor_id || "usr-sup",
+          supervisor_name: contract.assigned_supervisor || 'Sarath Kr',
+          report_id: null,
+          status: "Scheduled",
+          visit_status: "Scheduled",
+          remarks: `Routine ${item.systems_label} safety compliance inspection #${item.visit_number}`,
+          photos: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        db.amc_visits.push(newVisit);
+        createdVisits.push(newVisit);
       }
-      matchedConfig = matchedConfig || { interval_months: 3, visits_per_year: 4 };
+    });
 
-      for (let v = 1; v <= matchedConfig.visits_per_year; v++) {
-        const cycleLabel = matchedConfig.interval_months === 3 ? `Q${v}` : `Cycle ${v}`;
-        // Anchor to contract start date: Visit 1 = month of start date, Visit 2 = +3 mos, etc.
-        const scheduledDate = this.addCalendarMonths(contract.start_date, (v - 1) * matchedConfig.interval_months);
-        const dayName = this.getDayName(scheduledDate);
-
-        // Prevent duplicate visit check: contract.id + sys + service_sequence
-        const existing = db.amc_visits.find(
-          vis => (vis.amc_contract_id === contract.id || vis.amc_id === contract.id) &&
-                 (vis.system_type === sys || vis.system === sys) &&
-                 (vis.service_sequence === v || vis.visit_number === v)
-        );
-
-        if (!existing) {
-          const newVisit = {
-            id: `vis-${contract.id}-${sys.replace(/\s+/g, '').toLowerCase()}-${v}-${Math.floor(Math.random()*1000)}`,
-            amc_contract_id: contract.id,
-            amc_id: contract.id,
-            contract_number: contract.contract_number,
-            customer_id: contract.customer_id,
-            site_id: contract.site_id,
-            sales_person_id: contract.sales_person_id || null,
-            sales_person_name: salesPersonName,
-            service_sequence: v,
-            visit_number: v,
-            service_cycle: cycleLabel,
-            quarter: cycleLabel,
-            system_type: sys,
-            system: sys,
-            frequency_months: matchedConfig.interval_months,
-            scheduled_date: scheduledDate,
-            original_scheduled_date: scheduledDate,
-            rescheduled_date: null,
-            actual_service_date: null,
-            completed_date: null,
-            day: dayName,
-            day_of_week: dayName,
-            assigned_team: "Team Alpha (Tariq & Rajesh)",
-            assigned_technician: contract.technician_id || "usr-tech",
-            technician_id: contract.technician_id || "usr-tech",
-            supervisor_id: contract.supervisor_id || "usr-sup",
-            report_id: null,
-            status: "Scheduled",
-            visit_status: "Scheduled",
-            remarks: `Routine ${sys} safety compliance inspection #${v}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-          db.amc_visits.push(newVisit);
-          createdVisits.push(newVisit);
-        } else {
-          // Keep existing, but ensure schema fields are populated
-          existing.service_sequence = existing.service_sequence || v;
-          existing.visit_number = existing.service_sequence;
-          existing.service_cycle = existing.service_cycle || cycleLabel;
-          existing.quarter = existing.service_cycle;
-          existing.frequency_months = existing.frequency_months || matchedConfig.interval_months;
-          existing.original_scheduled_date = existing.original_scheduled_date || existing.scheduled_date;
-          existing.system_type = existing.system_type || sys;
-          existing.system = existing.system_type;
-          existing.day = existing.day || dayName;
-          existing.day_of_week = existing.day_of_week || dayName;
-          existing.sales_person_id = contract.sales_person_id || existing.sales_person_id;
-          existing.sales_person_name = salesPersonName;
-          createdVisits.push(existing);
-        }
-      }
+    // Remove any uncompleted duplicate visits for this contract that are not in the created list
+    db.amc_visits = db.amc_visits.filter(v => {
+      const isThisContract = v.amc_contract_id === contract.id || v.amc_id === contract.id;
+      if (!isThisContract) return true;
+      const isInCreated = createdVisits.some(cv => cv.id === v.id);
+      if (isInCreated) return true;
+      return v.status === 'Completed'; // preserve completed historical records
     });
 
     this.write(db);
@@ -2630,8 +2730,19 @@ class Database {
     visit.completed_date = completionData.completed_date || nowIso;
     visit.status = 'Completed';
     visit.visit_status = 'Completed';
+
+    if (user) {
+      visit.completed_by = user.id;
+      visit.completed_by_name = user.name;
+    }
+    if (completionData.technician_name) {
+      visit.technician_name = completionData.technician_name;
+    }
     if (completionData.report_id) {
       visit.report_id = completionData.report_id;
+    }
+    if (completionData.report_number) {
+      visit.report_number = completionData.report_number;
     }
     if (completionData.remarks) {
       visit.remarks = completionData.remarks;
@@ -2642,6 +2753,25 @@ class Database {
     if (completionData.materials_used) {
       visit.materials_used = completionData.materials_used;
     }
+    if (completionData.photos) {
+      visit.photos = Array.isArray(completionData.photos) ? completionData.photos : [completionData.photos];
+    }
+
+    // Per-service completion tracking inside combined visits (Requirement 7)
+    visit.services_status = visit.services_status || {};
+    const systems = visit.systems || [visit.system || 'Inspection'];
+    systems.forEach(s => {
+      if (completionData.services_status && completionData.services_status[s]) {
+        visit.services_status[s] = completionData.services_status[s];
+      } else {
+        visit.services_status[s] = {
+          completed: true,
+          status: 'Completed',
+          completed_at: actualDate
+        };
+      }
+    });
+
     visit.updated_at = nowIso;
 
     // Next Service Date Calculation Rule (Requirement 3)
@@ -2650,18 +2780,17 @@ class Database {
     const updatedFutureVisits = [];
 
     if (nextServiceRule === 'from_actual_date') {
-      // Find subsequent uncompleted visits for this contract and the same system
-      const sameSystemFutureVisits = db.amc_visits.filter(v =>
+      // Find subsequent uncompleted visits for this contract
+      const contractFutureVisits = db.amc_visits.filter(v =>
         (v.amc_contract_id === visit.amc_contract_id || v.amc_id === visit.amc_id) &&
-        (v.system_type === visit.system_type || v.system === visit.system) &&
         v.id !== visit.id &&
-        v.service_sequence > visit.service_sequence &&
+        (v.service_sequence || v.visit_number || 0) > (visit.service_sequence || visit.visit_number || 0) &&
         v.status !== 'Completed'
-      ).sort((a, b) => a.service_sequence - b.service_sequence);
+      ).sort((a, b) => (a.service_sequence || a.visit_number || 0) - (b.service_sequence || b.visit_number || 0));
 
-      sameSystemFutureVisits.forEach(futVis => {
-        const step = futVis.service_sequence - visit.service_sequence;
-        const intervalMonths = visit.frequency_months || 3;
+      contractFutureVisits.forEach(futVis => {
+        const step = (futVis.service_sequence || futVis.visit_number || 1) - (visit.service_sequence || visit.visit_number || 1);
+        const intervalMonths = futVis.frequency_months || 3;
         const newScheduled = this.addCalendarMonths(actualDate, step * intervalMonths);
 
         futVis.scheduled_date = newScheduled;
@@ -2680,6 +2809,7 @@ class Database {
         contract.quarters[qKey].status = 'Completed';
         contract.quarters[qKey].actual_visit_date = actualDate;
         if (visit.report_id) contract.quarters[qKey].report_id = visit.report_id;
+        if (visit.report_number) contract.quarters[qKey].report_number = visit.report_number;
         contract.quarters[qKey].updated_at = nowIso;
       }
       // If next future visit was recalculated, update that quarter's scheduled date
@@ -2749,108 +2879,15 @@ class Database {
       });
     }
 
-    // If start_date, end_date or systems changed (Requirement 7):
+    // If start_date, end_date, service_start_date, extinguisher_start_date, or systems changed:
     const datesChanged = (updates.start_date && updates.start_date !== oldContract.start_date) ||
-                         (updates.end_date && updates.end_date !== oldContract.end_date);
+                         (updates.end_date && updates.end_date !== oldContract.end_date) ||
+                         (updates.service_start_date && updates.service_start_date !== oldContract.service_start_date) ||
+                         (updates.extinguisher_start_date && updates.extinguisher_start_date !== oldContract.extinguisher_start_date);
     const systemsChanged = updates.systems || updates.systems_covered;
 
     if (datesChanged || systemsChanged) {
-      const reports = db.reports || [];
-      if (db.amc_visits) {
-        // PRESERVE historical completed visits and visits with existing reports
-        // NEVER modify or delete completed visits or reports
-        const completedVisits = db.amc_visits.filter(vis => {
-          const isThisContract = (vis.amc_contract_id === id || vis.amc_id === id);
-          if (!isThisContract) return false;
-          return vis.status === 'Completed' || reports.some(r => r.visit_id === vis.id);
-        });
-
-        // Remove only future uncompleted visits for this contract to recalculate
-        db.amc_visits = db.amc_visits.filter(vis => {
-          const isThisContract = (vis.amc_contract_id === id || vis.amc_id === id);
-          if (!isThisContract) return true;
-          return vis.status === 'Completed' || reports.some(r => r.visit_id === vis.id);
-        });
-
-        // Re-generate future visits for the updated contract period
-        const freqs = this.getSettings().amc_frequencies || {
-          "Fire Alarm": { interval_months: 3, visits_per_year: 4 },
-          "Fire Fighting": { interval_months: 3, visits_per_year: 4 },
-          "Fire Extinguishers": { interval_months: 6, visits_per_year: 2 }
-        };
-
-        let systems = updatedContract.systems || updatedContract.systems_covered || ["Fire Alarm"];
-        if (typeof systems === 'string') systems = [systems];
-
-        systems.forEach(sys => {
-          let matchedConfig = freqs[sys];
-          if (!matchedConfig) {
-            if (sys.toLowerCase().includes('alarm')) matchedConfig = freqs["Fire Alarm"];
-            else if (sys.toLowerCase().includes('extinguish')) matchedConfig = freqs["Fire Extinguishers"];
-            else matchedConfig = freqs["Fire Fighting"];
-          }
-          matchedConfig = matchedConfig || { interval_months: 3, visits_per_year: 4 };
-
-          const sysCompleted = completedVisits.filter(v => v.system_type === sys || v.system === sys);
-          const maxCompletedSeq = sysCompleted.reduce((max, v) => Math.max(max, v.service_sequence || v.visit_number || 0), 0);
-
-          for (let v = maxCompletedSeq + 1; v <= matchedConfig.visits_per_year; v++) {
-            let scheduledDate;
-            const settings = this.getSettings();
-            const rule = settings.amc_next_service_rule || 'from_actual_date';
-
-            if (sysCompleted.length > 0 && rule === 'from_actual_date') {
-              const lastDone = sysCompleted.sort((a,b) => (b.service_sequence || 0) - (a.service_sequence || 0))[0];
-              const baseDate = lastDone.actual_service_date || lastDone.scheduled_date;
-              const step = v - (lastDone.service_sequence || 1);
-              scheduledDate = this.addCalendarMonths(baseDate, step * matchedConfig.interval_months);
-            } else {
-              scheduledDate = this.addCalendarMonths(updatedContract.start_date, (v - 1) * matchedConfig.interval_months);
-            }
-
-            const cycleLabel = matchedConfig.interval_months === 3 ? `Q${v}` : `Cycle ${v}`;
-            const dayName = this.getDayName(scheduledDate);
-
-            db.amc_visits.push({
-              id: `vis-${updatedContract.id}-${sys.replace(/\s+/g, '').toLowerCase()}-${v}-${Math.floor(Math.random()*1000)}`,
-              amc_contract_id: updatedContract.id,
-              amc_id: updatedContract.id,
-              contract_number: updatedContract.contract_number,
-              customer_id: updatedContract.customer_id,
-              site_id: updatedContract.site_id,
-              sales_person_id: assignedSalesId,
-              sales_person_name: salesPersonName,
-              service_sequence: v,
-              visit_number: v,
-              service_cycle: cycleLabel,
-              quarter: cycleLabel,
-              system_type: sys,
-              system: sys,
-              frequency_months: matchedConfig.interval_months,
-              scheduled_date: scheduledDate,
-              original_scheduled_date: scheduledDate,
-              rescheduled_date: null,
-              actual_service_date: null,
-              completed_date: null,
-              day: dayName,
-              day_of_week: dayName,
-              assigned_team: "Team Alpha (Tariq & Rajesh)",
-              assigned_technician: updatedContract.technician_id || "usr-tech",
-              technician_id: updatedContract.technician_id || "usr-tech",
-              supervisor_id: updatedContract.supervisor_id || "usr-sup",
-              report_id: null,
-              status: "Scheduled",
-              visit_status: "Scheduled",
-              remarks: `Routine ${sys} safety compliance inspection #${v}`,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-          }
-        });
-      }
-    }
-
-    if (datesChanged || systemsChanged) {
+      this.generateAmcVisits(updatedContract);
       updatedContract.quarters = this.getContractQuarters(id);
     }
 

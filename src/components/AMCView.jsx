@@ -86,13 +86,17 @@ export default function AMCView({ onStartInspectionForVisit }) {
     const defaultVal = 350.000;
     const defaultVatAmt = (defaultVal * defaultVat) / 100;
     const firstSales = salesUsers[0];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const oneYearLater = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10);
 
     return {
       customer_id: '',
       site_id: '',
       contract_type: 'Comprehensive',
-      start_date: new Date().toISOString().slice(0, 10),
-      end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10),
+      start_date: todayStr,
+      end_date: oneYearLater,
+      service_start_date: todayStr,
+      extinguisher_start_date: '',
       renewal_date: '',
       systems_covered: ['Fire Alarm', 'Fire Fighting'],
       contract_value: defaultVal,
@@ -121,11 +125,28 @@ export default function AMCView({ onStartInspectionForVisit }) {
   const [newRescheduleDate, setNewRescheduleDate] = useState('');
   const [rescheduleReason, setRescheduleReason] = useState('');
 
-  // Complete Service Modal State (Requirement 3: Actual Completed Service Date)
+  // Complete Service Modal State (Requirement 3 & 7: Actual Completed Service Date & Per-Service Tracking)
   const [completingVisit, setCompletingVisit] = useState(null);
   const [completionActualDate, setCompletionActualDate] = useState(new Date().toISOString().slice(0, 10));
   const [completionRemarks, setCompletionRemarks] = useState('');
+  const [completionServicesStatus, setCompletionServicesStatus] = useState({});
+  const [completionPhotos, setCompletionPhotos] = useState([]);
+  const [completionPhotoUrl, setCompletionPhotoUrl] = useState('');
   const [completionSaving, setCompletionSaving] = useState(false);
+
+  // Helper to open Service Completion Modal with initialized per-service checkboxes
+  const openCompleteVisitModal = (visit) => {
+    setCompletingVisit(visit);
+    setCompletionActualDate(new Date().toISOString().slice(0, 10));
+    setCompletionRemarks(visit.remarks || '');
+    setCompletionPhotoUrl('');
+    const initStatus = {};
+    const sysList = visit.systems || [visit.system_type || visit.system || 'Inspection'];
+    sysList.forEach(s => {
+      initStatus[s] = true;
+    });
+    setCompletionServicesStatus(initStatus);
+  };
 
   // Schedule Single Visit Form State
   const [newVisit, setNewVisit] = useState({
@@ -205,14 +226,102 @@ export default function AMCView({ onStartInspectionForVisit }) {
     return cycles;
   };
 
-  // Calculate estimated visits for selected systems
-  const calculateTotalVisits = (systems) => {
-    let total = 0;
-    systems.forEach(s => {
-      const match = SYSTEM_OPTIONS.find(opt => opt.id === s);
-      if (match) total += match.visitsPerYear;
+  // Calculate Live AMC Service Schedule Preview with Same-Day Merging (Requirements 1, 2, 3, 4, 11)
+  const calculateSchedulePreview = (contractData) => {
+    if (!contractData) return [];
+    const serviceStartDate = contractData.service_start_date || contractData.start_date;
+    if (!serviceStartDate) return [];
+    const extinguisherStartDate = contractData.extinguisher_start_date || serviceStartDate;
+    let systems = contractData.systems_covered || contractData.systems || ["Fire Alarm", "Fire Fighting"];
+    if (typeof systems === 'string') systems = [systems];
+
+    const hasAlarm = systems.some(s => s.toLowerCase().includes('alarm'));
+    const hasFighting = systems.some(s => s.toLowerCase().includes('fighting'));
+    const hasExtinguishers = systems.some(s => s.toLowerCase().includes('extinguish'));
+
+    const dateMap = new Map();
+
+    const addSystemToDate = (dateStr, sysName) => {
+      if (!dateStr) return;
+      if (!dateMap.has(dateStr)) {
+        dateMap.set(dateStr, new Set());
+      }
+      dateMap.get(dateStr).add(sysName);
+    };
+
+    // 1. Fire Alarm + Fire Fighting stream: COMBINED service, exactly 4 visits per year
+    if (hasAlarm || hasFighting) {
+      for (let v = 0; v < 4; v++) {
+        const schedDate = addCalendarMonths(serviceStartDate, v * 3);
+        if (hasAlarm) addSystemToDate(schedDate, "Fire Alarm");
+        if (hasFighting) addSystemToDate(schedDate, "Fire Fighting");
+      }
+    }
+
+    // 2. Fire Extinguisher stream: exactly 2 visits per year
+    if (hasExtinguishers) {
+      for (let v = 0; v < 2; v++) {
+        const schedDate = addCalendarMonths(extinguisherStartDate, v * 6);
+        addSystemToDate(schedDate, "Fire Extinguishers");
+      }
+    }
+
+    // 3. Other systems
+    const otherSystems = systems.filter(s => 
+      !s.toLowerCase().includes('alarm') && 
+      !s.toLowerCase().includes('fighting') && 
+      !s.toLowerCase().includes('extinguish')
+    );
+    otherSystems.forEach(sys => {
+      for (let v = 0; v < 4; v++) {
+        const schedDate = addCalendarMonths(serviceStartDate, v * 3);
+        addSystemToDate(schedDate, sys);
+      }
     });
-    return total;
+
+    const sortedDates = Array.from(dateMap.keys()).sort();
+
+    const formatSystemsLabel = (sysList) => {
+      const order = ["Fire Alarm", "Fire Fighting", "Fire Extinguishers"];
+      const sorted = [...sysList].sort((a, b) => {
+        const idxA = order.findIndex(o => a.toLowerCase().includes(o.toLowerCase().slice(0, 5)));
+        const idxB = order.findIndex(o => b.toLowerCase().includes(o.toLowerCase().slice(0, 5)));
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      });
+      return sorted.map(s => s.replace(/Extinguishers/i, 'Fire Extinguisher').replace(/Fire Fire Extinguisher/i, 'Fire Extinguisher')).join(' + ');
+    };
+
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    return sortedDates.map((dateStr, idx) => {
+      const sysArray = Array.from(dateMap.get(dateStr));
+      const sysLabel = formatSystemsLabel(sysArray);
+      const visitNum = idx + 1;
+      const quarter = idx < 4 ? `Q${visitNum}` : `Visit ${visitNum}`;
+      let dayName = '';
+      try {
+        const d = new Date(dateStr);
+        dayName = days[d.getDay()] || '';
+      } catch {}
+
+      return {
+        visit_number: visitNum,
+        service_sequence: visitNum,
+        quarter: quarter,
+        service_cycle: quarter,
+        scheduled_date: dateStr,
+        day: dayName,
+        systems: sysArray,
+        systems_label: sysLabel,
+        is_combined: sysArray.length > 1
+      };
+    });
+  };
+
+  // Calculate unique visits for selected systems (combining same-day visits)
+  const calculateTotalVisits = (systems) => {
+    const preview = calculateSchedulePreview({ systems_covered: systems, start_date: '2026-01-01' });
+    return preview.length || (Array.isArray(systems) ? systems.length : 1);
   };
 
   const loadData = async () => {
@@ -437,6 +546,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
         contract_type: editingContract.contract_type,
         start_date: editingContract.start_date,
         end_date: editingContract.end_date,
+        service_start_date: editingContract.service_start_date || editingContract.start_date,
+        extinguisher_start_date: editingContract.extinguisher_start_date || editingContract.service_start_date || editingContract.start_date,
         renewal_date: editingContract.renewal_date || editingContract.end_date,
         systems: editingContract.systems_covered,
         systems_covered: editingContract.systems_covered,
@@ -482,6 +593,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
         contract_type: editingContract.contract_type,
         start_date: editingContract.start_date,
         end_date: editingContract.end_date,
+        service_start_date: editingContract.service_start_date || editingContract.start_date,
+        extinguisher_start_date: editingContract.extinguisher_start_date || editingContract.service_start_date || editingContract.start_date,
         renewal_date: editingContract.renewal_date,
         systems: editingContract.systems_covered,
         systems_covered: editingContract.systems_covered,
@@ -720,12 +833,24 @@ export default function AMCView({ onStartInspectionForVisit }) {
     }
   };
 
-  // Handle Complete Service Visit (Requirement 3: Actual Completed Service Date & Next Service Rule)
+  // Handle Complete Service Visit (Requirement 3 & 7: Actual Completed Service Date & Next Service Rule)
   const handleCompleteVisitSubmit = async (e) => {
     e.preventDefault();
     if (!completingVisit || !completionActualDate) return;
     setCompletionSaving(true);
     try {
+      const perServiceStatus = {};
+      const systems = completingVisit.systems || [completingVisit.system || completingVisit.system_type || 'Inspection'];
+      systems.forEach(s => {
+        perServiceStatus[s] = {
+          completed: completionServicesStatus[s] !== false,
+          status: completionServicesStatus[s] !== false ? 'Completed' : 'Scheduled',
+          completed_at: completionActualDate
+        };
+      });
+
+      const photos = completionPhotoUrl ? [{ url: completionPhotoUrl, caption: 'Inspection Evidence', uploaded_at: new Date().toISOString() }] : [];
+
       const res = await fetch(`/api/amc-visits/${completingVisit.id}/complete`, {
         method: 'POST',
         headers: {
@@ -737,13 +862,18 @@ export default function AMCView({ onStartInspectionForVisit }) {
           actual_service_date: completionActualDate,
           remarks: completionRemarks,
           completed_date: new Date().toISOString(),
-          status: 'Completed'
+          status: 'Completed',
+          services_status: perServiceStatus,
+          photos: photos,
+          technician_name: completingVisit.technician_name || completingVisit.assigned_technician || currentUser.name
         })
       });
       if (res.ok) {
         showToast(`Service visit completed on ${completionActualDate}! Subsequent visits updated according to scheduling rule.`, 'success');
         setCompletingVisit(null);
         setCompletionRemarks('');
+        setCompletionPhotoUrl('');
+        setCompletionServicesStatus({});
         if (viewingContractDetail) {
           refreshContractQuarters(viewingContractDetail.id);
         }
@@ -1126,7 +1256,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                   )}
 
                   {/* Contract Details Grid */}
-                  <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                  <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">
                         Start Date
@@ -1138,6 +1268,12 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         End Date
                       </span>
                       <span className="font-semibold text-slate-800">{c.end_date}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-blue-600 block">
+                        Service Starting
+                      </span>
+                      <span className="font-bold text-blue-900">{c.service_start_date || c.start_date}</span>
                     </div>
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">
@@ -1166,13 +1302,18 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     </div>
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                        Next Visit
+                        Next Service Date
                       </span>
                       <span className={`font-semibold truncate block ${
                         isDraft || isSubmitted || isReturned ? 'text-amber-700' : 'text-blue-700'
                       }`}>
                         {c.next_visit || (isDraft || isSubmitted ? 'Pending Approval' : 'None scheduled')}
                       </span>
+                      {c.services_due && c.services_due.length > 0 && (
+                        <span className="text-[9px] text-emerald-700 font-bold block truncate">
+                          Due: {c.services_due.join(', ')}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -1217,7 +1358,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         const isCompliant = ['Completed', 'Approved'].includes(qStatus);
                         const isOverdue = qStatus === 'Overdue';
                         const isPending = qStatus.includes('Pending') || qStatus.includes('Submitted') || qStatus.includes('Reviewed');
-                        const defaultQuarterDate = c.start_date ? addCalendarMonths(c.start_date, qIdx * 3) : '';
+                        const defaultQuarterDate = (c.service_start_date || c.start_date) ? addCalendarMonths(c.service_start_date || c.start_date, qIdx * 3) : '';
                         const displayDate = qData.actual_visit_date || qData.visit_date || qData.scheduled_date || defaultQuarterDate || 'TBD';
 
                         return (
@@ -1784,7 +1925,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSystemColor(v.system_type || v.system)}`}>
-                            {v.system_type || v.system}
+                            {v.systems_label || v.system_type || v.system}
                           </span>
                           <span className="text-xs font-mono font-bold text-navy-900 bg-slate-100 px-2 py-0.5 rounded">
                             {v.contract_number} • Visit #{v.visit_number}
@@ -1863,7 +2004,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       <div className="flex items-center gap-1.5">
                         {(v.visit_status || v.status) !== 'Completed' ? (
                           <button
-                            onClick={() => handleUpdateVisitStatus(v.id, 'Completed')}
+                            onClick={() => openCompleteVisitModal(v)}
                             className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold flex items-center gap-1"
                           >
                             <CheckCircle2 className="w-3 h-3" />
@@ -2065,10 +2206,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 </div>
               </div>
 
-              {/* Start & End Dates */}
+              {/* Contract Start & End Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Start Date *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Contract Start Date *</label>
                   <input
                     type="date"
                     required
@@ -2077,13 +2218,18 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       const newStart = e.target.value;
                       const d = new Date(newStart);
                       d.setFullYear(d.getFullYear() + 1);
-                      setNewContract(p => ({ ...p, start_date: newStart, end_date: d.toISOString().slice(0, 10) }));
+                      setNewContract(p => ({
+                        ...p,
+                        start_date: newStart,
+                        end_date: d.toISOString().slice(0, 10),
+                        service_start_date: (!p.service_start_date || p.service_start_date === p.start_date) ? newStart : p.service_start_date
+                      }));
                     }}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">End Date *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Contract End Date *</label>
                   <input
                     type="date"
                     required
@@ -2091,6 +2237,83 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     onChange={(e) => setNewContract((prev) => ({ ...prev, end_date: e.target.value }))}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   />
+                </div>
+              </div>
+
+              {/* Service Starting Date & Optional Extinguisher Starting Date */}
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-200 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-blue-900 mb-1 flex items-center justify-between">
+                      <span>Service Starting Date *</span>
+                      <span className="text-[10px] font-extrabold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">First Service</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newContract.service_start_date || newContract.start_date}
+                      onChange={(e) => setNewContract((prev) => ({ ...prev, service_start_date: e.target.value }))}
+                      className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-bold text-xs text-blue-900 shadow-xs"
+                    />
+                    <span className="text-[10px] text-blue-600 mt-1 block">
+                      Visit 1 is scheduled here; subsequent visits follow every 3 months.
+                    </span>
+                  </div>
+
+                  {newContract.systems_covered.some(s => s.toLowerCase().includes('extinguish')) && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>Extinguisher Start Date (Optional)</span>
+                        <span className="text-[10px] font-semibold text-slate-500">2 Visits / Yr</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={newContract.extinguisher_start_date || ''}
+                        onChange={(e) => setNewContract((prev) => ({ ...prev, extinguisher_start_date: e.target.value }))}
+                        placeholder={newContract.service_start_date || newContract.start_date}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Defaults to Service Starting Date ({newContract.service_start_date || newContract.start_date}).
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Service Schedule Preview */}
+                <div className="pt-2 border-t border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Live Service Schedule Preview ({calculateSchedulePreview(newContract).length} Visits)</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Same-Day Services Combined
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {calculateSchedulePreview(newContract).map((v) => (
+                      <div key={v.visit_number} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between text-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="font-mono font-black text-[10px] bg-navy-900 text-white px-1.5 py-0.5 rounded">
+                              Visit #{v.visit_number}
+                            </span>
+                            <span className="font-extrabold text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                              {v.quarter}
+                            </span>
+                          </div>
+                          <span className="font-bold text-slate-900 block">{v.scheduled_date}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{v.day}</span>
+                        </div>
+                        <div className="text-right max-w-[55%]">
+                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg inline-block text-right leading-tight">
+                            {v.systems_label}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2408,26 +2631,104 @@ export default function AMCView({ onStartInspectionForVisit }) {
               </div>
 
               {/* Start & End Dates */}
+              {/* Contract Start & End Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Start Date *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Contract Start Date *</label>
                   <input
                     type="date"
                     required
                     value={editingContract.start_date}
                     onChange={(e) => setEditingContract(p => ({ ...p, start_date: e.target.value }))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">End Date *</label>
+                  <label className="block font-bold text-slate-700 mb-1">Contract End Date *</label>
                   <input
                     type="date"
                     required
                     value={editingContract.end_date}
                     onChange={(e) => setEditingContract(p => ({ ...p, end_date: e.target.value }))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   />
+                </div>
+              </div>
+
+              {/* Service Starting Date & Optional Extinguisher Starting Date */}
+              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-200 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-blue-900 mb-1 flex items-center justify-between">
+                      <span>Service Starting Date *</span>
+                      <span className="text-[10px] font-extrabold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">First Service</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editingContract.service_start_date || editingContract.start_date}
+                      onChange={(e) => setEditingContract((prev) => ({ ...prev, service_start_date: e.target.value }))}
+                      className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-bold text-xs text-blue-900 shadow-xs"
+                    />
+                    <span className="text-[10px] text-blue-600 mt-1 block">
+                      Visit 1 is scheduled here; subsequent visits follow every 3 months.
+                    </span>
+                  </div>
+
+                  {(editingContract.systems_covered || editingContract.systems || []).some(s => s.toLowerCase().includes('extinguish')) && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>Extinguisher Start Date (Optional)</span>
+                        <span className="text-[10px] font-semibold text-slate-500">2 Visits / Yr</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={editingContract.extinguisher_start_date || ''}
+                        onChange={(e) => setEditingContract((prev) => ({ ...prev, extinguisher_start_date: e.target.value }))}
+                        placeholder={editingContract.service_start_date || editingContract.start_date}
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+                      />
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Defaults to Service Starting Date ({editingContract.service_start_date || editingContract.start_date}).
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Service Schedule Preview */}
+                <div className="pt-2 border-t border-blue-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Live Service Schedule Preview ({calculateSchedulePreview(editingContract).length} Visits)</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Same-Day Services Combined
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {calculateSchedulePreview(editingContract).map((v) => (
+                      <div key={v.visit_number} className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between text-xs">
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="font-mono font-black text-[10px] bg-navy-900 text-white px-1.5 py-0.5 rounded">
+                              Visit #{v.visit_number}
+                            </span>
+                            <span className="font-extrabold text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                              {v.quarter}
+                            </span>
+                          </div>
+                          <span className="font-bold text-slate-900 block">{v.scheduled_date}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{v.day}</span>
+                        </div>
+                        <div className="text-right max-w-[55%]">
+                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg inline-block text-right leading-tight">
+                            {v.systems_label}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2848,9 +3149,9 @@ export default function AMCView({ onStartInspectionForVisit }) {
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">System</span>
-                  <span className="font-bold text-slate-800">
-                    {completingVisit.system_type || completingVisit.system || 'Fire Alarm'}
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Systems Included</span>
+                  <span className="font-bold text-slate-800 text-xs">
+                    {completingVisit.systems_label || completingVisit.system_type || completingVisit.system || 'Combined Service'}
                   </span>
                 </div>
               </div>
@@ -2877,6 +3178,48 @@ export default function AMCView({ onStartInspectionForVisit }) {
                   />
                 </div>
 
+                {/* Per-Service Completion Checkboxes (Requirement 7) */}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1.5">
+                    Individual Services Completed in This Visit *
+                  </label>
+                  <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    {(completingVisit.systems || [completingVisit.system_type || completingVisit.system || 'Inspection']).map((sysName) => {
+                      const isChecked = completionServicesStatus[sysName] !== false;
+                      return (
+                        <label
+                          key={sysName}
+                          className={`flex items-center justify-between p-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                            isChecked
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-2xs'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                setCompletionServicesStatus(prev => ({
+                                  ...prev,
+                                  [sysName]: e.target.checked
+                                }));
+                              }}
+                              className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                            />
+                            <span>{sysName}</span>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            isChecked ? 'bg-emerald-200/70 text-emerald-900' : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            {isChecked ? '✓ Done' : 'Pending'}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Lead Technician / Inspector</label>
                   <input
@@ -2890,11 +3233,22 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Completion Remarks &amp; Inspection Findings</label>
                   <textarea
-                    rows={3}
+                    rows={2}
                     placeholder="Enter service observations, testing confirmation, or remarks..."
                     value={completionRemarks}
                     onChange={(e) => setCompletionRemarks(e.target.value)}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Photo Evidence / Attachment URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://example.com/inspection-photo.jpg"
+                    value={completionPhotoUrl}
+                    onChange={(e) => setCompletionPhotoUrl(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono"
                   />
                 </div>
 
@@ -3324,7 +3678,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
                           </thead>
                           <tbody className="divide-y divide-slate-100 bg-white">
                             {(() => {
-                              const cyclePeriods = getContractCyclePeriods(viewingContractDetail.start_date);
+                              const contractAnchorDate = viewingContractDetail.service_start_date || viewingContractDetail.start_date;
+                              const cyclePeriods = getContractCyclePeriods(contractAnchorDate);
                               const contractVisits = viewingContractDetail.visits || [];
                               const contractSystems = viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm'];
 
@@ -3335,7 +3690,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                   v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1)
                                 );
                                 
-                                const defaultCycleDate = viewingContractDetail.start_date ? addCalendarMonths(viewingContractDetail.start_date, idx * 3) : '';
+                                const defaultCycleDate = contractAnchorDate ? addCalendarMonths(contractAnchorDate, idx * 3) : '';
                                 const schedDate = matchedVisit?.scheduled_date || qRec.scheduled_date || defaultCycleDate || 'TBD';
                                 const origDate = matchedVisit?.original_scheduled_date;
                                 const isRescheduled = (matchedVisit?.status === 'Rescheduled') || (origDate && origDate !== schedDate);
@@ -3367,7 +3722,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                         Service #{idx + 1}
                                       </span>
                                       <span className="text-[10px] text-slate-500 truncate max-w-[150px] block">
-                                        {matchedVisit?.system_type || contractSystems.join(', ')}
+                                        {matchedVisit?.systems_label || matchedVisit?.system_type || (Array.isArray(contractSystems) ? contractSystems.join(' + ') : contractSystems)}
                                       </span>
                                     </td>
 
@@ -3464,12 +3819,12 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                                 service_cycle: q,
                                                 service_sequence: idx + 1,
                                                 scheduled_date: schedDate,
+                                                systems: contractSystems,
+                                                systems_label: contractSystems.join(' + '),
                                                 system_type: contractSystems[0] || 'Fire Alarm',
                                                 technician_name: qRec.technician_name || 'Rajesh Kumar'
                                               };
-                                              setCompletingVisit(targetVis);
-                                              setCompletionActualDate(new Date().toISOString().slice(0, 10));
-                                              setCompletionRemarks('');
+                                              openCompleteVisitModal(targetVis);
                                             }}
                                             className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-0.5 shadow-xs"
                                             title="Record actual service completion date"
@@ -3492,8 +3847,9 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     /* SPECIFIC QUARTER RECORD VIEW (Q1, Q2, Q3, Q4) */
                     (() => {
                       const qTabIdx = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(activeQuarterTab);
-                      const defaultQuarterDate = viewingContractDetail.start_date
-                        ? addCalendarMonths(viewingContractDetail.start_date, Math.max(0, qTabIdx) * 3)
+                      const contractAnchorDate = viewingContractDetail.service_start_date || viewingContractDetail.start_date;
+                      const defaultQuarterDate = contractAnchorDate
+                        ? addCalendarMonths(contractAnchorDate, Math.max(0, qTabIdx) * 3)
                         : '';
                       const qRec = viewingContractDetail.quarters?.[activeQuarterTab] || {
                         status: 'Not Started',
@@ -3513,7 +3869,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         ]
                       };
 
-                      const cyclePeriods = getContractCyclePeriods(viewingContractDetail.start_date);
+                      const cyclePeriods = getContractCyclePeriods(contractAnchorDate);
                       const currentCycleInfo = cyclePeriods[activeQuarterTab] || { name: `${activeQuarterTab} Periodic Inspection`, months: 'Quarterly Cycle' };
                       const quarterLabel = currentCycleInfo.name;
                       const quarterPeriodRange = currentCycleInfo.months;

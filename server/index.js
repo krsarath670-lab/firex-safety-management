@@ -979,13 +979,17 @@ const getAmcContractsHandler = (req, res) => {
 
     // Calculate next visit
     let nextVisit = 'None scheduled';
+    let nextServiceDate = null;
+    let servicesDue = [];
     if (['Draft', 'Submitted', 'Returned for Correction'].includes(autoStatus)) {
       nextVisit = 'Pending Approval';
     } else {
       const pendingVisits = contractVisits.filter(v => v.status !== 'Completed');
       const upcoming = pendingVisits.find(v => (v.scheduled_date || '') >= todayStr) || pendingVisits[0];
       if (upcoming && upcoming.scheduled_date) {
-        nextVisit = `${upcoming.scheduled_date} (${upcoming.system_type || upcoming.system || 'Inspection'})`;
+        nextVisit = `${upcoming.scheduled_date} (${upcoming.systems_label || upcoming.system_type || upcoming.system || 'Inspection'})`;
+        nextServiceDate = upcoming.scheduled_date;
+        servicesDue = upcoming.systems || [upcoming.system || 'Inspection'];
       }
     }
 
@@ -1021,6 +1025,10 @@ const getAmcContractsHandler = (req, res) => {
       status: autoStatus,
       days_to_expiry: diffDays,
       next_visit: nextVisit,
+      next_service_date: nextServiceDate,
+      services_due: servicesDue,
+      service_start_date: contract.service_start_date || contract.start_date,
+      extinguisher_start_date: contract.extinguisher_start_date || contract.service_start_date || contract.start_date,
       customer_name: customer ? customer.name : 'Unknown Customer',
       site_name: site ? site.site_name : 'Unknown Site',
       sales_person_id: contract.sales_person_id,
@@ -1028,7 +1036,7 @@ const getAmcContractsHandler = (req, res) => {
       contract_start_date: contract.start_date,
       contract_end_date: contract.end_date,
       contract_period: `${contract.start_date} to ${contract.end_date}`,
-      quarter: db.getQuarter(contract.start_date),
+      quarter: db.getQuarter(contract.service_start_date || contract.start_date),
       quarters: quartersData,
       quarters_summary,
       visits: contractVisits
@@ -1099,8 +1107,10 @@ const getAmcContractByIdHandler = (req, res) => {
     sales_person_name: spName,
     contract_start_date: contract.start_date,
     contract_end_date: contract.end_date,
+    service_start_date: contract.service_start_date || contract.start_date,
+    extinguisher_start_date: contract.extinguisher_start_date || contract.service_start_date || contract.start_date,
     contract_period: `${contract.start_date} to ${contract.end_date}`,
-    quarter: db.getQuarter(contract.start_date),
+    quarter: db.getQuarter(contract.service_start_date || contract.start_date),
     quarters: quartersData,
     quarters_summary,
     visits,
@@ -1109,11 +1119,43 @@ const getAmcContractByIdHandler = (req, res) => {
   });
 };
 
+// Preview AMC Schedule Endpoint for UI modal (Requirements 1, 2, 3, 4, 11)
+app.post('/api/amc-contracts/preview-schedule', (req, res) => {
+  try {
+    const schedule = db.calculateAmcSchedule(req.body);
+    res.json({ schedule });
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to calculate AMC schedule', message: err.message });
+  }
+});
+
 app.get('/api/amc-contracts/:id', getAmcContractByIdHandler);
 app.get('/api/amc/:id', getAmcContractByIdHandler);
 
 const postAmcContractHandler = (req, res) => {
-  const { customer_id, site_id, contract_type, start_date, end_date, renewal_date, systems, systems_covered, contract_value, contact_person, remarks, reminder_days, quotation_number, frequency, visit_frequency, vat_percent } = req.body;
+  const {
+    customer_id,
+    site_id,
+    contract_type,
+    start_date,
+    end_date,
+    service_start_date,
+    extinguisher_start_date,
+    renewal_date,
+    systems,
+    systems_covered,
+    contract_value,
+    contact_person,
+    remarks,
+    reminder_days,
+    quotation_number,
+    frequency,
+    visit_frequency,
+    vat_percent,
+    assigned_technician,
+    assigned_supervisor
+  } = req.body;
+
   if (!customer_id || !site_id || !start_date || !end_date) {
     return res.status(400).json({ error: 'Customer, Site, Start Date and End Date are required.' });
   }
@@ -1156,6 +1198,10 @@ const postAmcContractHandler = (req, res) => {
     contract_type: contract_type || 'Comprehensive',
     start_date,
     end_date,
+    service_start_date: service_start_date || start_date,
+    extinguisher_start_date: extinguisher_start_date || service_start_date || start_date,
+    assigned_technician: assigned_technician || 'Abdul Majeed',
+    assigned_supervisor: assigned_supervisor || 'Sarath Kr',
     renewal_date: renewal_date || end_date,
     contract_status: status,
     status: status,

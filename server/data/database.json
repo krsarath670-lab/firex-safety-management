@@ -359,6 +359,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -371,7 +372,8 @@
           "customer_signature": null,
           "report_id": null,
           "report_number": null,
-          "report_status": "Not Started"
+          "report_status": "Not Started",
+          "updated_at": "2026-09-30T18:15:57.158Z"
         },
         "Q2": {
           "quarter": "Q2",
@@ -387,6 +389,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -415,6 +418,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -443,6 +447,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -458,9 +463,11 @@
           "report_status": "Not Started"
         }
       },
-      "updated_at": "2026-09-30T15:08:21.981Z",
+      "updated_at": "2026-09-30T17:05:09.527Z",
       "customer_name": "HAWAR SCHOOL",
-      "site_name": "HAWAR SCHOOL"
+      "site_name": "HAWAR SCHOOL",
+      "service_start_date": "2026-09-30",
+      "extinguisher_start_date": "2026-09-30"
     },
     {
       "contract_number": "AMC-2026-005",
@@ -501,7 +508,7 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:53:47.368Z",
       "id": "amc-1790639627369-808",
-      "updated_at": "2026-09-28T23:53:47.633Z",
+      "updated_at": "2026-09-30T17:05:09.572Z",
       "quarters": {
         "Q1": {
           "quarter": "Q1",
@@ -517,6 +524,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -542,8 +550,7 @@
           "supervisor_name": "Sarath Kr",
           "systems_inspected": [
             "Fire Alarm",
-            "Fire Fighting",
-            "Emergency Light"
+            "Fire Fighting"
           ],
           "checklist": {
             "FACP Main Power & Battery Standby": {
@@ -575,7 +582,8 @@
           "report_number": "RPT-2026-Q2-002",
           "report_status": "Approved",
           "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)",
-          "fullMonths": "April – June 2026"
+          "fullMonths": "April – June 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q3": {
           "quarter": "Q3",
@@ -610,7 +618,8 @@
           "report_id": null,
           "report_number": null,
           "report_status": "Draft",
-          "fullMonths": "July – September 2026"
+          "fullMonths": "July – September 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q4": {
           "quarter": "Q4",
@@ -626,6 +635,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -640,7 +650,9 @@
           "report_number": null,
           "report_status": "Not Started"
         }
-      }
+      },
+      "service_start_date": "2026-01-01",
+      "extinguisher_start_date": "2026-01-01"
     },
     {
       "contract_number": "AMC-2026-004",
@@ -681,7 +693,7 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:38:23.567Z",
       "id": "amc-1790638703568-371",
-      "updated_at": "2026-09-28T23:38:23.758Z",
+      "updated_at": "2026-09-30T17:05:09.614Z",
       "quarters": {
         "Q1": {
           "quarter": "Q1",
@@ -697,6 +709,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -722,8 +735,7 @@
           "supervisor_name": "Sarath Kr",
           "systems_inspected": [
             "Fire Alarm",
-            "Fire Fighting",
-            "Emergency Light"
+            "Fire Fighting"
           ],
           "checklist": {
             "FACP Main Power & Battery Standby": {
@@ -755,7 +767,8 @@
           "report_number": "RPT-2026-Q2-002",
           "report_status": "Approved",
           "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)",
-          "fullMonths": "April – June 2026"
+          "fullMonths": "April – June 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q3": {
           "quarter": "Q3",
@@ -790,7 +803,8 @@
           "report_id": null,
           "report_number": null,
           "report_status": "Draft",
-          "fullMonths": "July – September 2026"
+          "fullMonths": "July – September 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q4": {
           "quarter": "Q4",
@@ -806,6 +820,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -820,7 +835,9 @@
           "report_number": null,
           "report_status": "Not Started"
         }
-      }
+      },
+      "service_start_date": "2026-01-01",
+      "extinguisher_start_date": "2026-01-01"
     },
     {
       "contract_number": "AMC-2026-002",
@@ -861,7 +878,7 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T23:22:28.425Z",
       "id": "amc-1790637748426-910",
-      "updated_at": "2026-09-28T23:22:28.585Z",
+      "updated_at": "2026-09-30T17:05:09.658Z",
       "quarters": {
         "Q1": {
           "quarter": "Q1",
@@ -877,6 +894,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -902,8 +920,7 @@
           "supervisor_name": "Sarath Kr",
           "systems_inspected": [
             "Fire Alarm",
-            "Fire Fighting",
-            "Emergency Light"
+            "Fire Fighting"
           ],
           "checklist": {
             "FACP Main Power & Battery Standby": {
@@ -935,7 +952,8 @@
           "report_number": "RPT-2026-Q2-002",
           "report_status": "Approved",
           "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)",
-          "fullMonths": "April – June 2026"
+          "fullMonths": "April – June 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q3": {
           "quarter": "Q3",
@@ -970,7 +988,8 @@
           "report_id": null,
           "report_number": null,
           "report_status": "Draft",
-          "fullMonths": "July – September 2026"
+          "fullMonths": "July – September 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q4": {
           "quarter": "Q4",
@@ -986,6 +1005,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -1000,7 +1020,9 @@
           "report_number": null,
           "report_status": "Not Started"
         }
-      }
+      },
+      "service_start_date": "2026-01-01",
+      "extinguisher_start_date": "2026-01-01"
     },
     {
       "contract_number": "AMC-2026-001",
@@ -1037,7 +1059,7 @@
       "created_by": "usr-gm-1790621464394",
       "created_at": "2026-09-28T19:38:37.728Z",
       "id": "amc-1790624317733-714",
-      "updated_at": "2026-09-28T22:20:45.843Z",
+      "updated_at": "2026-09-30T17:05:09.715Z",
       "sales_person_name": "Unassigned",
       "vat_percent": 10,
       "vat_amount": 75,
@@ -1048,7 +1070,7 @@
           "name": "Q1 (April 2026)",
           "months": "Apr – Jun 2026",
           "fullMonths": "April – June 2026",
-          "status": "Not Started",
+          "status": "Overdue",
           "scheduled_date": "2026-04-25",
           "actual_visit_date": null,
           "technician_name": "Abdul Majeed",
@@ -1057,6 +1079,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -1082,8 +1105,7 @@
           "supervisor_name": "Sarath Kr",
           "systems_inspected": [
             "Fire Alarm",
-            "Fire Fighting",
-            "Emergency Light"
+            "Fire Fighting"
           ],
           "checklist": {
             "FACP Main Power & Battery Standby": {
@@ -1115,7 +1137,8 @@
           "report_number": "RPT-2026-Q2-002",
           "report_status": "Approved",
           "approved_by": "Eng. Chandiramohan Karunanithi (Engineer)",
-          "fullMonths": "July – September 2026"
+          "fullMonths": "July – September 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q3": {
           "quarter": "Q3",
@@ -1150,14 +1173,15 @@
           "report_id": null,
           "report_number": null,
           "report_status": "Draft",
-          "fullMonths": "October – December 2026"
+          "fullMonths": "October – December 2026",
+          "systems_label": "Fire Alarm + Fire Fighting"
         },
         "Q4": {
           "quarter": "Q4",
           "name": "Q4 (January 2027)",
           "months": "Jan – Mar 2027",
           "fullMonths": "January – March 2027",
-          "status": "Not Started",
+          "status": "Scheduled",
           "scheduled_date": "2027-01-25",
           "actual_visit_date": null,
           "technician_name": "Abdul Majeed",
@@ -1166,6 +1190,7 @@
             "Fire Alarm",
             "Fire Fighting"
           ],
+          "systems_label": "Fire Alarm + Fire Fighting",
           "checklist": {},
           "faults_count": 0,
           "faults_details": "",
@@ -1180,7 +1205,9 @@
           "report_number": null,
           "report_status": "Not Started"
         }
-      }
+      },
+      "service_start_date": "2026-04-25",
+      "extinguisher_start_date": "2026-04-25"
     }
   ],
   "amc_visits": [
@@ -1193,8 +1220,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 1,
       "scheduled_date": "2026-01-01",
       "quarter": "Q1",
@@ -1216,7 +1243,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790637748426-910-firealarm-2-665",
@@ -1227,8 +1269,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 2,
       "scheduled_date": "2026-04-01",
       "quarter": "Q2",
@@ -1250,7 +1292,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790637748426-910-firealarm-3-365",
@@ -1261,8 +1318,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 3,
       "scheduled_date": "2026-07-01",
       "quarter": "Q3",
@@ -1284,7 +1341,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790637748426-910-firealarm-4-55",
@@ -1295,8 +1367,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 4,
       "scheduled_date": "2026-10-01",
       "quarter": "Q4",
@@ -1318,143 +1390,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790637748426-910-firefighting-1-489",
-      "amc_contract_id": "amc-1790637748426-910",
-      "amc_id": "amc-1790637748426-910",
-      "contract_number": "AMC-2026-002",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 1,
-      "scheduled_date": "2026-01-01",
-      "quarter": "Q1",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #1",
-      "created_at": "2026-09-28T23:22:28.439Z",
-      "updated_at": "2026-09-28T23:22:28.586Z",
-      "service_sequence": 1,
-      "frequency_months": 3,
-      "service_cycle": "Q1",
-      "original_scheduled_date": "2026-01-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790637748426-910-firefighting-2-998",
-      "amc_contract_id": "amc-1790637748426-910",
-      "amc_id": "amc-1790637748426-910",
-      "contract_number": "AMC-2026-002",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 2,
-      "scheduled_date": "2026-04-01",
-      "quarter": "Q2",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #2",
-      "created_at": "2026-09-28T23:22:28.439Z",
-      "updated_at": "2026-09-28T23:22:28.586Z",
-      "service_sequence": 2,
-      "frequency_months": 3,
-      "service_cycle": "Q2",
-      "original_scheduled_date": "2026-04-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790637748426-910-firefighting-3-209",
-      "amc_contract_id": "amc-1790637748426-910",
-      "amc_id": "amc-1790637748426-910",
-      "contract_number": "AMC-2026-002",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 3,
-      "scheduled_date": "2026-07-01",
-      "quarter": "Q3",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #3",
-      "created_at": "2026-09-28T23:22:28.439Z",
-      "updated_at": "2026-09-28T23:22:28.586Z",
-      "service_sequence": 3,
-      "frequency_months": 3,
-      "service_cycle": "Q3",
-      "original_scheduled_date": "2026-07-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790637748426-910-firefighting-4-688",
-      "amc_contract_id": "amc-1790637748426-910",
-      "amc_id": "amc-1790637748426-910",
-      "contract_number": "AMC-2026-002",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 4,
-      "scheduled_date": "2026-10-01",
-      "quarter": "Q4",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #4",
-      "created_at": "2026-09-28T23:22:28.439Z",
-      "updated_at": "2026-09-28T23:22:28.586Z",
-      "service_sequence": 4,
-      "frequency_months": 3,
-      "service_cycle": "Q4",
-      "original_scheduled_date": "2026-10-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790638703568-371-firealarm-1-974",
@@ -1465,8 +1416,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 1,
       "scheduled_date": "2026-01-01",
       "quarter": "Q1",
@@ -1488,7 +1439,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790638703568-371-firealarm-2-372",
@@ -1499,8 +1465,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 2,
       "scheduled_date": "2026-04-01",
       "quarter": "Q2",
@@ -1522,7 +1488,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790638703568-371-firealarm-3-671",
@@ -1533,8 +1514,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 3,
       "scheduled_date": "2026-07-01",
       "quarter": "Q3",
@@ -1556,7 +1537,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790638703568-371-firealarm-4-600",
@@ -1567,8 +1563,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 4,
       "scheduled_date": "2026-10-01",
       "quarter": "Q4",
@@ -1590,143 +1586,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790638703568-371-firefighting-1-464",
-      "amc_contract_id": "amc-1790638703568-371",
-      "amc_id": "amc-1790638703568-371",
-      "contract_number": "AMC-2026-004",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 1,
-      "scheduled_date": "2026-01-01",
-      "quarter": "Q1",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #1",
-      "created_at": "2026-09-28T23:38:23.581Z",
-      "updated_at": "2026-09-28T23:38:23.759Z",
-      "service_sequence": 1,
-      "frequency_months": 3,
-      "service_cycle": "Q1",
-      "original_scheduled_date": "2026-01-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790638703568-371-firefighting-2-204",
-      "amc_contract_id": "amc-1790638703568-371",
-      "amc_id": "amc-1790638703568-371",
-      "contract_number": "AMC-2026-004",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 2,
-      "scheduled_date": "2026-04-01",
-      "quarter": "Q2",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #2",
-      "created_at": "2026-09-28T23:38:23.581Z",
-      "updated_at": "2026-09-28T23:38:23.759Z",
-      "service_sequence": 2,
-      "frequency_months": 3,
-      "service_cycle": "Q2",
-      "original_scheduled_date": "2026-04-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790638703568-371-firefighting-3-480",
-      "amc_contract_id": "amc-1790638703568-371",
-      "amc_id": "amc-1790638703568-371",
-      "contract_number": "AMC-2026-004",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 3,
-      "scheduled_date": "2026-07-01",
-      "quarter": "Q3",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #3",
-      "created_at": "2026-09-28T23:38:23.581Z",
-      "updated_at": "2026-09-28T23:38:23.759Z",
-      "service_sequence": 3,
-      "frequency_months": 3,
-      "service_cycle": "Q3",
-      "original_scheduled_date": "2026-07-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790638703568-371-firefighting-4-930",
-      "amc_contract_id": "amc-1790638703568-371",
-      "amc_id": "amc-1790638703568-371",
-      "contract_number": "AMC-2026-004",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 4,
-      "scheduled_date": "2026-10-01",
-      "quarter": "Q4",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #4",
-      "created_at": "2026-09-28T23:38:23.581Z",
-      "updated_at": "2026-09-28T23:38:23.759Z",
-      "service_sequence": 4,
-      "frequency_months": 3,
-      "service_cycle": "Q4",
-      "original_scheduled_date": "2026-10-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790639627369-808-firealarm-1-914",
@@ -1737,8 +1612,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 1,
       "scheduled_date": "2026-01-01",
       "quarter": "Q1",
@@ -1760,7 +1635,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790639627369-808-firealarm-2-787",
@@ -1771,8 +1661,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 2,
       "scheduled_date": "2026-04-01",
       "quarter": "Q2",
@@ -1794,7 +1684,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790639627369-808-firealarm-3-561",
@@ -1805,8 +1710,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 3,
       "scheduled_date": "2026-07-01",
       "quarter": "Q3",
@@ -1828,7 +1733,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790639627369-808-firealarm-4-731",
@@ -1839,8 +1759,8 @@
       "site_id": "sit-1790624104596-666",
       "sales_person_id": "use-1790621910982-865",
       "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "visit_number": 4,
       "scheduled_date": "2026-10-01",
       "quarter": "Q4",
@@ -1862,143 +1782,22 @@
       "rescheduled_date": null,
       "actual_service_date": null,
       "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790639627369-808-firefighting-1-411",
-      "amc_contract_id": "amc-1790639627369-808",
-      "amc_id": "amc-1790639627369-808",
-      "contract_number": "AMC-2026-005",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 1,
-      "scheduled_date": "2026-01-01",
-      "quarter": "Q1",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #1",
-      "created_at": "2026-09-28T23:53:47.390Z",
-      "updated_at": "2026-09-28T23:53:47.636Z",
-      "service_sequence": 1,
-      "frequency_months": 3,
-      "service_cycle": "Q1",
-      "original_scheduled_date": "2026-01-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790639627369-808-firefighting-2-559",
-      "amc_contract_id": "amc-1790639627369-808",
-      "amc_id": "amc-1790639627369-808",
-      "contract_number": "AMC-2026-005",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 2,
-      "scheduled_date": "2026-04-01",
-      "quarter": "Q2",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #2",
-      "created_at": "2026-09-28T23:53:47.391Z",
-      "updated_at": "2026-09-28T23:53:47.636Z",
-      "service_sequence": 2,
-      "frequency_months": 3,
-      "service_cycle": "Q2",
-      "original_scheduled_date": "2026-04-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790639627369-808-firefighting-3-446",
-      "amc_contract_id": "amc-1790639627369-808",
-      "amc_id": "amc-1790639627369-808",
-      "contract_number": "AMC-2026-005",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 3,
-      "scheduled_date": "2026-07-01",
-      "quarter": "Q3",
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #3",
-      "created_at": "2026-09-28T23:53:47.391Z",
-      "updated_at": "2026-09-28T23:53:47.636Z",
-      "service_sequence": 3,
-      "frequency_months": 3,
-      "service_cycle": "Q3",
-      "original_scheduled_date": "2026-07-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
-    },
-    {
-      "id": "vis-amc-1790639627369-808-firefighting-4-490",
-      "amc_contract_id": "amc-1790639627369-808",
-      "amc_id": "amc-1790639627369-808",
-      "contract_number": "AMC-2026-005",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790621910982-865",
-      "sales_person_name": "Abdulsattar Saiyed",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "visit_number": 4,
-      "scheduled_date": "2026-10-01",
-      "quarter": "Q4",
-      "day": "Thursday",
-      "day_of_week": "Thursday",
-      "assigned_team": "Team Alpha (Tariq & Rajesh)",
-      "assigned_technician": "usr-tech",
-      "technician_id": "usr-tech",
-      "supervisor_id": "usr-sup",
-      "status": "Scheduled",
-      "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #4",
-      "created_at": "2026-09-28T23:53:47.391Z",
-      "updated_at": "2026-09-28T23:53:47.636Z",
-      "service_sequence": 4,
-      "frequency_months": 3,
-      "service_cycle": "Q4",
-      "original_scheduled_date": "2026-10-01",
-      "rescheduled_date": null,
-      "actual_service_date": null,
-      "completed_date": null,
-      "report_id": null
+      "report_id": null,
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-test-amc-aug-1790688735021-firealarm-1-400",
@@ -2493,8 +2292,8 @@
       "visit_number": 1,
       "service_cycle": "Q1",
       "quarter": "Q1",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "frequency_months": 3,
       "scheduled_date": "2026-09-30",
       "original_scheduled_date": "2026-09-30",
@@ -2510,9 +2309,19 @@
       "report_id": null,
       "status": "Scheduled",
       "visit_status": "Scheduled",
-      "remarks": "Routine Fire Alarm safety compliance inspection #1",
+      "remarks": "Completed Q1 comprehensive check on Fire Alarm and Fire Fighting.",
       "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "updated_at": "2026-09-30T18:15:57.158Z",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": null,
+      "completed_by": null,
+      "completed_by_name": null,
+      "technician_name": "usr-tech",
+      "photos": []
     },
     {
       "id": "vis-amc-1790780901899-234-firealarm-2-171",
@@ -2527,8 +2336,8 @@
       "visit_number": 2,
       "service_cycle": "Q2",
       "quarter": "Q2",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "frequency_months": 3,
       "scheduled_date": "2026-12-30",
       "original_scheduled_date": "2026-12-30",
@@ -2546,7 +2355,22 @@
       "visit_status": "Scheduled",
       "remarks": "Routine Fire Alarm safety compliance inspection #2",
       "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "updated_at": "2026-09-30T18:15:57.158Z",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790780901899-234-firealarm-3-727",
@@ -2561,8 +2385,8 @@
       "visit_number": 3,
       "service_cycle": "Q3",
       "quarter": "Q3",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "frequency_months": 3,
       "scheduled_date": "2027-03-30",
       "original_scheduled_date": "2027-03-30",
@@ -2580,7 +2404,22 @@
       "visit_status": "Scheduled",
       "remarks": "Routine Fire Alarm safety compliance inspection #3",
       "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "updated_at": "2026-09-30T18:15:57.158Z",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
       "id": "vis-amc-1790780901899-234-firealarm-4-553",
@@ -2595,8 +2434,8 @@
       "visit_number": 4,
       "service_cycle": "Q4",
       "quarter": "Q4",
-      "system_type": "Fire Alarm",
-      "system": "Fire Alarm",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
       "frequency_months": 3,
       "scheduled_date": "2027-06-30",
       "original_scheduled_date": "2027-06-30",
@@ -2614,143 +2453,238 @@
       "visit_status": "Scheduled",
       "remarks": "Routine Fire Alarm safety compliance inspection #4",
       "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "updated_at": "2026-09-30T18:15:57.158Z",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      }
     },
     {
-      "id": "vis-amc-1790780901899-234-firefighting-1-280",
-      "amc_contract_id": "amc-1790780901899-234",
-      "amc_id": "amc-1790780901899-234",
-      "contract_number": "AMC-2026-006",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790622019667-210",
-      "sales_person_name": "Mohammed Alwadhi",
-      "service_sequence": 1,
+      "id": "vis-amc-1790624317733-714-1-20260425",
+      "amc_contract_id": "amc-1790624317733-714",
+      "amc_id": "amc-1790624317733-714",
+      "contract_number": "AMC-2026-001",
+      "customer_id": "cus-1790622760597-446",
+      "customer_name": "Customer",
+      "site_id": "sit-1790622760624-394",
+      "site_name": "Site",
+      "sales_person_id": "usr-sales-1",
+      "sales_person_name": "Unassigned",
       "visit_number": 1,
-      "service_cycle": "Q1",
+      "service_sequence": 1,
       "quarter": "Q1",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "frequency_months": 3,
-      "scheduled_date": "2026-09-30",
-      "original_scheduled_date": "2026-09-30",
-      "rescheduled_date": null,
+      "service_cycle": "Q1",
+      "scheduled_date": "2026-04-25",
+      "original_scheduled_date": "2026-04-25",
       "actual_service_date": null,
       "completed_date": null,
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
+      "day": "Saturday",
+      "day_of_week": "Saturday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
       "assigned_team": "Team Alpha (Tariq & Rajesh)",
       "assigned_technician": "usr-tech",
       "technician_id": "usr-tech",
+      "technician_name": "Abdul Majeed",
       "supervisor_id": "usr-sup",
+      "supervisor_name": "Sarath Kr",
       "report_id": null,
       "status": "Scheduled",
       "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #1",
-      "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "remarks": "Routine Fire Alarm + Fire Fighting safety compliance inspection #1",
+      "photos": [],
+      "created_at": "2026-09-30T17:05:09.687Z",
+      "updated_at": "2026-09-30T17:05:09.687Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
     },
     {
-      "id": "vis-amc-1790780901899-234-firefighting-2-791",
-      "amc_contract_id": "amc-1790780901899-234",
-      "amc_id": "amc-1790780901899-234",
-      "contract_number": "AMC-2026-006",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790622019667-210",
-      "sales_person_name": "Mohammed Alwadhi",
-      "service_sequence": 2,
+      "id": "vis-amc-1790624317733-714-2-20260725",
+      "amc_contract_id": "amc-1790624317733-714",
+      "amc_id": "amc-1790624317733-714",
+      "contract_number": "AMC-2026-001",
+      "customer_id": "cus-1790622760597-446",
+      "customer_name": "Customer",
+      "site_id": "sit-1790622760624-394",
+      "site_name": "Site",
+      "sales_person_id": "usr-sales-1",
+      "sales_person_name": "Unassigned",
       "visit_number": 2,
-      "service_cycle": "Q2",
+      "service_sequence": 2,
       "quarter": "Q2",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "frequency_months": 3,
-      "scheduled_date": "2026-12-30",
-      "original_scheduled_date": "2026-12-30",
-      "rescheduled_date": null,
+      "service_cycle": "Q2",
+      "scheduled_date": "2026-07-25",
+      "original_scheduled_date": "2026-07-25",
       "actual_service_date": null,
       "completed_date": null,
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
+      "day": "Saturday",
+      "day_of_week": "Saturday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
       "assigned_team": "Team Alpha (Tariq & Rajesh)",
       "assigned_technician": "usr-tech",
       "technician_id": "usr-tech",
+      "technician_name": "Abdul Majeed",
       "supervisor_id": "usr-sup",
+      "supervisor_name": "Sarath Kr",
       "report_id": null,
       "status": "Scheduled",
       "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #2",
-      "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "remarks": "Routine Fire Alarm + Fire Fighting safety compliance inspection #2",
+      "photos": [],
+      "created_at": "2026-09-30T17:05:09.687Z",
+      "updated_at": "2026-09-30T17:05:09.687Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
     },
     {
-      "id": "vis-amc-1790780901899-234-firefighting-3-13",
-      "amc_contract_id": "amc-1790780901899-234",
-      "amc_id": "amc-1790780901899-234",
-      "contract_number": "AMC-2026-006",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790622019667-210",
-      "sales_person_name": "Mohammed Alwadhi",
-      "service_sequence": 3,
+      "id": "vis-amc-1790624317733-714-3-20261025",
+      "amc_contract_id": "amc-1790624317733-714",
+      "amc_id": "amc-1790624317733-714",
+      "contract_number": "AMC-2026-001",
+      "customer_id": "cus-1790622760597-446",
+      "customer_name": "Customer",
+      "site_id": "sit-1790622760624-394",
+      "site_name": "Site",
+      "sales_person_id": "usr-sales-1",
+      "sales_person_name": "Unassigned",
       "visit_number": 3,
-      "service_cycle": "Q3",
+      "service_sequence": 3,
       "quarter": "Q3",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "frequency_months": 3,
-      "scheduled_date": "2027-03-30",
-      "original_scheduled_date": "2027-03-30",
-      "rescheduled_date": null,
+      "service_cycle": "Q3",
+      "scheduled_date": "2026-10-25",
+      "original_scheduled_date": "2026-10-25",
       "actual_service_date": null,
       "completed_date": null,
-      "day": "Tuesday",
-      "day_of_week": "Tuesday",
+      "day": "Sunday",
+      "day_of_week": "Sunday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
       "assigned_team": "Team Alpha (Tariq & Rajesh)",
       "assigned_technician": "usr-tech",
       "technician_id": "usr-tech",
+      "technician_name": "Abdul Majeed",
       "supervisor_id": "usr-sup",
+      "supervisor_name": "Sarath Kr",
       "report_id": null,
       "status": "Scheduled",
       "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #3",
-      "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "remarks": "Routine Fire Alarm + Fire Fighting safety compliance inspection #3",
+      "photos": [],
+      "created_at": "2026-09-30T17:05:09.687Z",
+      "updated_at": "2026-09-30T17:05:09.687Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
     },
     {
-      "id": "vis-amc-1790780901899-234-firefighting-4-660",
-      "amc_contract_id": "amc-1790780901899-234",
-      "amc_id": "amc-1790780901899-234",
-      "contract_number": "AMC-2026-006",
-      "customer_id": "cus-1790624104568-530",
-      "site_id": "sit-1790624104596-666",
-      "sales_person_id": "use-1790622019667-210",
-      "sales_person_name": "Mohammed Alwadhi",
-      "service_sequence": 4,
+      "id": "vis-amc-1790624317733-714-4-20270125",
+      "amc_contract_id": "amc-1790624317733-714",
+      "amc_id": "amc-1790624317733-714",
+      "contract_number": "AMC-2026-001",
+      "customer_id": "cus-1790622760597-446",
+      "customer_name": "Customer",
+      "site_id": "sit-1790622760624-394",
+      "site_name": "Site",
+      "sales_person_id": "usr-sales-1",
+      "sales_person_name": "Unassigned",
       "visit_number": 4,
-      "service_cycle": "Q4",
+      "service_sequence": 4,
       "quarter": "Q4",
-      "system_type": "Fire Fighting",
-      "system": "Fire Fighting",
-      "frequency_months": 3,
-      "scheduled_date": "2027-06-30",
-      "original_scheduled_date": "2027-06-30",
-      "rescheduled_date": null,
+      "service_cycle": "Q4",
+      "scheduled_date": "2027-01-25",
+      "original_scheduled_date": "2027-01-25",
       "actual_service_date": null,
       "completed_date": null,
-      "day": "Wednesday",
-      "day_of_week": "Wednesday",
+      "day": "Monday",
+      "day_of_week": "Monday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting",
+      "system_type": "Fire Alarm + Fire Fighting",
+      "system": "Fire Alarm + Fire Fighting",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
       "assigned_team": "Team Alpha (Tariq & Rajesh)",
       "assigned_technician": "usr-tech",
       "technician_id": "usr-tech",
+      "technician_name": "Abdul Majeed",
       "supervisor_id": "usr-sup",
+      "supervisor_name": "Sarath Kr",
       "report_id": null,
       "status": "Scheduled",
       "visit_status": "Scheduled",
-      "remarks": "Routine Fire Fighting safety compliance inspection #4",
-      "created_at": "2026-09-30T15:08:21.946Z",
-      "updated_at": "2026-09-30T15:08:21.946Z"
+      "remarks": "Routine Fire Alarm + Fire Fighting safety compliance inspection #4",
+      "photos": [],
+      "created_at": "2026-09-30T17:05:09.687Z",
+      "updated_at": "2026-09-30T17:05:09.687Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
     }
   ],
   "jobs": [
@@ -3837,6 +3771,15 @@
   ],
   "quotations": [],
   "audit_logs": [
+    {
+      "id": "aud-1790792157176",
+      "user_id": "usr-supervisor",
+      "action": "COMPLETE_AMC_VISIT",
+      "entity": "amc_visits",
+      "entity_id": "vis-amc-1790780901899-234-firealarm-1-299",
+      "details": "Completed visit vis-amc-1790780901899-234-firealarm-1-299 for contract AMC-2026-006 on 2026-09-30. Next service rule: from_actual_date. Updated 3 future visits.",
+      "timestamp": "2026-09-30T18:15:57.176Z"
+    },
     {
       "id": "aud-1790780902012",
       "user_id": "usr-gm-1790621464394",
