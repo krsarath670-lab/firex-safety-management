@@ -1007,7 +1007,7 @@ const getAmcContractsHandler = (req, res) => {
       total_including_vat: totalIncVat
     }, req.user);
 
-    const quartersData = contract.quarters || db.getContractQuarters(contract.id);
+    const quartersData = db.getContractQuarters(contract.id);
     const quarters_summary = {
       Q1: quartersData?.Q1?.status || 'Not Started',
       Q2: quartersData?.Q2?.status || 'Not Started',
@@ -1083,7 +1083,7 @@ const getAmcContractByIdHandler = (req, res) => {
     total_including_vat: totalIncVat
   }, req.user);
 
-  const quartersData = contract.quarters || db.getContractQuarters(contract.id);
+  const quartersData = db.getContractQuarters(contract.id);
   const quarters_summary = {
     Q1: quartersData?.Q1?.status || 'Not Started',
     Q2: quartersData?.Q2?.status || 'Not Started',
@@ -1178,9 +1178,12 @@ const postAmcContractHandler = (req, res) => {
 
   // Automatically calculate and generate system visit schedules (Requirements 5, 6, 7)
   const visits = db.generateAmcVisits(newContract);
+  const quarters = db.getContractQuarters(newContract.id);
+  newContract.quarters = quarters;
+  db.update('amc_contracts', newContract.id, { quarters });
 
   db.logAudit(req.user.id, 'CREATE_AMC', 'amc_contracts', newContract.id, `Created AMC contract ${contract_number} (Status: ${status}) with ${visits.length} system visits`);
-  res.status(201).json({ ...newContract, generated_visits_count: visits.length });
+  res.status(201).json({ ...newContract, quarters, generated_visits_count: visits.length });
 };
 
 app.post('/api/amc-contracts', requirePermission('canManageContracts'), postAmcContractHandler);

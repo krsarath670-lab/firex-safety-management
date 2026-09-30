@@ -1465,131 +1465,6 @@ class Database {
       modified = true;
     }
 
-    // Ensure amc_contracts have quarters_data initialized
-    if (data.amc_contracts && data.amc_contracts.length > 0) {
-      data.amc_contracts.forEach(contract => {
-        if (!contract.quarters) {
-          contract.quarters = {
-            Q1: {
-              quarter: 'Q1',
-              name: 'Q1 (Jan - Mar)',
-              months: 'Jan - Mar',
-              status: 'Completed',
-              scheduled_date: '2026-02-15',
-              actual_visit_date: '2026-02-16',
-              technician_name: 'Abdul Majeed',
-              supervisor_name: 'Sarath Kr',
-              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
-              checklist: {
-                'FACP Main Power & Battery Standby': { status: 'Pass' },
-                'Detector Smoke Chamber Sensitivity': { status: 'Pass' },
-                'Manual Call Point Glass & Microswitch': { status: 'Pass' },
-                'Main Diesel Fire Pump Auto-Start': { status: 'Pass' },
-                'Sprinkler Zone Valve Tamper Switch': { status: 'Pass' }
-              },
-              faults_count: 0,
-              faults_details: 'Routine periodic quarterly maintenance successfully completed with no critical faults.',
-              corrective_action: 'Smoke sensors cleaned, batteries load-tested, pump pressure hold verified.',
-              materials_used: [],
-              photos: [
-                { id: 'q1-p1', url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600', tag: 'After', caption: 'FACP Morley Panel Verified Normal' }
-              ],
-              technician_remarks: 'All 8 loops normal. Pump auto-crank tested normal at 11.5 bar.',
-              customer_rep_name: 'KHALIL EBRAHIM',
-              customer_rep_designation: 'Facilities Supervisor',
-              customer_signature: 'Verified & Signed Electronically',
-              report_id: 'rpt-amc-q1',
-              report_number: 'RPT-2026-Q1-001',
-              report_status: 'Approved',
-              approved_by: 'Eng. Mohamed Hweidi (GM)'
-            },
-            Q2: {
-              quarter: 'Q2',
-              name: 'Q2 (Apr - Jun)',
-              months: 'Apr - Jun',
-              status: 'Completed',
-              scheduled_date: '2026-05-18',
-              actual_visit_date: '2026-05-19',
-              technician_name: 'Abdul Majeed',
-              supervisor_name: 'Sarath Kr',
-              systems_inspected: ['Fire Alarm', 'Fire Fighting', 'Emergency Light'],
-              checklist: {
-                'FACP Main Power & Battery Standby': { status: 'Pass' },
-                'Detector Smoke Chamber Sensitivity': { status: 'Pass' },
-                'Sprinkler Flow Switch & Valves': { status: 'Pass' }
-              },
-              faults_count: 1,
-              faults_details: 'Level 2 MCP frangible glass cracked by freight cart.',
-              corrective_action: 'Replaced cracked element with genuine Notifier glass.',
-              materials_used: [
-                { part_number: 'MCP-GL-01', description: 'Notifier Call Point Replacement Glass', quantity: 1 }
-              ],
-              photos: [],
-              technician_remarks: 'Q2 inspection completed. System restored to 100% normal.',
-              customer_rep_name: 'KHALIL EBRAHIM',
-              customer_rep_designation: 'Facilities Supervisor',
-              customer_signature: 'Verified & Signed Electronically',
-              report_id: 'rpt-amc-q2',
-              report_number: 'RPT-2026-Q2-002',
-              report_status: 'Approved',
-              approved_by: 'Eng. Chandiramohan Karunanithi (Engineer)'
-            },
-            Q3: {
-              quarter: 'Q3',
-              name: 'Q3 (Jul - Sep)',
-              months: 'Jul - Sep',
-              status: 'In Progress',
-              scheduled_date: '2026-08-20',
-              actual_visit_date: '2026-09-28',
-              technician_name: 'Abdul Majeed',
-              supervisor_name: 'Sarath Kr',
-              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
-              checklist: {
-                'FACP Main Power & Battery Standby': { status: 'Pass' },
-                'Detector Smoke Chamber Sensitivity': { status: 'Pass' }
-              },
-              faults_count: 0,
-              faults_details: '',
-              corrective_action: '',
-              materials_used: [],
-              photos: [],
-              technician_remarks: 'Technician on site executing Q3 testing and loop checks.',
-              customer_rep_name: 'KHALIL EBRAHIM',
-              customer_rep_designation: 'Facilities Supervisor',
-              customer_signature: null,
-              report_id: null,
-              report_number: null,
-              report_status: 'Draft'
-            },
-            Q4: {
-              quarter: 'Q4',
-              name: 'Q4 (Oct - Dec)',
-              months: 'Oct - Dec',
-              status: 'Scheduled',
-              scheduled_date: '2026-11-15',
-              actual_visit_date: null,
-              technician_name: 'Abdul Majeed',
-              supervisor_name: 'Sarath Kr',
-              systems_inspected: ['Fire Alarm', 'Fire Fighting'],
-              checklist: {},
-              faults_count: 0,
-              faults_details: '',
-              corrective_action: '',
-              materials_used: [],
-              photos: [],
-              technician_remarks: '',
-              customer_rep_name: '',
-              customer_rep_designation: '',
-              customer_signature: null,
-              report_id: null,
-              report_number: null,
-              report_status: 'Not Started'
-            }
-          };
-          modified = true;
-        }
-      });
-    }
 
     // AMC Settings & Visits Schema Normalization (Requirements 1, 2, 3, 10)
     if (!data.company_settings) data.company_settings = {};
@@ -2194,7 +2069,7 @@ class Database {
     return job;
   }
 
-  // Get full Quarterly inspection data for AMC Contract (Requirement 1, 2, 5)
+  // Get full Quarterly inspection data for AMC Contract (strictly anchored to contract start date & service cycle)
   getContractQuarters(contractId) {
     const db = this.read();
     const contract = (db.amc_contracts || []).find(c => c.id === contractId);
@@ -2202,20 +2077,6 @@ class Database {
 
     // Helper to get period names relative to contract start date
     const cycleNames = this.getCyclePeriodNames(contract.start_date);
-
-    // If already stored in contract.quarters, return enriched with dynamic cycle names
-    if (contract.quarters && contract.quarters.Q1) {
-      ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
-        if (contract.quarters[q]) {
-          contract.quarters[q].name = cycleNames[q]?.name || `${q} Inspection`;
-          contract.quarters[q].months = cycleNames[q]?.months || 'Quarterly Cycle';
-          contract.quarters[q].fullMonths = cycleNames[q]?.fullMonths || cycleNames[q]?.months;
-        }
-      });
-      return contract.quarters;
-    }
-
-    // Otherwise generate dynamic cycle quarterly records for Q1-Q4 based on contract start date
     const visits = (db.amc_visits || []).filter(v => v.amc_contract_id === contractId || v.amc_id === contractId);
     const reports = (db.reports || []).filter(r => r.amc_id === contractId || r.amc_contract_id === contractId);
     const todayStr = new Date().toISOString().split('T')[0];
@@ -2225,7 +2086,7 @@ class Database {
     ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, idx) => {
       const qVisits = visits.filter(v => v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1));
       const qReports = reports.filter(r => r.quarter === q || (r.report_number && r.report_number.includes(q)) || r.service_cycle === q);
-      const approvedRpt = qReports.find(r => r.status === 'Approved');
+      const approvedRpt = qReports.find(r => r.status === 'Approved' || r.status === 'Completed');
       const submittedRpt = qReports.find(r => r.status === 'Submitted' || r.status === 'Reviewed');
 
       let status = 'Not Started';
@@ -2240,32 +2101,56 @@ class Database {
 
       const firstVisit = qVisits[0];
       const defaultDate = this.addCalendarMonths(contract.start_date, idx * 3);
+      const scheduledDate = firstVisit?.scheduled_date || defaultDate;
 
-      quarters[q] = {
-        quarter: q,
-        name: cycleNames[q]?.name || `Q${idx + 1}`,
-        months: cycleNames[q]?.months || `Service ${idx + 1}`,
-        fullMonths: cycleNames[q]?.fullMonths || cycleNames[q]?.months,
-        status,
-        scheduled_date: firstVisit ? firstVisit.scheduled_date : defaultDate,
-        actual_visit_date: firstVisit?.actual_service_date || (firstVisit?.status === 'Completed' ? firstVisit.scheduled_date : null),
-        technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : 'Abdul Majeed',
-        supervisor_name: firstVisit ? (firstVisit.supervisor_name || 'Sarath Kr') : 'Sarath Kr',
-        systems_inspected: contract.systems || ['Fire Alarm', 'Fire Fighting'],
-        checklist: {},
-        faults_count: 0,
-        faults_details: '',
-        corrective_action: '',
-        materials_used: [],
-        photos: [],
-        technician_remarks: '',
-        customer_rep_name: '',
-        customer_rep_designation: '',
-        customer_signature: null,
-        report_id: approvedRpt ? approvedRpt.id : (submittedRpt ? submittedRpt.id : null),
-        report_number: approvedRpt ? approvedRpt.report_number : (submittedRpt ? submittedRpt.report_number : null),
-        report_status: approvedRpt ? 'Approved' : (submittedRpt ? 'Submitted' : 'Not Started')
-      };
+      // Existing stored quarter inspection data (e.g. from manual technician/supervisor submission)
+      const savedQuarter = contract.quarters?.[q];
+      const isManualUpdate = savedQuarter && (
+        savedQuarter.updated_at ||
+        (savedQuarter.checklist && Object.keys(savedQuarter.checklist).length > 0 && savedQuarter.scheduled_date !== '2026-02-15')
+      );
+
+      if (isManualUpdate) {
+        quarters[q] = {
+          ...savedQuarter,
+          quarter: q,
+          name: cycleNames[q]?.name || `Q${idx + 1}`,
+          months: cycleNames[q]?.months || `Service ${idx + 1}`,
+          fullMonths: cycleNames[q]?.fullMonths || cycleNames[q]?.months,
+          status: savedQuarter.status || status,
+          // Guard against stale hardcoded seed dates from legacy demo
+          scheduled_date: (savedQuarter.scheduled_date && !['2026-02-15', '2026-05-18', '2026-08-20', '2026-11-15'].includes(savedQuarter.scheduled_date))
+            ? savedQuarter.scheduled_date
+            : scheduledDate,
+          actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (savedQuarter.status === 'Completed' ? scheduledDate : null)
+        };
+      } else {
+        quarters[q] = {
+          quarter: q,
+          name: cycleNames[q]?.name || `Q${idx + 1}`,
+          months: cycleNames[q]?.months || `Service ${idx + 1}`,
+          fullMonths: cycleNames[q]?.fullMonths || cycleNames[q]?.months,
+          status,
+          scheduled_date: scheduledDate,
+          actual_visit_date: firstVisit?.actual_service_date || (firstVisit?.status === 'Completed' ? firstVisit.scheduled_date : null),
+          technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : (contract.assigned_technician || 'Abdul Majeed'),
+          supervisor_name: firstVisit ? (firstVisit.supervisor_name || 'Sarath Kr') : (contract.assigned_supervisor || 'Sarath Kr'),
+          systems_inspected: contract.systems || contract.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+          checklist: {},
+          faults_count: 0,
+          faults_details: '',
+          corrective_action: '',
+          materials_used: [],
+          photos: [],
+          technician_remarks: '',
+          customer_rep_name: '',
+          customer_rep_designation: '',
+          customer_signature: null,
+          report_id: approvedRpt ? approvedRpt.id : (submittedRpt ? submittedRpt.id : null),
+          report_number: approvedRpt ? approvedRpt.report_number : (submittedRpt ? submittedRpt.report_number : null),
+          report_status: approvedRpt ? 'Approved' : (submittedRpt ? 'Submitted' : 'Not Started')
+        };
+      }
     });
 
     return quarters;
@@ -2965,6 +2850,10 @@ class Database {
       }
     }
 
+    if (datesChanged || systemsChanged) {
+      updatedContract.quarters = this.getContractQuarters(id);
+    }
+
     db.amc_contracts[index] = updatedContract;
     this.write(db);
     return updatedContract;
@@ -3029,6 +2918,12 @@ class Database {
 
     // 3. Generate visits for the new contract period
     this.generateAmcVisits(newContract);
+    newContract.quarters = this.getContractQuarters(newContract.id);
+    const renewIdx = db.amc_contracts.findIndex(c => c.id === newContract.id);
+    if (renewIdx !== -1) {
+      db.amc_contracts[renewIdx].quarters = newContract.quarters;
+      this.write(db);
+    }
 
     return newContract;
   }

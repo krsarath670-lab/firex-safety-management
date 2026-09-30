@@ -137,6 +137,24 @@ export default function AMCView({ onStartInspectionForVisit }) {
     remarks: ''
   });
 
+  // Deterministic calendar month arithmetic for contract service cycles
+  const addCalendarMonths = (dateStr, monthsToAdd) => {
+    if (!dateStr) return '';
+    const cleanStr = String(dateStr).split('T')[0];
+    const parts = cleanStr.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return dateStr;
+
+    const totalMonths = (year * 12 + (month - 1)) + Number(monthsToAdd);
+    const newYear = Math.floor(totalMonths / 12);
+    const newMonth = (totalMonths % 12) + 1;
+    const maxDays = new Date(newYear, newMonth, 0).getDate();
+    const newDay = Math.min(day, maxDays);
+    return `${newYear}-${String(newMonth).padStart(2, '0')}-${String(newDay).padStart(2, '0')}`;
+  };
+
   // Dynamic Cycle Period Names calculated relative to AMC contract start date
   const getContractCyclePeriods = (startDateStr) => {
     if (!startDateStr) {
@@ -1193,12 +1211,14 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey) => {
+                      {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey, qIdx) => {
                         const qData = c.quarters?.[qKey] || { status: 'Not Started' };
                         const qStatus = qData.status || 'Not Started';
                         const isCompliant = ['Completed', 'Approved'].includes(qStatus);
                         const isOverdue = qStatus === 'Overdue';
                         const isPending = qStatus.includes('Pending') || qStatus.includes('Submitted') || qStatus.includes('Reviewed');
+                        const defaultQuarterDate = c.start_date ? addCalendarMonths(c.start_date, qIdx * 3) : '';
+                        const displayDate = qData.actual_visit_date || qData.visit_date || qData.scheduled_date || defaultQuarterDate || 'TBD';
 
                         return (
                           <div
@@ -1220,7 +1240,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                             <div className="flex items-center justify-between text-[11px] font-black">
                               <span>{qKey}</span>
                               <span className="text-[9px] font-semibold opacity-75 truncate max-w-[70px]">
-                                {qData.visit_date || qData.scheduled_date || 'TBD'}
+                                {displayDate}
                               </span>
                             </div>
                             <div className="text-[9.5px] font-bold truncate mt-0.5" title={qStatus}>
@@ -3315,7 +3335,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                   v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1)
                                 );
                                 
-                                const schedDate = matchedVisit?.scheduled_date || qRec.scheduled_date || 'TBD';
+                                const defaultCycleDate = viewingContractDetail.start_date ? addCalendarMonths(viewingContractDetail.start_date, idx * 3) : '';
+                                const schedDate = matchedVisit?.scheduled_date || qRec.scheduled_date || defaultCycleDate || 'TBD';
                                 const origDate = matchedVisit?.original_scheduled_date;
                                 const isRescheduled = (matchedVisit?.status === 'Rescheduled') || (origDate && origDate !== schedDate);
                                 const actualDate = matchedVisit?.actual_service_date || qRec.actual_visit_date || (matchedVisit?.status === 'Completed' ? schedDate : null);
@@ -3470,13 +3491,17 @@ export default function AMCView({ onStartInspectionForVisit }) {
                   ) : (
                     /* SPECIFIC QUARTER RECORD VIEW (Q1, Q2, Q3, Q4) */
                     (() => {
+                      const qTabIdx = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(activeQuarterTab);
+                      const defaultQuarterDate = viewingContractDetail.start_date
+                        ? addCalendarMonths(viewingContractDetail.start_date, Math.max(0, qTabIdx) * 3)
+                        : '';
                       const qRec = viewingContractDetail.quarters?.[activeQuarterTab] || {
                         status: 'Not Started',
-                        scheduled_date: '2026-03-15',
-                        technician_name: 'Rajesh Kumar',
-                        supervisor_name: 'Eng. Tariq Mahmoud',
-                        systems: ['Fire Alarm', 'Fire Fighting & Sprinklers', 'Fire Extinguishers'],
-                        findings: { pass: 18, fail: 0, needs_attention: 0 },
+                        scheduled_date: defaultQuarterDate,
+                        technician_name: viewingContractDetail.sales_person_name || 'Abdul Majeed',
+                        supervisor_name: 'Sarath Kr',
+                        systems: viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
+                        findings: { pass: 0, fail: 0, needs_attention: 0 },
                         report_status: 'Draft',
                         checklist_items: [
                           { item: 'Fire Alarm Control Panel Main Power & Battery Backups', status: 'Pass' },
@@ -3594,7 +3619,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-white p-3 rounded-xl border border-slate-200 text-xs">
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400 block">Scheduled Date</span>
-                              <span className="font-semibold text-slate-900">{qRec.scheduled_date || '2026-03-15'}</span>
+                              <span className="font-semibold text-slate-900">{qRec.scheduled_date || defaultQuarterDate || 'TBD'}</span>
                             </div>
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400 block">Actual Visit Date</span>
