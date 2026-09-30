@@ -2258,11 +2258,11 @@ app.get('/api/reports', (req, res) => {
     const contractEnd = r.contract_end_date || (amc ? amc.end_date : '');
     const contractPeriod = r.contract_period || (contractStart && contractEnd ? `${contractStart} to ${contractEnd}` : '');
 
-    // Resolve Prepared By and Audit Trail (Requirements 3, 4, 5, 7, 8)
+    // Resolve Prepared By, Submitted By, Reviewed By, Completed By
     const preparedUser = users.find(u => u.id === r.prepared_by_user_id || u.id === r.created_by_user_id || u.id === r.created_by);
     const submittedUser = users.find(u => u.id === r.submitted_by_user_id || u.id === r.submitted_by);
     const reviewedUser = users.find(u => u.id === r.reviewed_by_user_id || u.id === r.reviewed_by);
-    const approvedUser = users.find(u => u.id === r.approved_by_user_id || u.id === r.approved_by);
+    const completedUser = users.find(u => u.id === r.completed_by_user_id || u.id === r.completed_by || u.id === r.approved_by_user_id || u.id === r.approved_by);
 
     const preparedByName = preparedUser ? preparedUser.name : (r.prepared_by_name || r.technician_name || 'Staff');
     const preparedByRole = preparedUser ? preparedUser.role : (r.prepared_by_role || 'Technician');
@@ -2272,8 +2272,11 @@ app.get('/api/reports', (req, res) => {
     const preparedDate = r.prepared_date || r.created_date || dt.date;
     const preparedTime = r.prepared_time || r.created_time || dt.time;
 
+    const normalizedStatus = r.status === 'Approved' ? 'Completed' : (r.status || 'Draft');
+
     return {
       ...r,
+      status: normalizedStatus,
       customer_name: cust ? cust.name : (r.customer_name || 'Customer / Client'),
       customer_address: cust ? (cust.address || formatCustomerAddress(cust)) : (r.customer_address || ''),
       contact_person: cust ? (cust.contact_person || cust.contact_mobile) : (r.contact_person || ''),
@@ -2294,14 +2297,20 @@ app.get('/api/reports', (req, res) => {
       prepared_time: preparedTime,
       created_date: r.created_date || preparedDate,
       submitted_by_user_id: r.submitted_by_user_id || (submittedUser ? submittedUser.id : null),
-      submitted_by_name: submittedUser ? submittedUser.name : (r.submitted_by_name || null),
-      submitted_by_role: submittedUser ? submittedUser.role : (r.submitted_by_role || null),
+      submitted_by_name: submittedUser ? submittedUser.name : (r.submitted_by_name || (r.submitted_at ? preparedByName : null)),
+      submitted_by_role: submittedUser ? submittedUser.role : (r.submitted_by_role || (r.submitted_at ? preparedByRole : null)),
+      submitted_date: r.submitted_date || (r.submitted_at ? r.submitted_at.slice(0, 10) : null),
+      submitted_time: r.submitted_time || null,
       reviewed_by_user_id: r.reviewed_by_user_id || (reviewedUser ? reviewedUser.id : null),
       reviewed_by_name: reviewedUser ? reviewedUser.name : (r.reviewed_by_name || (r.reviewed_at ? (r.supervisor_name || 'Supervisor') : null)),
       reviewed_by_role: reviewedUser ? reviewedUser.role : (r.reviewed_by_role || (r.reviewed_at ? 'Supervisor' : null)),
-      approved_by_user_id: r.approved_by_user_id || r.approved_by || (approvedUser ? approvedUser.id : null),
-      approved_by_name: approvedUser ? approvedUser.name : (r.approved_by_name || (r.status === 'Approved' ? 'GM' : null)),
-      approved_by_role: approvedUser ? approvedUser.role : (r.approved_by_role || (r.status === 'Approved' ? 'GM' : null))
+      reviewed_date: r.reviewed_date || (r.reviewed_at ? r.reviewed_at.slice(0, 10) : null),
+      reviewed_time: r.reviewed_time || null,
+      completed_by_user_id: r.completed_by_user_id || (completedUser ? completedUser.id : null),
+      completed_by_name: completedUser ? completedUser.name : (r.completed_by_name || (normalizedStatus === 'Completed' ? (reviewedUser?.name || 'Engineer') : null)),
+      completed_by_role: completedUser ? completedUser.role : (r.completed_by_role || (normalizedStatus === 'Completed' ? (reviewedUser?.role || 'Engineer') : null)),
+      completed_date: r.completed_date || (r.completed_at ? r.completed_at.slice(0, 10) : null),
+      completed_time: r.completed_time || null
     };
   });
 
@@ -2351,11 +2360,11 @@ app.get('/api/reports/:id', (req, res) => {
   const contractEnd = report.contract_end_date || (amc ? amc.end_date : '');
   const contractPeriod = report.contract_period || (contractStart && contractEnd ? `${contractStart} to ${contractEnd}` : '');
 
-  // Resolve Prepared By and Audit Trail (Requirements 3, 4, 5, 7, 8)
+  // Resolve Prepared By, Submitted By, Reviewed By, Completed By
   const preparedUser = users.find(u => u.id === report.prepared_by_user_id || u.id === report.created_by_user_id || u.id === report.created_by);
   const submittedUser = users.find(u => u.id === report.submitted_by_user_id || u.id === report.submitted_by);
   const reviewedUser = users.find(u => u.id === report.reviewed_by_user_id || u.id === report.reviewed_by);
-  const approvedUser = users.find(u => u.id === report.approved_by_user_id || u.id === report.approved_by);
+  const completedUser = users.find(u => u.id === report.completed_by_user_id || u.id === report.completed_by || u.id === report.approved_by_user_id || u.id === report.approved_by);
 
   const preparedByName = preparedUser ? preparedUser.name : (report.prepared_by_name || report.technician_name || 'Staff');
   const preparedByRole = preparedUser ? preparedUser.role : (report.prepared_by_role || 'Technician');
@@ -2365,8 +2374,11 @@ app.get('/api/reports/:id', (req, res) => {
   const preparedDate = report.prepared_date || report.created_date || dt.date;
   const preparedTime = report.prepared_time || report.created_time || dt.time;
 
+  const normalizedStatus = report.status === 'Approved' ? 'Completed' : (report.status || 'Draft');
+
   res.json({
     ...report,
+    status: normalizedStatus,
     customer_name: customer ? customer.name : (report.customer_name || 'Customer / Client'),
     customer_address: customer ? (customer.address || formatCustomerAddress(customer)) : (report.customer_address || ''),
     contact_person: customer ? (customer.contact_person || customer.contact_mobile) : (report.contact_person || ''),
@@ -2391,14 +2403,20 @@ app.get('/api/reports/:id', (req, res) => {
     created_date: report.created_date || preparedDate,
     created_time: report.created_time || preparedTime,
     submitted_by_user_id: report.submitted_by_user_id || (submittedUser ? submittedUser.id : null),
-    submitted_by_name: submittedUser ? submittedUser.name : (report.submitted_by_name || null),
-    submitted_by_role: submittedUser ? submittedUser.role : (report.submitted_by_role || null),
+    submitted_by_name: submittedUser ? submittedUser.name : (report.submitted_by_name || (report.submitted_at ? preparedByName : null)),
+    submitted_by_role: submittedUser ? submittedUser.role : (report.submitted_by_role || (report.submitted_at ? preparedByRole : null)),
+    submitted_date: report.submitted_date || (report.submitted_at ? report.submitted_at.slice(0, 10) : null),
+    submitted_time: report.submitted_time || null,
     reviewed_by_user_id: report.reviewed_by_user_id || (reviewedUser ? reviewedUser.id : null),
     reviewed_by_name: reviewedUser ? reviewedUser.name : (report.reviewed_by_name || (report.reviewed_at ? (report.supervisor_name || 'Supervisor') : null)),
     reviewed_by_role: reviewedUser ? reviewedUser.role : (report.reviewed_by_role || (report.reviewed_at ? 'Supervisor' : null)),
-    approved_by_user_id: report.approved_by_user_id || report.approved_by || (approvedUser ? approvedUser.id : null),
-    approved_by_name: approvedUser ? approvedUser.name : (report.approved_by_name || (report.status === 'Approved' ? 'GM' : null)),
-    approved_by_role: approvedUser ? approvedUser.role : (report.approved_by_role || (report.status === 'Approved' ? 'GM' : null))
+    reviewed_date: report.reviewed_date || (report.reviewed_at ? report.reviewed_at.slice(0, 10) : null),
+    reviewed_time: report.reviewed_time || null,
+    completed_by_user_id: report.completed_by_user_id || (completedUser ? completedUser.id : null),
+    completed_by_name: completedUser ? completedUser.name : (report.completed_by_name || (normalizedStatus === 'Completed' ? (reviewedUser?.name || 'Engineer') : null)),
+    completed_by_role: completedUser ? completedUser.role : (report.completed_by_role || (normalizedStatus === 'Completed' ? (reviewedUser?.role || 'Engineer') : null)),
+    completed_date: report.completed_date || (report.completed_at ? report.completed_at.slice(0, 10) : null),
+    completed_time: report.completed_time || null
   });
 });
 
@@ -2499,7 +2517,7 @@ app.post('/api/reports', (req, res) => {
     submitted_at: isSubmitted ? nowAudit.iso : null,
     submitted_by: isSubmitted ? authUser.id : null,
 
-    // Review & Approval initialized strictly to null
+    // Review & Completed audit initialized strictly to null
     reviewed_by_user_id: null,
     reviewed_by_name: null,
     reviewed_by_role: null,
@@ -2508,13 +2526,13 @@ app.post('/api/reports', (req, res) => {
     reviewed_at: null,
     reviewed_by: null,
 
-    approved_by_user_id: null,
-    approved_by_name: null,
-    approved_by_role: null,
-    approved_date: null,
-    approved_time: null,
-    approved_at: null,
-    approved_by: null
+    completed_by_user_id: null,
+    completed_by_name: null,
+    completed_by_role: null,
+    completed_date: null,
+    completed_time: null,
+    completed_at: null,
+    completed_by: null
   });
 
   // Link to job if provided
@@ -2531,25 +2549,41 @@ app.put('/api/reports/:id', (req, res) => {
   const existing = db.getById('reports', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Report not found' });
 
-  // If technician, can only edit if status is Draft or if submitting it
+  // GM has view-only access to reports and does NOT approve reports
+  if (req.user.role === 'GM') {
+    return res.status(403).json({
+      error: 'Access Denied',
+      message: 'General Manager has view-only access to operational reports. GM does not approve reports.'
+    });
+  }
+
+  // Sales and Accounts have view-only access where permitted
+  if (['Sales', 'Accounts'].includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Access Denied',
+      message: 'Sales and Accounts users have view-only access to reports and cannot edit or complete them.'
+    });
+  }
+
+  // Technician restrictions:
+  // - Can only submit/edit their own draft report
+  // - Cannot review or complete reports (neither their own nor others')
   if (req.user.role === 'Technician') {
     const isOwn = existing.created_by === req.user.id || existing.created_by_user_id === req.user.id || existing.prepared_by_user_id === req.user.id || existing.technician_name === req.user.name;
     if (!isOwn) {
       return res.status(403).json({ error: 'Access Denied', message: 'You cannot edit another technician\'s report.' });
     }
-    if (existing.status !== 'Draft' && req.body.status !== 'Submitted') {
-      return res.status(403).json({ error: 'Access Denied', message: 'Submitted or approved reports cannot be edited by technicians.' });
+    if (['Reviewed', 'Completed', 'Approved'].includes(req.body.status)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Technicians are not authorized to review or complete reports.' });
     }
-  }
-
-  // Technician cannot approve their own or any report (Requirement 14)
-  if (req.body.status === 'Approved' && req.user.role === 'Technician') {
-    return res.status(403).json({ error: 'Access Denied', message: 'Technicians are not authorized to approve reports.' });
+    if (existing.status !== 'Draft' && req.body.status !== 'Submitted') {
+      return res.status(403).json({ error: 'Access Denied', message: 'Submitted or completed reports cannot be edited by technicians.' });
+    }
   }
 
   const updates = { ...req.body };
 
-  // STRICT IMMUTABILITY (Requirement 11): Never overwrite original creator / prepared by
+  // STRICT IMMUTABILITY: Never overwrite original creator / prepared by
   delete updates.created_by_user_id;
   delete updates.prepared_by_user_id;
   delete updates.prepared_by_name;
@@ -2565,7 +2599,7 @@ app.put('/api/reports/:id', (req, res) => {
   const users = db.get('users') || [];
   const authUser = users.find(u => u.id === req.user.id) || req.user;
 
-  // Record Last Modified By (Requirement 11)
+  // Record Last Modified By
   updates.last_modified_by_user_id = authUser.id;
   updates.last_modified_by_name = authUser.name;
   updates.last_modified_by_role = authUser.role;
@@ -2573,7 +2607,7 @@ app.put('/api/reports/:id', (req, res) => {
   updates.last_modified_time = nowAudit.time;
   updates.last_modified_at = nowAudit.iso;
 
-  // Track status transitions: Draft -> Submitted -> Reviewed -> Approved
+  // Track status transitions: Draft -> Submitted -> Reviewed -> Completed
   if (updates.status === 'Submitted' && existing.status !== 'Submitted') {
     updates.submitted_by_user_id = authUser.id;
     updates.submitted_by_name = authUser.name;
@@ -2585,8 +2619,8 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if (updates.status === 'Reviewed' && existing.status !== 'Reviewed') {
-    if (req.user.role === 'Technician') {
-      return res.status(403).json({ error: 'Technicians cannot mark reports as Reviewed.' });
+    if (!['Projects Manager', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, or Supervisor can review reports.' });
     }
     updates.reviewed_by_user_id = authUser.id;
     updates.reviewed_by_name = authUser.name;
@@ -2597,17 +2631,40 @@ app.put('/api/reports/:id', (req, res) => {
     updates.reviewed_by = authUser.id;
   }
 
-  if (updates.status === 'Approved' && existing.status !== 'Approved') {
-    if (req.user.role === 'Technician') {
-      return res.status(403).json({ error: 'Technicians cannot approve reports.' });
+  if ((updates.status === 'Completed' || updates.status === 'Approved') && existing.status !== 'Completed') {
+    if (!['Projects Manager', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, or Supervisor can complete reports.' });
     }
-    updates.approved_by_user_id = authUser.id;
-    updates.approved_by_name = authUser.name;
-    updates.approved_by_role = authUser.role;
-    updates.approved_date = nowAudit.date;
-    updates.approved_time = nowAudit.time;
-    updates.approved_at = nowAudit.iso;
-    updates.approved_by = authUser.id;
+    // Standardize to Completed
+    updates.status = 'Completed';
+
+    // If review was not previously recorded, record it alongside completion
+    if (!existing.reviewed_by_user_id && !updates.reviewed_by_user_id) {
+      updates.reviewed_by_user_id = authUser.id;
+      updates.reviewed_by_name = authUser.name;
+      updates.reviewed_by_role = authUser.role;
+      updates.reviewed_date = nowAudit.date;
+      updates.reviewed_time = nowAudit.time;
+      updates.reviewed_at = nowAudit.iso;
+      updates.reviewed_by = authUser.id;
+    }
+
+    updates.completed_by_user_id = authUser.id;
+    updates.completed_by_name = authUser.name;
+    updates.completed_by_role = authUser.role;
+    updates.completed_date = nowAudit.date;
+    updates.completed_time = nowAudit.time;
+    updates.completed_at = nowAudit.iso;
+    updates.completed_by = authUser.id;
+
+    // Remove any legacy approval keys
+    delete updates.approved_by_user_id;
+    delete updates.approved_by_name;
+    delete updates.approved_by_role;
+    delete updates.approved_date;
+    delete updates.approved_time;
+    delete updates.approved_at;
+    delete updates.approved_by;
   }
 
   const updated = db.update('reports', req.params.id, updates);
@@ -2883,12 +2940,12 @@ app.post('/api/emergency-calls/:id/submit', (req, res) => {
   }
 });
 
-// Review report (Supervisor, Engineer, GM)
+// Review report (Supervisor, Engineer, Projects Manager)
 app.post('/api/emergency-calls/:id/review', (req, res) => {
   try {
-    const allowed = ['Supervisor', 'Engineer', 'GM'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager'];
     if (!allowed.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, and GM can review reports.' });
+      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, and Projects Managers can review reports.' });
     }
 
     const existing = db.getEmergencyCallById(req.params.id);
@@ -2906,14 +2963,14 @@ app.post('/api/emergency-calls/:id/review', (req, res) => {
   }
 });
 
-// Approve report (Engineer, GM) - Technician and others FORBIDDEN
-app.post('/api/emergency-calls/:id/approve', (req, res) => {
+// Complete report (Supervisor, Engineer, Projects Manager) - NO GM approval step
+app.post('/api/emergency-calls/:id/complete', (req, res) => {
   try {
-    const allowed = ['Engineer', 'GM'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager'];
     if (!allowed.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Lead Engineers and General Managers are authorized to approve emergency reports.'
+        message: 'Only Projects Managers, Engineers, and Supervisors can complete emergency reports.'
       });
     }
 
@@ -2921,13 +2978,44 @@ app.post('/api/emergency-calls/:id/approve', (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
 
     const updated = db.updateEmergencyCall(existing.id, {
-      report_status: 'Approved',
-      status: 'Approved'
+      report_status: 'Completed',
+      status: 'Completed'
     }, req.user);
 
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to approve report' });
+    res.status(500).json({ error: 'Failed to complete report' });
+  }
+});
+
+// Legacy /approve endpoint mapped to complete (GM rejected with 403)
+app.post('/api/emergency-calls/:id/approve', (req, res) => {
+  try {
+    if (req.user.role === 'GM') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'GM does not approve reports. Reports are completed by Projects Manager, Engineer, or Supervisor.'
+      });
+    }
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager'];
+    if (!allowed.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Only Projects Managers, Engineers, and Supervisors can complete emergency reports.'
+      });
+    }
+
+    const existing = db.getEmergencyCallById(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
+
+    const updated = db.updateEmergencyCall(existing.id, {
+      report_status: 'Completed',
+      status: 'Completed'
+    }, req.user);
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to complete report' });
   }
 });
 

@@ -16,8 +16,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
 
   const role = currentUser?.role || 'Technician';
   const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
-  const canReviewReports = ['Projects Manager', 'Engineer', 'Supervisor', 'GM'].includes(role);
-  const canApproveReports = ['Projects Manager', 'Engineer', 'Supervisor', 'GM'].includes(role);
+  const canReviewReports = ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
+  const canCompleteReports = ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const isTechnician = role === 'Technician';
   const isSales = role === 'Sales';
   const isAccounts = role === 'Accounts';
@@ -46,7 +46,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
     loadReports();
   }, [currentUser]);
 
-  // Handle Status Pipeline transitions: Draft -> Submitted -> Reviewed -> Approved
+  // Handle Status Pipeline transitions: Draft -> Submitted -> Reviewed -> Completed
   const handleTransitionStatus = async (reportId, nextStatus) => {
     try {
       const res = await fetch(`/api/reports/${reportId}`, {
@@ -103,7 +103,13 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   );
 
   const filteredReports = reports.filter((r) => {
-    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'Completed') {
+        if (r.status !== 'Completed' && r.status !== 'Approved') return false;
+      } else if (r.status !== statusFilter) {
+        return false;
+      }
+    }
     if (preparedByFilter !== 'all') {
       const pName = r.prepared_by_name || r.technician_name || '';
       if (pName !== preparedByFilter) return false;
@@ -130,6 +136,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
         return 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse';
       case 'Reviewed':
         return 'bg-indigo-100 text-indigo-800 border-indigo-300';
+      case 'Completed':
       case 'Approved':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold';
       default:
@@ -148,7 +155,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
             <span>Service &amp; AMC Reports</span>
           </h1>
           <p className="text-xs text-slate-500">
-            Official field reports, digital approvals, and FIREX A4 PDFs.
+            Official field reports, digital reviews, and FIREX A4 PDFs.
           </p>
         </div>
         {canPrepareReports ? (
@@ -161,7 +168,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
           </button>
         ) : (
           <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-            {role} • View &amp; Review Mode
+            {role} • View Only Mode
           </span>
         )}
       </div>
@@ -187,7 +194,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
               { id: 'Draft', label: 'Draft' },
               { id: 'Submitted', label: 'Submitted' },
               { id: 'Reviewed', label: 'Reviewed' },
-              { id: 'Approved', label: 'Approved (Official)' }
+              { id: 'Completed', label: 'Completed' }
             ].map((st) => (
               <button
                 key={st.id}
@@ -234,7 +241,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
           const isDraft = r.status === 'Draft';
           const isSubmitted = r.status === 'Submitted';
           const isReviewed = r.status === 'Reviewed';
-          const isApproved = r.status === 'Approved';
+          const isCompleted = r.status === 'Completed' || r.status === 'Approved';
 
           return (
             <div
@@ -318,9 +325,9 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                       Reviewed by {r.reviewed_by_name || 'Lead'} ({r.reviewed_by_role || 'Supervisor'}) • {r.reviewed_at.slice(0, 10)}
                     </span>
                   )}
-                  {r.approved_at && (
+                  {(r.completed_at || r.approved_at) && (
                     <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">
-                      Approved by {r.approved_by_name || 'GM'} ({r.approved_by_role || 'GM'}) • {r.approved_at.slice(0, 10)}
+                      Completed by {r.completed_by_name || r.approved_by_name || 'Lead'} ({r.completed_by_role || r.approved_by_role || 'Supervisor'}) • {(r.completed_at || r.approved_at).slice(0, 10)}
                     </span>
                   )}
                 </div>
@@ -350,7 +357,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                   )}
 
                   {/* Status Progression Button: Mark Reviewed */}
-                  {!isTechnician && !isSales && !isAccounts && isSubmitted && canReviewReports && (
+                  {!isTechnician && !isSales && !isAccounts && !isGM && isSubmitted && canReviewReports && (
                     <button
                       onClick={() => handleTransitionStatus(r.id, 'Reviewed')}
                       className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
@@ -359,22 +366,21 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {/* Status Progression Button: Approve (Technicians can NEVER approve) */}
-                  {!isTechnician && !isSales && !isAccounts && (isSubmitted || isReviewed) && canApproveReports && (
+                  {/* Status Progression Button: Complete Report (PM, Engineer, Supervisor only) */}
+                  {!isTechnician && !isSales && !isAccounts && !isGM && (isSubmitted || isReviewed) && canCompleteReports && (
                     <button
-                      onClick={() => handleTransitionStatus(r.id, 'Approved')}
+                      onClick={() => handleTransitionStatus(r.id, 'Completed')}
                       className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3 h-3" />
-                      <span>Approve</span>
+                      <span>Complete Report</span>
                     </button>
                   )}
 
-                  {/* Edit Draft: Technicians can only edit draft; Supervisor/PM/GM can edit draft or submitted; Approved is locked */}
-                  {!isSales && !isAccounts && (
-                    (isDraft && (isTechnician ? (!r.prepared_by_user_id || r.prepared_by_user_id === currentUser?.id) : true)) ||
-                    (isSubmitted && !isTechnician) ||
-                    (isApproved && isGM)
+                  {/* Edit Draft: Technicians can only edit draft they prepared; Supervisor/PM/Engineer can edit draft or submitted; Completed is locked */}
+                  {!isSales && !isAccounts && !isGM && (
+                    (isDraft && (isTechnician ? (!r.prepared_by_user_id || r.prepared_by_user_id === currentUser?.id) : canPrepareReports)) ||
+                    (isSubmitted && canReviewReports)
                   ) && (
                     <button
                       onClick={() => onEditReport(r)}
@@ -385,8 +391,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {/* Delete Report: GM / PM only */}
-                  {(isGM || role === 'Projects Manager') && !isApproved && (
+                  {/* Delete Report: PM only for Draft reports */}
+                  {(role === 'Projects Manager') && isDraft && (
                     <button
                       onClick={() => handleDeleteReport(r.id)}
                       className="p-1.5 rounded-lg border border-slate-200 text-red-500 hover:bg-red-50"

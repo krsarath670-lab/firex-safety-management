@@ -45,8 +45,8 @@ export default function EmergencyCalloutView() {
 
   const canPrepareReport = isPM || isEngineer || isSupervisor || isTech;
   const canCreate = isGM || isEngineer || isSupervisor || isPM;
-  const canApprove = (isGM || isEngineer || isPM || isSupervisor) && !isTech;
-  const canReview = (isGM || isEngineer || isSupervisor || isPM) && !isTech;
+  const canReview = isEngineer || isSupervisor || isPM;
+  const canComplete = isEngineer || isSupervisor || isPM;
   const canClose = isGM;
 
   // Load emergency calls from backend
@@ -148,10 +148,10 @@ export default function EmergencyCalloutView() {
     }
   };
 
-  // Approve Report
-  const handleApproveReport = async (callId) => {
+  // Complete Report
+  const handleCompleteReport = async (callId) => {
     try {
-      const res = await fetch(`/api/emergency-calls/${callId}/approve`, {
+      const res = await fetch(`/api/emergency-calls/${callId}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,11 +160,11 @@ export default function EmergencyCalloutView() {
         }
       });
       if (res.ok) {
-        showToast('Emergency Call-Out Report APPROVED and locked!', 'success');
+        showToast('Emergency Call-Out Report COMPLETED and locked!', 'success');
         loadCalls();
       } else {
         const err = await res.json();
-        showToast(err.message || 'Error approving report', 'error');
+        showToast(err.message || 'Error completing report', 'error');
       }
     } catch {
       showToast('Network error', 'error');
@@ -235,7 +235,7 @@ export default function EmergencyCalloutView() {
   const criticalCalls = calls.filter(c => c.priority === 'Critical' && !['Closed', 'Cancelled', 'Approved'].includes(c.status));
   const inProgressCalls = calls.filter(c => ['On Site', 'In Progress', 'Assigned', 'En Route'].includes(c.status));
   const pendingReports = calls.filter(c => ['Draft', 'Submitted'].includes(c.report_status));
-  const approvedReports = calls.filter(c => c.report_status === 'Approved');
+  const completedReports = calls.filter(c => c.report_status === 'Completed' || c.report_status === 'Approved');
   const myAssignedCalls = calls.filter(c => c.assigned_technician_id === currentUser?.id || c.assigned_supervisor_id === currentUser?.id);
 
   // Filtered List for View
@@ -411,9 +411,9 @@ export default function EmergencyCalloutView() {
           <span className={`text-[10px] font-bold uppercase tracking-wider block ${activeTabFilter === 'reports' ? 'text-purple-200' : 'text-purple-700'}`}>
             Emergency Reports
           </span>
-          <div className="text-xl sm:text-2xl font-black mt-0.5">{approvedReports.length + pendingReports.length}</div>
+          <div className="text-xl sm:text-2xl font-black mt-0.5">{completedReports.length + pendingReports.length}</div>
           <span className={`text-[10px] font-medium ${activeTabFilter === 'reports' ? 'text-purple-200' : 'text-slate-500'}`}>
-            {approvedReports.length} Approved • {pendingReports.length} Pending
+            {completedReports.length} Completed • {pendingReports.length} Pending
           </span>
         </div>
 
@@ -448,7 +448,7 @@ export default function EmergencyCalloutView() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           {[
             { id: 'all', label: `All Calls (${calls.length})` },
-            { id: 'reports', label: `Emergency Reports (${approvedReports.length + pendingReports.length})`, highlight: true },
+            { id: 'reports', label: `Emergency Reports (${completedReports.length + pendingReports.length})`, highlight: true },
             { id: 'critical', label: `Critical Priority (${criticalCalls.length})` },
             { id: 'inprogress', label: `In Progress (${inProgressCalls.length})` },
             ...(isTech ? [{ id: 'assigned_me', label: `My Assigned Calls (${myAssignedCalls.length})` }] : []),
@@ -532,7 +532,7 @@ export default function EmergencyCalloutView() {
             const isDraft = c.report_status === 'Draft';
             const isSubmitted = c.report_status === 'Submitted';
             const isReviewed = c.report_status === 'Reviewed';
-            const isApproved = c.report_status === 'Approved';
+            const isCompleted = c.report_status === 'Completed' || c.report_status === 'Approved';
             const isClosed = c.status === 'Closed';
 
             return (
@@ -580,7 +580,7 @@ export default function EmergencyCalloutView() {
 
                     {/* Report Lifecycle Badge */}
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      isApproved ? 'bg-emerald-600 text-white' :
+                      isCompleted ? 'bg-emerald-600 text-white' :
                       isReviewed ? 'bg-blue-600 text-white' :
                       isSubmitted ? 'bg-purple-600 text-white' :
                       'bg-slate-200 text-slate-700'
@@ -700,11 +700,11 @@ export default function EmergencyCalloutView() {
                       className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                     >
                       <Wrench className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{isApproved && !isGM ? 'View Details' : 'Field Findings & Action'}</span>
+                      <span>{isCompleted && !isGM ? 'View Details' : 'Field Findings & Action'}</span>
                     </button>
 
                     {/* Submit Report (Only authorized report preparers: PM, Engineer, Supervisor, Tech) */}
-                    {isDraft && !isApproved && canPrepareReport && (
+                    {isDraft && !isCompleted && canPrepareReport && (
                       <button
                         onClick={() => handleSubmitReport(c.id)}
                         className="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-purple-200 transition-all"
@@ -714,8 +714,8 @@ export default function EmergencyCalloutView() {
                       </button>
                     )}
 
-                    {/* Supervisor Review */}
-                    {isSubmitted && canReview && !isApproved && (
+                    {/* Supervisor / Engineer / PM Review */}
+                    {isSubmitted && canReview && !isCompleted && (
                       <button
                         onClick={() => handleReviewReport(c.id)}
                         className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-blue-200 transition-all"
@@ -725,19 +725,19 @@ export default function EmergencyCalloutView() {
                       </button>
                     )}
 
-                    {/* Lead Engineer / GM Approve */}
-                    {(isSubmitted || isReviewed) && canApprove && !isApproved && (
+                    {/* Supervisor / Engineer / PM Complete Report */}
+                    {(isSubmitted || isReviewed) && canComplete && !isCompleted && (
                       <button
-                        onClick={() => handleApproveReport(c.id)}
+                        onClick={() => handleCompleteReport(c.id)}
                         className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
                       >
                         <Shield className="w-3.5 h-3.5 text-emerald-200" />
-                        <span>Approve Report</span>
+                        <span>Complete Report</span>
                       </button>
                     )}
 
                     {/* GM Close */}
-                    {isApproved && !isClosed && canClose && (
+                    {isCompleted && !isClosed && canClose && (
                       <button
                         onClick={() => handleCloseCall(c.id)}
                         className="py-2 px-3 bg-slate-800 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
@@ -751,7 +751,7 @@ export default function EmergencyCalloutView() {
                   {/* Right Buttons: Report Viewing & Distribution (ALL 7 ROLES CAN VIEW!) */}
                   <div className="flex items-center gap-1.5 ml-auto">
                     {/* Distribute Internally */}
-                    {isApproved && (isGM || isEngineer || isSupervisor) && (
+                    {isCompleted && (isGM || isEngineer || isSupervisor || isPM) && (
                       <button
                         onClick={() => setDistributeModalCall(c)}
                         className="py-2 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"

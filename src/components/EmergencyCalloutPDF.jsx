@@ -443,12 +443,12 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
         )}
 
         {/* ========================================================================= */}
-        {/* SIGNATURES SECTION (Strictly 3 Signatures: Technician, Supervisor, Customer) */}
+        {/* SIGNATURES SECTION: Prepared By, Submitted By, Reviewed By, Customer Sign-off */}
         {/* ========================================================================= */}
         <div className="border-t-2 border-slate-200 pt-4 mt-6">
           <div className="flex items-center justify-between mb-3 pb-1 border-b border-slate-200">
             <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">
-              Official Multi-Tier Approvals &amp; Client Sign-off
+              Official Technical Preparation &amp; Supervisory Sign-off
             </h4>
             <span className="text-[10px] font-mono text-slate-500">
               Report Ref: {call.report_number || call.call_number}
@@ -461,10 +461,10 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between h-44">
               <div>
                 <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block">
-                  1. Prepared By (Field Tech)
+                  1. Prepared By
                 </span>
                 <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
-                  {call.prepared_by_name || call.assigned_technician_name || 'Attending Tech'}
+                  {call.prepared_by_name || call.assigned_technician_name || 'Staff'}
                 </p>
                 <p className="text-[10px] text-blue-700 font-semibold">{call.prepared_by_role || 'Technician'}</p>
               </div>
@@ -474,7 +474,7 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
                   <img src={call.technician_signature} alt="Technician Signature" className="max-h-full object-contain p-1" />
                 ) : (
                   <div className="text-center">
-                    <span className="text-[9px] text-emerald-700 font-bold block">✓ System Verified</span>
+                    <span className="text-[9px] text-emerald-700 font-bold block">✓ System Recorded</span>
                     <span className="text-[8px] font-mono text-slate-400">UID: {call.prepared_by_user_id || 'tech-01'}</span>
                   </div>
                 )}
@@ -482,36 +482,68 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
 
               <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
                 <span>Date: {call.prepared_date || call.completion_date || call.call_date}</span>
-                <span className="font-bold text-emerald-700">✓ Done</span>
+                <span className="font-bold text-emerald-700">✓ Prepared</span>
               </div>
             </div>
 
-            {/* Box 2: REVIEWED BY */}
+            {/* Box 2: SUBMITTED BY */}
             <div className={`p-3 rounded-xl border flex flex-col justify-between h-44 ${
-              (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+              (call.submitted_at || call.report_status === 'Submitted' || call.report_status === 'Reviewed' || call.report_status === 'Completed' || call.report_status === 'Approved')
+                ? 'bg-blue-50/40 border-blue-200'
+                : 'bg-slate-50/50 border-dashed border-slate-200 opacity-75'
+            }`}>
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-blue-700 block">
+                  2. Submitted By
+                </span>
+                <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
+                  {call.submitted_by_name || (['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(call.report_status) ? (call.prepared_by_name || 'Field Lead') : 'Pending Submission')}
+                </p>
+                <p className="text-[10px] text-blue-700 font-semibold">
+                  {call.submitted_by_role || (['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(call.report_status) ? (call.prepared_by_role || 'Technician') : 'Pending')}
+                </p>
+              </div>
+
+              <div className="h-14 flex items-center justify-center my-1 bg-white/80 rounded-lg border border-blue-100 overflow-hidden text-center p-1">
+                {(call.submitted_at || ['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(call.report_status)) ? (
+                  <span className="text-[9px] font-bold text-blue-800">✓ Submitted for Review</span>
+                ) : (
+                  <span className="text-[9px] text-slate-400 italic">Submission Pending</span>
+                )}
+              </div>
+
+              <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
+                <span>Date: {call.submitted_date || (call.submitted_at ? call.submitted_at.slice(0, 10) : (call.prepared_date || call.call_date))}</span>
+                <span className="font-bold text-blue-700">✓ Done</span>
+              </div>
+            </div>
+
+            {/* Box 3: REVIEWED BY */}
+            <div className={`p-3 rounded-xl border flex flex-col justify-between h-44 ${
+              (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Completed' || call.report_status === 'Approved')
                 ? 'bg-indigo-50/40 border-indigo-200'
                 : 'bg-slate-50/50 border-dashed border-slate-200 opacity-75'
             }`}>
               <div>
                 <span className="text-[9px] font-black uppercase tracking-wider text-indigo-700 block">
-                  2. Reviewed By (Supervisor)
+                  3. Reviewed By
                 </span>
                 <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
-                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Completed' || call.report_status === 'Approved')
                     ? (call.reviewed_by_name || call.assigned_supervisor_name || 'David Thomas')
-                    : 'Engineering Review Pending'}
+                    : 'Review Pending'}
                 </p>
                 <p className="text-[10px] text-indigo-700 font-semibold">
-                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved')
+                  {(call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Completed' || call.report_status === 'Approved')
                     ? (call.reviewed_by_role || 'Supervisor')
-                    : 'Awaiting submission'}
+                    : 'Awaiting review'}
                 </p>
               </div>
 
               <div className="h-14 flex items-center justify-center my-1 bg-white/80 rounded-lg border border-indigo-100 overflow-hidden text-center p-1">
                 {call.supervisor_signature ? (
                   <img src={call.supervisor_signature} alt="Supervisor Signature" className="max-h-full object-contain p-1" />
-                ) : (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Approved') ? (
+                ) : (call.reviewed_at || call.report_status === 'Reviewed' || call.report_status === 'Completed' || call.report_status === 'Approved') ? (
                   <span className="text-[9px] font-bold text-indigo-800">✓ Technical Review Verified</span>
                 ) : (
                   <span className="text-[9px] text-slate-400 italic">Review Pending</span>
@@ -519,44 +551,8 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
               </div>
 
               <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
-                <span>Date: {call.reviewed_at ? call.reviewed_at.slice(0, 10) : (call.supervisor_signed_date || 'Pending')}</span>
+                <span>Date: {call.reviewed_date || (call.reviewed_at ? call.reviewed_at.slice(0, 10) : (call.supervisor_signed_date || 'Pending'))}</span>
                 <span className="font-bold text-indigo-700">✓ Verified</span>
-              </div>
-            </div>
-
-            {/* Box 3: APPROVED BY */}
-            <div className={`p-3 rounded-xl border flex flex-col justify-between h-44 ${
-              (call.approved_at || call.report_status === 'Approved')
-                ? 'bg-emerald-50/40 border-emerald-200'
-                : 'bg-slate-50/50 border-dashed border-slate-200 opacity-75'
-            }`}>
-              <div>
-                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 block">
-                  3. Approved By (GM / Lead)
-                </span>
-                <p className="font-bold text-slate-900 mt-0.5 text-xs truncate">
-                  {(call.approved_at || call.report_status === 'Approved')
-                    ? (call.approved_by_name || 'Eng. Mohamed Hweidi')
-                    : 'Approval Pending'}
-                </p>
-                <p className="text-[10px] text-emerald-700 font-semibold">
-                  {(call.approved_at || call.report_status === 'Approved')
-                    ? (call.approved_by_role || 'General Manager')
-                    : 'Locked'}
-                </p>
-              </div>
-
-              <div className="h-14 flex items-center justify-center my-1 bg-white/80 rounded-lg border border-emerald-100 overflow-hidden text-center p-1">
-                {(call.approved_at || call.report_status === 'Approved') ? (
-                  <span className="text-[9px] font-black text-emerald-800">✓ OFFICIAL APPROVAL SIGN-OFF</span>
-                ) : (
-                  <span className="text-[9px] text-slate-400 italic">Requires Review Sign-off</span>
-                )}
-              </div>
-
-              <div className="text-[9.5px] text-slate-500 border-t border-slate-200 pt-1 flex justify-between">
-                <span>Date: {call.approved_at ? call.approved_at.slice(0, 10) : 'Pending'}</span>
-                <span className="font-bold text-emerald-700">OFFICIAL</span>
               </div>
             </div>
 

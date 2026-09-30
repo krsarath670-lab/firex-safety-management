@@ -469,13 +469,13 @@ export default function PDFReportGenerator({ report, onClose }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* FORMAL REPORT PREPARATION & APPROVAL AUDIT SECTION                        */}
+        {/* FORMAL REPORT PREPARATION & REVIEW AUDIT SECTION                         */}
         {/* ========================================================================= */}
         <div className="mt-6 pt-4 border-t-2 border-slate-300">
           <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-200">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-navy-900" />
-              <span>Official Report Preparation &amp; Multi-Tier Sign-off</span>
+              <span>Official Report Preparation &amp; Review Sign-off</span>
             </h3>
             <span className="text-[10px] font-mono text-slate-500">
               Doc Ref: {report.report_number}
@@ -484,14 +484,14 @@ export default function PDFReportGenerator({ report, onClose }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             
-            {/* Box 1: PREPARED BY (Mandatory, dynamically resolved from authenticated user) */}
+            {/* Box 1: PREPARED BY */}
             <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 flex flex-col justify-between min-h-[140px]">
               <div>
                 <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 block mb-1">
-                  1. Prepared By (Technical Lead)
+                  1. Prepared By
                 </span>
                 <p className="font-bold text-slate-900 text-xs">
-                  {report.prepared_by_name || report.technician_name || 'Rajesh Kumar'}
+                  {report.prepared_by_name || report.technician_name || 'Staff'}
                 </p>
                 <p className="text-[10px] text-blue-700 font-semibold">
                   Role: {report.prepared_by_role || 'Technician'}
@@ -509,23 +509,58 @@ export default function PDFReportGenerator({ report, onClose }) {
                 ) : (
                   <div className="text-center">
                     <span className="text-[9px] text-emerald-700 font-bold block">✓ System Verified &amp; Recorded</span>
-                    <span className="text-[8px] font-mono text-slate-400">UID: {report.prepared_by_user_id || report.created_by_user_id || 'usr-tech-01'}</span>
+                    <span className="text-[8px] font-mono text-slate-400">UID: {report.prepared_by_user_id || report.created_by_user_id || 'usr-preparer'}</span>
                   </div>
                 )}
               </div>
 
               <div className="pt-1 border-t border-slate-200 text-[9.5px] text-slate-600 flex justify-between">
-                <span>Date: {report.prepared_date || report.date}</span>
-                <span>Time: {report.prepared_time || '10:30 AM'}</span>
+                <span>Prepared Date: {report.prepared_date || report.created_date || report.date}</span>
+                <span>Time: {report.prepared_time || report.created_time || '10:30 AM'}</span>
               </div>
             </div>
 
-            {/* Box 2: REVIEWED BY (Shown only if reviewed, or shows "Pending Review") */}
-            {(report.reviewed_at || report.status === 'Reviewed' || report.status === 'Approved') ? (
+            {/* Box 2: SUBMITTED BY */}
+            <div className={`border rounded-xl p-3 flex flex-col justify-between min-h-[140px] ${
+              (report.submitted_at || report.submitted_by_name || ['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(report.status))
+                ? 'border-blue-200 bg-blue-50/40'
+                : 'border-dashed border-slate-200 bg-slate-50/50 opacity-75'
+            }`}>
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-blue-700 block mb-1">
+                  2. Submitted By
+                </span>
+                <p className="font-bold text-slate-900 text-xs">
+                  {report.submitted_by_name || (report.submitted_at ? report.prepared_by_name : (['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(report.status) ? report.prepared_by_name : 'Pending Submission'))}
+                </p>
+                <p className="text-[10px] text-blue-700 font-semibold">
+                  Role: {report.submitted_by_role || (report.submitted_at ? report.prepared_by_role : (['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(report.status) ? report.prepared_by_role : 'Pending'))}
+                </p>
+              </div>
+
+              <div className="h-14 my-1.5 border border-blue-200 rounded bg-white/80 flex flex-col items-center justify-center p-1">
+                {(report.submitted_at || report.submitted_by_name || ['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(report.status)) ? (
+                  <>
+                    <span className="text-[9px] font-bold text-blue-800">✓ Submitted for Review</span>
+                    <span className="text-[8px] text-slate-500">Field Handover Confirmed</span>
+                  </>
+                ) : (
+                  <span className="text-[9px] text-slate-400 italic">Submission Pending</span>
+                )}
+              </div>
+
+              <div className="pt-1 border-t border-blue-200 text-[9.5px] text-slate-600 flex justify-between">
+                <span>Submitted Date: {report.submitted_date || (report.submitted_at ? report.submitted_at.slice(0, 10) : (['Submitted', 'Reviewed', 'Completed', 'Approved'].includes(report.status) ? (report.prepared_date || report.date) : 'Pending'))}</span>
+                <span>Time: {report.submitted_time || (report.submitted_at ? report.submitted_at.slice(11, 16) : '')}</span>
+              </div>
+            </div>
+
+            {/* Box 3: REVIEWED BY */}
+            {(report.reviewed_at || report.reviewed_by_name || report.status === 'Reviewed' || report.status === 'Completed' || report.status === 'Approved') ? (
               <div className="border border-indigo-100 rounded-xl p-3 bg-indigo-50/40 flex flex-col justify-between min-h-[140px]">
                 <div>
                   <span className="text-[9px] font-black uppercase tracking-wider text-indigo-700 block mb-1">
-                    2. Reviewed By (Supervisory Review)
+                    3. Reviewed By
                   </span>
                   <p className="font-bold text-slate-900 text-xs">
                     {report.reviewed_by_name || report.supervisor_name || 'David Thomas'}
@@ -541,18 +576,18 @@ export default function PDFReportGenerator({ report, onClose }) {
                 </div>
 
                 <div className="pt-1 border-t border-indigo-200 text-[9.5px] text-slate-600 flex justify-between">
-                  <span>Reviewed: {report.reviewed_at ? report.reviewed_at.slice(0, 10) : report.date}</span>
-                  <span className="text-indigo-700 font-bold font-mono">STATUS: {report.status}</span>
+                  <span>Reviewed Date: {report.reviewed_date || (report.reviewed_at ? report.reviewed_at.slice(0, 10) : report.date)}</span>
+                  <span>Time: {report.reviewed_time || (report.reviewed_at ? report.reviewed_at.slice(11, 16) : '')}</span>
                 </div>
               </div>
             ) : (
               <div className="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between min-h-[140px] opacity-75">
                 <div>
                   <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                    2. Supervisory Review
+                    3. Reviewed By
                   </span>
                   <p className="font-semibold text-slate-500 text-xs italic">
-                    Engineering Review Pending
+                    Review Pending
                   </p>
                 </div>
                 <div className="h-14 my-1.5 flex items-center justify-center text-center p-1">
@@ -560,50 +595,6 @@ export default function PDFReportGenerator({ report, onClose }) {
                 </div>
                 <div className="pt-1 border-t border-slate-200 text-[9px] text-slate-400">
                   Status: {report.status || 'Draft'}
-                </div>
-              </div>
-            )}
-
-            {/* Box 3: APPROVED BY (Only show approved details if approved; NO blank fake approvals) */}
-            {(report.approved_at || report.status === 'Approved') ? (
-              <div className="border border-emerald-200 rounded-xl p-3 bg-emerald-50/40 flex flex-col justify-between min-h-[140px]">
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 block mb-1">
-                    3. Approved By (Management Sign-off)
-                  </span>
-                  <p className="font-bold text-slate-900 text-xs">
-                    {report.approved_by_name || 'Eng. Mohamed Hweidi'}
-                  </p>
-                  <p className="text-[10px] text-emerald-700 font-semibold">
-                    Role: {report.approved_by_role || 'General Manager'}
-                  </p>
-                </div>
-
-                <div className="h-14 my-1.5 border border-emerald-200 rounded bg-white/80 flex flex-col items-center justify-center p-1">
-                  <span className="text-[9px] font-black text-emerald-800">✓ OFFICIAL APPROVAL SIGN-OFF</span>
-                  <span className="text-[8px] text-slate-500">Authorized for Legal Issuance</span>
-                </div>
-
-                <div className="pt-1 border-t border-emerald-200 text-[9.5px] text-slate-600 flex justify-between">
-                  <span>Approved: {report.approved_at ? report.approved_at.slice(0, 10) : report.date}</span>
-                  <span className="text-emerald-700 font-bold font-mono">OFFICIAL</span>
-                </div>
-              </div>
-            ) : (
-              <div className="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between min-h-[140px] opacity-75">
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                    3. Management Approval
-                  </span>
-                  <p className="font-semibold text-slate-500 text-xs italic">
-                    Final Sign-off Pending
-                  </p>
-                </div>
-                <div className="h-14 my-1.5 flex items-center justify-center text-center p-1">
-                  <span className="text-[9px] text-slate-400 italic">Locked until reviewed &amp; approved</span>
-                </div>
-                <div className="pt-1 border-t border-slate-200 text-[9px] text-slate-400">
-                  Approval Status: Pending
                 </div>
               </div>
             )}
