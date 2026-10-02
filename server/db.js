@@ -938,8 +938,8 @@ class Database {
       });
     }
 
-    // Ensure realistic Bahrain jobs exist if jobs array is empty
-    if (!data.jobs || data.jobs.length === 0) {
+    // Ensure realistic Bahrain jobs exist if jobs array is not defined
+    if (!data.jobs) {
       const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'M/s SOFOOH REALESTATE W.LL' };
       const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'HALA TOWER' };
       const salesUser = data.users.find(u => u.role === 'Sales') || data.users[0];
@@ -1319,8 +1319,8 @@ class Database {
       modified = true;
     }
 
-    // Seed realistic Emergency Call-Outs if emergency_calls array is empty
-    if (!data.emergency_calls || data.emergency_calls.length === 0) {
+    // Seed realistic Emergency Call-Outs if emergency_calls array is not defined
+    if (!data.emergency_calls) {
       const defaultCustomer = data.customers?.[0] || { id: 'cus-1', name: 'Hawar School' };
       const defaultSite = data.sites?.[0] || { id: 'sit-1', site_name: 'Main Facility / Head Office' };
 
