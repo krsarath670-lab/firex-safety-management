@@ -25,12 +25,18 @@ export default function UserManagementView() {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
+    employee_id: '',
+    department: '',
+    joining_date: '',
+    photo: '',
     email: '',
     role: 'Technician',
     phone: '+973 ',
     designation: 'Certified Fire Alarm Specialist',
-    pin: '1234',
-    password: '1234',
+    pin: '',
+    password: '',
+    confirmPassword: '',
     status: 'Active',
     notes: ''
   });
@@ -73,11 +79,18 @@ export default function UserManagementView() {
   const handleOpenAdd = () => {
     setFormData({
       name: '',
+      username: '',
+      employee_id: '',
+      department: '',
+      joining_date: new Date().toISOString().slice(0, 10),
+      photo: '',
       email: '',
       role: 'Technician',
       phone: '+973 ',
       designation: 'Certified Fire Alarm Specialist',
-      pin: Math.floor(1000 + Math.random() * 9000).toString(),
+      pin: '',
+      password: '',
+      confirmPassword: '',
       status: 'Active',
       notes: ''
     });
@@ -94,11 +107,18 @@ export default function UserManagementView() {
     setSelectedUser(user);
     setFormData({
       name: user.name || '',
+      username: user.username || '',
+      employee_id: user.employee_id || '',
+      department: user.department || '',
+      joining_date: user.joining_date || '',
+      photo: user.photo || '',
       email: user.email || '',
       role: user.role || 'Technician',
       phone: user.phone || '+973 ',
       designation: user.designation || '',
-      pin: user.pin || '1234',
+      pin: user.password || user.pin || '',
+      password: user.password || user.pin || '',
+      confirmPassword: '',
       status: user.status || 'Active',
       notes: user.notes || ''
     });
@@ -112,10 +132,30 @@ export default function UserManagementView() {
       showToast('Please enter the full name', 'error');
       return;
     }
+    if (modalMode === 'add' && !(formData.username || '').trim()) {
+      showToast('Please enter a login username', 'error');
+      return;
+    }
+    const pwChanged = modalMode === 'add' || formData.password !== (selectedUser?.password || selectedUser?.pin);
+    if (pwChanged) {
+      if (!formData.password || formData.password.trim().length < 3) {
+        showToast('Password must be at least 3 characters', 'error');
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        showToast('Password and Confirm Password do not match', 'error');
+        return;
+      }
+    }
 
     try {
       const url = modalMode === 'edit' ? `/api/users/${selectedUser.id}` : '/api/users';
       const method = modalMode === 'edit' ? 'PUT' : 'POST';
+      const { confirmPassword, ...payload } = formData;
+      if (!pwChanged) {
+        delete payload.password;
+        delete payload.pin;
+      }
 
       const res = await fetch(url, {
         method,
@@ -124,7 +164,7 @@ export default function UserManagementView() {
           'x-user-role': currentUser.role,
           'x-user-id': currentUser.id
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
@@ -186,7 +226,7 @@ export default function UserManagementView() {
       });
 
       if (res.ok) {
-        showToast(`Staff account for ${deleteConfirmUser.name} deleted`, 'info');
+        showToast('Staff member deleted successfully.', 'success');
         setDeleteConfirmUser(null);
         await loadUsers();
         if (fetchAllUsers) await fetchAllUsers();
@@ -702,7 +742,7 @@ export default function UserManagementView() {
                       <option value="Engineer">Engineer — (Technical approval, inspections, full ops)</option>
                       <option value="Accounts">Accounts — (Finance, Invoices, Payments, Customer Ledgers &amp; Holds)</option>
                       <option value="Projects Manager">Projects Manager — (Projects, Fit-out, Installation, T&amp;C, Milestones &amp; Ops Holds)</option>
-                      <option value="GM">GM — (Executive management &amp; system-wide access)</option>
+                      <option value="GM">Administrator / GM — (Executive management &amp; system-wide access)</option>
                     </>
                   )}
                 </select>
@@ -723,6 +763,68 @@ export default function UserManagementView() {
                   value={formData.name}
                   onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Login Username & Employee ID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Login Username *</label>
+                  <input
+                    type="text"
+                    required={modalMode === 'add'}
+                    autoComplete="off"
+                    placeholder="e.g. jasim.eng"
+                    value={formData.username || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, username: e.target.value.replace(/\s+/g, '') }))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-[10px] text-slate-400">Used to sign in. Must be unique.</span>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Employee ID</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. FX-EMP-001"
+                    value={formData.employee_id || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, employee_id: e.target.value }))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Department & Joining Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Department</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Operations / Maintenance"
+                    value={formData.department || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, department: e.target.value }))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Joining Date</label>
+                  <input
+                    type="date"
+                    value={formData.joining_date || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, joining_date: e.target.value }))}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Photo URL */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Photo URL (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={formData.photo || ''}
+                  onChange={(e) => setFormData(p => ({ ...p, photo: e.target.value }))}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -748,7 +850,7 @@ export default function UserManagementView() {
                       type="button"
                       onClick={() => {
                         const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
-                        setFormData(p => ({ ...p, pin: randomPin, password: randomPin }));
+                        setFormData(p => ({ ...p, pin: randomPin, password: randomPin, confirmPassword: randomPin }));
                       }}
                       className="text-[10px] text-blue-600 font-bold hover:underline"
                     >
@@ -764,6 +866,16 @@ export default function UserManagementView() {
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
                   />
                   <span className="text-[10px] text-slate-400">Staff password required to open mobile app.</span>
+                  <input
+                    type="text"
+                    placeholder="Confirm password"
+                    value={formData.confirmPassword || ''}
+                    onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
+                    className={`mt-1.5 w-full p-2.5 bg-slate-50 border rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm ${
+                      formData.confirmPassword && formData.confirmPassword !== formData.password ? 'border-red-400' : 'border-slate-200'
+                    }`}
+                  />
+                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Only needed if you change the password.' : 'Re-enter the password.'}</span>
                 </div>
               </div>
 

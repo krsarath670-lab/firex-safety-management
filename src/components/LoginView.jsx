@@ -13,6 +13,7 @@ export default function LoginView() {
   
   // Normal Login state
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [loginUsername, setLoginUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -66,8 +67,9 @@ export default function LoginView() {
     if (e) e.preventDefault();
     setLoginError('');
 
-    if (!selectedUserId) {
-      setLoginError('Please select a staff account to log in');
+    const typedUsername = loginUsername.trim();
+    if (!typedUsername && !selectedUserId) {
+      setLoginError('Please enter your username or select a staff account');
       return;
     }
     if (!password) {
@@ -80,7 +82,7 @@ export default function LoginView() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: selectedUserId, password })
+        body: JSON.stringify(typedUsername ? { identifier: typedUsername, password } : { userId: selectedUserId, password })
       });
 
       const data = await res.json();
@@ -420,6 +422,26 @@ export default function LoginView() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Username Sign-in */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                Username:
+              </label>
+              <div className="relative">
+                <div className="absolute left-3.5 top-3.5 text-slate-400">
+                  <User className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Enter your username (or pick your name below)"
+                  value={loginUsername}
+                  onChange={(e) => { setLoginUsername(e.target.value); setLoginError(''); }}
+                  className="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
 

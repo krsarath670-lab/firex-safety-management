@@ -1,0 +1,357 @@
+{
+  "company_settings": {
+    "company_name": "FIREX",
+    "arabic_name": "شركة فايركس لأدوات السلامه",
+    "logo_url": "/logo.png",
+    "letterhead_url": "/letterhead.png",
+    "use_custom_letterhead": true,
+    "cr_number": "96850 1",
+    "cr_no": "96850 1",
+    "vat_number": "220006271900002",
+    "vat_no": "220006271900002",
+    "cr_vat_number": "CR No.: 96850 1 | VAT No.: 220006271900002",
+    "address_line_1": "Villa 13, Building 2373",
+    "address_line_2": "Road 2831, Al Seef",
+    "address_line_3": "Block 428, Bahrain",
+    "address": "Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain",
+    "phone": "+973 1716 2240",
+    "email": "service@firexbahrain.com",
+    "report_footer": "FIREX • Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain • CR No.: 96850 1 • VAT No.: 220006271900002",
+    "report_number_prefix": "RPT",
+    "reminder_days": [
+      90,
+      60,
+      30,
+      7
+    ],
+    "amc_frequencies": {
+      "Fire Alarm": {
+        "interval_months": 3,
+        "visits_per_year": 4
+      },
+      "Fire Fighting": {
+        "interval_months": 3,
+        "visits_per_year": 4
+      },
+      "Fire Extinguishers": {
+        "interval_months": 6,
+        "visits_per_year": 2
+      }
+    },
+    "amc_next_service_rule": "from_actual_date"
+  },
+  "users": [
+    {
+      "name": "Abdul Majeed",
+      "email": "abdul.majeed@firexbahrain.com",
+      "role": "Technician",
+      "phone": "+973",
+      "designation": "Fire Alarm Tech",
+      "status": "Active",
+      "pin": "5172",
+      "password": "5172",
+      "notes": "",
+      "avatar": "AM",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-28T19:01:20.784Z",
+      "id": "use-1790622080786-809"
+    },
+    {
+      "name": "Mohammed Alwadhi",
+      "email": "mohammed.alwadhi@firexbahrain.com",
+      "role": "Sales",
+      "phone": "+973",
+      "designation": "Commercial Sales Representative",
+      "status": "Active",
+      "pin": "7237",
+      "password": "7237",
+      "notes": "",
+      "avatar": "MA",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-28T19:00:19.666Z",
+      "id": "use-1790622019667-210"
+    },
+    {
+      "name": "Abdulsattar Saiyed",
+      "email": "abdulsattar.saiyed@firexbahrain.com",
+      "role": "Sales",
+      "phone": "+973",
+      "designation": "Commercial Sales Representative",
+      "status": "Active",
+      "pin": "8818",
+      "password": "8818",
+      "notes": "",
+      "avatar": "AS",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-28T18:58:30.979Z",
+      "id": "use-1790621910982-865"
+    },
+    {
+      "name": "Sarath Kr",
+      "email": "sarath.kr@firexbahrain.com",
+      "role": "Supervisor",
+      "phone": "+973",
+      "designation": "Senior Field Supervisor",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "notes": "",
+      "avatar": "SK",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-28T18:57:10.996Z",
+      "id": "use-1790621830998-19"
+    },
+    {
+      "name": "Eng. Chandiramohan Karunanithi",
+      "email": "eng..chandiramohan.karunanithi@firexbahrain.com",
+      "role": "Engineer",
+      "phone": "+973",
+      "designation": "Lead Fire Protection Engineer",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "notes": "",
+      "avatar": "EC",
+      "created_by": "usr-gm-1790621464394",
+      "created_at": "2026-09-28T18:56:13.516Z",
+      "id": "use-1790621773518-208"
+    },
+    {
+      "id": "usr-gm-1790621464394",
+      "name": "Eng. Mohamed Hweidi",
+      "email": "eng..mohamed.hweidi@firexbahrain.com",
+      "role": "GM",
+      "phone": "+973  17162240",
+      "designation": "General Manager",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "notes": "Primary General Manager & System Administrator",
+      "avatar": "EM",
+      "created_by": "system",
+      "created_at": "2026-09-28T18:51:04.394Z"
+    },
+    {
+      "id": "usr-pm-sarah",
+      "name": "Sarah Ali",
+      "email": "sarah.ali@firexbahrain.com",
+      "role": "Projects Manager",
+      "phone": "+973 3999 1100",
+      "designation": "Projects & Operations Manager",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "avatar": "SA",
+      "created_by": "system",
+      "created_at": "2026-09-29T13:19:15.555Z"
+    },
+    {
+      "id": "usr-acc-zahra",
+      "name": "Zahra Hasan",
+      "email": "zahra.hasan@firexbahrain.com",
+      "role": "Accounts",
+      "phone": "+973 3999 2200",
+      "designation": "Finance & Accounts Specialist",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "avatar": "ZH",
+      "created_by": "system",
+      "created_at": "2026-09-29T13:19:15.556Z"
+    },
+    {
+      "id": "usr-tech-ahmed",
+      "name": "Ahmed Mohammed",
+      "email": "ahmed.mohammed@firexbahrain.com",
+      "role": "Technician",
+      "phone": "+973 3999 3300",
+      "designation": "Senior Fire Protection Technician",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "avatar": "AM",
+      "created_by": "system",
+      "created_at": "2026-09-29T13:19:15.556Z"
+    },
+    {
+      "id": "usr-eng-john",
+      "name": "John Smith",
+      "email": "john.smith@firexbahrain.com",
+      "role": "Engineer",
+      "phone": "+973 3999 4400",
+      "designation": "Fire Protection Engineer",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "avatar": "JS",
+      "created_by": "system",
+      "created_at": "2026-09-29T13:19:15.556Z"
+    },
+    {
+      "id": "usr-sup-david",
+      "name": "David Thomas",
+      "email": "david.thomas@firexbahrain.com",
+      "role": "Supervisor",
+      "phone": "+973 3999 5500",
+      "designation": "Field Operations Supervisor",
+      "status": "Active",
+      "pin": "1234",
+      "password": "1234",
+      "avatar": "DT",
+      "created_by": "system",
+      "created_at": "2026-09-29T13:19:15.556Z"
+    }
+  ],
+  "customers": [],
+  "sites": [],
+  "amc_contracts": [],
+  "amc_visits": [],
+  "jobs": [],
+  "faults": [],
+  "materials": [
+    {
+      "id": "mat-1",
+      "code": "DET-SMK-01",
+      "name": "Optical Smoke Detector (UL Listed)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 85,
+      "unit_cost": 42
+    },
+    {
+      "id": "mat-2",
+      "code": "DET-HT-01",
+      "name": "Rate of Rise Heat Detector (UL)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 40,
+      "unit_cost": 38
+    },
+    {
+      "id": "mat-3",
+      "code": "DET-MULTI-01",
+      "name": "Multi-Sensor Smoke & Heat Detector",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 24,
+      "unit_cost": 65
+    },
+    {
+      "id": "mat-4",
+      "code": "MCP-WP-01",
+      "name": "Manual Call Point (Weatherproof IP66)",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 32,
+      "unit_cost": 48
+    },
+    {
+      "id": "mat-5",
+      "code": "SND-STR-01",
+      "name": "Electronic Sounder Strobe 24V Red",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 50,
+      "unit_cost": 55
+    },
+    {
+      "id": "mat-6",
+      "code": "BAT-12V-17AH",
+      "name": "12V 17Ah Sealed Lead Acid Battery",
+      "category": "Accessories",
+      "unit": "Pcs",
+      "stock": 18,
+      "unit_cost": 68
+    },
+    {
+      "id": "mat-7",
+      "code": "BAT-12V-26AH",
+      "name": "12V 26Ah Sealed Lead Acid Battery",
+      "category": "Accessories",
+      "unit": "Pcs",
+      "stock": 12,
+      "unit_cost": 95
+    },
+    {
+      "id": "mat-8",
+      "code": "MOD-MON-01",
+      "name": "Single Input Monitor Module",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 30,
+      "unit_cost": 52
+    },
+    {
+      "id": "mat-9",
+      "code": "MOD-REL-01",
+      "name": "Dual Relay Control Module 240V/24V",
+      "category": "Fire Alarm",
+      "unit": "Pcs",
+      "stock": 25,
+      "unit_cost": 58
+    },
+    {
+      "id": "mat-10",
+      "code": "SPR-PEN-68",
+      "name": "Pendent Sprinkler Head 68°C 1/2\" QR",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 150,
+      "unit_cost": 12.5
+    },
+    {
+      "id": "mat-11",
+      "code": "HOS-RUB-30M",
+      "name": "1\" High-Pressure Rubber Fire Hose 30m",
+      "category": "Firefighting",
+      "unit": "Roll",
+      "stock": 14,
+      "unit_cost": 110
+    },
+    {
+      "id": "mat-12",
+      "code": "EXT-DCP-6KG",
+      "name": "6kg ABC Dry Powder Fire Extinguisher",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 65,
+      "unit_cost": 34
+    },
+    {
+      "id": "mat-13",
+      "code": "EXT-CO2-5KG",
+      "name": "5kg Carbon Dioxide (CO2) Extinguisher",
+      "category": "Firefighting",
+      "unit": "Pcs",
+      "stock": 38,
+      "unit_cost": 72
+    },
+    {
+      "id": "mat-14",
+      "code": "CBL-FP200-2C",
+      "name": "Fire Resistant Cable 2C x 1.5mm FP200 (100m)",
+      "category": "Cable",
+      "unit": "Drum",
+      "stock": 9,
+      "unit_cost": 145
+    }
+  ],
+  "reports": [],
+  "notifications": [],
+  "quotations": [],
+  "audit_logs": [
+    {
+      "id": "aud-prod-init",
+      "user_id": "usr-gm-1790621464394",
+      "action": "PRODUCTION_INITIALIZATION",
+      "entity": "system",
+      "entity_id": "main",
+      "details": "System switched from demo/test mode to live production. All demo records cleared.",
+      "timestamp": "2026-10-02T17:11:09.612Z"
+    }
+  ],
+  "invoices": [],
+  "payments": [],
+  "job_holds": [],
+  "emergency_calls": []
+}

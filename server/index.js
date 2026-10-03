@@ -60,6 +60,7 @@ app.get('/api/auth/users-list', (req, res) => {
     .map(u => ({
       id: u.id,
       name: u.name,
+      username: u.username || '',
       role: u.role,
       avatar: u.avatar || u.role?.[0] || 'U',
       designation: u.designation || u.role,
@@ -140,6 +141,7 @@ app.post('/api/auth/login', (req, res) => {
   } else if (identifier) {
     const idf = identifier.toString().trim().toLowerCase();
     user = users.find(u => 
+      (u.username && u.username.toLowerCase() === idf) ||
       (u.id && u.id.toLowerCase() === idf) ||
       (u.email && u.email.toLowerCase() === idf) ||
       (u.phone && u.phone.replace(/\s+/g, '') === idf.replace(/\s+/g, '')) ||
@@ -237,14 +239,31 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     }
   }
 
-  const cleanPass = (password || pin || '1234').toString().trim();
+  const cleanPass = (password || pin || '').toString().trim();
+  if (cleanPass.length < 3) {
+    return res.status(400).json({ error: 'Password Required', message: 'Password must be at least 3 characters.' });
+  }
+
+  const cleanUsername = (req.body.username || '').toString().trim();
+  if (cleanUsername) {
+    const taken = (db.get('users') || []).some(u => (u.username || '').toLowerCase() === cleanUsername.toLowerCase());
+    if (taken) {
+      return res.status(409).json({ error: 'Username Taken', message: `Username "${cleanUsername}" is already in use.` });
+    }
+  }
+
   const initials = (name.trim().split(' ').map(n => n[0]).join('')).toUpperCase().slice(0, 2);
   const newUser = db.insert('users', {
     name: name.trim(),
+    username: cleanUsername,
+    employee_id: (req.body.employee_id || '').toString().trim(),
+    department: (req.body.department || '').toString().trim(),
+    joining_date: req.body.joining_date || '',
+    photo: req.body.photo || '',
     email: email ? email.trim() : `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@firexbahrain.com`,
     role,
-    phone: phone ? phone.trim() : '+973 3000 0000',
-    designation: designation ? designation.trim() : (role === 'Sales' ? 'Commercial Sales Executive' : 'Certified Fire Technician'),
+    phone: phone ? phone.trim() : '',
+    designation: designation ? designation.trim() : role,
     status: status || 'Active',
     pin: cleanPass,
     password: cleanPass,
@@ -279,6 +298,15 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
   }
 
   const updates = { ...req.body };
+  if (typeof updates.username === 'string') {
+    updates.username = updates.username.trim();
+    if (updates.username) {
+      const taken = (db.get('users') || []).some(u => u.id !== existing.id && (u.username || '').toLowerCase() === updates.username.toLowerCase());
+      if (taken) {
+        return res.status(409).json({ error: 'Username Taken', message: `Username "${updates.username}" is already in use.` });
+      }
+    }
+  }
   if (updates.password || updates.pin) {
     const cleanPass = (updates.password || updates.pin).toString().trim();
     updates.password = cleanPass;
@@ -343,12 +371,40 @@ app.delete('/api/users/:id', requirePermission('canManageUsers'), (req, res) => 
   }
 
   if (existing.id === req.user.id) {
-    return res.status(400).json({ error: 'Cannot delete your own active account.' });
+    return res.status(400).json({ error: 'Cannot delete your own active account.', message: 'You cannot delete your own active account.' });
   }
 
-  db.delete('users', req.params.id);
-  db.logAudit(req.user.id, 'DELETE_USER', 'users', req.params.id, `Deleted user ${existing.name}`);
-  res.json({ success: true, message: `User ${existing.name} deleted successfully.` });
+  if (existing.role === 'GM') {
+    const gmCount = (db.get('users') || []).filter(u => u.role === 'GM').length;
+    if (gmCount <= 1) {
+      return res.status(400).json({ error: 'Last Administrator', message: 'The last Administrator account cannot be deleted.' });
+    }
+  }
+
+  // Release the staff member from open (not completed) assignments; completed records keep their stored names as history.
+  const data = db.read();
+  const uid = existing.id;
+  const assignmentFields = ['technician_id', 'supervisor_id', 'assigned_technician', 'assigned_supervisor', 'sales_person_id', 'assigned_to'];
+  let released = 0;
+  ['jobs', 'amc_visits', 'amc_contracts', 'emergency_calls', 'faults'].forEach(col => {
+    (data[col] || []).forEach(rec => {
+      const isClosed = ['Completed', 'Closed', 'Cancelled'].includes(rec.status);
+      if (isClosed) return;
+      assignmentFields.forEach(f => {
+        if (rec[f] === uid) { rec[f] = null; released++; }
+      });
+      if (Array.isArray(rec.assigned_technicians)) {
+        const before = rec.assigned_technicians.length;
+        rec.assigned_technicians = rec.assigned_technicians.filter(t => (t && (t.id || t)) !== uid);
+        released += before - rec.assigned_technicians.length;
+      }
+    });
+  });
+  data.users = (data.users || []).filter(u => u.id !== uid);
+  db.write(data);
+
+  db.logAudit(req.user.id, 'DELETE_USER', 'users', uid, `Deleted staff ${existing.name} (${existing.role}); released ${released} open assignment(s)`);
+  res.json({ success: true, released_assignments: released, message: 'Staff member deleted successfully.' });
 });
 
 // --- DASHBOARD INTELLIGENCE & STATISTICS ---
