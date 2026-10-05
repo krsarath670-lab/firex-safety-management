@@ -16,6 +16,7 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
 
   const [formData, setFormData] = useState({
     report_type: initialData?.report_type || 'AMC Service Report',
+    quarter: initialData?.quarter || 'Q1',
     customer_id: initialData?.customer_id || '',
     site_id: initialData?.site_id || '',
     amc_id: initialData?.amc_id || '',
@@ -67,7 +68,28 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     fetchData();
   }, [currentUser]);
 
-  // When AMC is selected, automatically populate start date, end date, contract period, and sales person!
+  // When Customer is changed, update customer and filter AMC contracts/sites
+  const handleCustomerChange = (customerId) => {
+    const custAmcs = amcs.filter((a) => a.customer_id === customerId);
+    const custSites = sites.filter((s) => s.customer_id === customerId);
+    const keepAmc = custAmcs.find((a) => a.id === formData.amc_id);
+    const keepSite = custSites.find((s) => s.id === formData.site_id);
+
+    setFormData((prev) => ({
+      ...prev,
+      customer_id: customerId,
+      site_id: keepSite ? prev.site_id : (custSites.length > 0 ? custSites[0].id : ''),
+      amc_id: keepAmc ? prev.amc_id : ''
+    }));
+
+    if (keepAmc) {
+      handleAMCChange(keepAmc.id);
+    } else if (custAmcs.length === 1) {
+      handleAMCChange(custAmcs[0].id);
+    }
+  };
+
+  // When AMC is selected, automatically populate start date, end date, contract period, customer and site
   const handleAMCChange = (amcId) => {
     const selected = amcs.find((a) => a.id === amcId);
     if (selected) {
@@ -76,8 +98,8 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
         ...prev,
         amc_id: amcId,
         amc_contract_number: selected.contract_number,
-        customer_id: selected.customer_id,
-        site_id: selected.site_id,
+        customer_id: selected.customer_id || prev.customer_id,
+        site_id: selected.site_id || prev.site_id,
         amc_start_date: selected.start_date,
         amc_end_date: selected.end_date,
         contract_start_date: selected.start_date,
@@ -291,23 +313,93 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
           </div>
         </div>
 
-        {/* AMC Contract Selection (Auto populates Start & End dates) */}
+        {/* 1. Customer & Site Selection (Must precede AMC contract) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Customer / Company *</label>
+            <select
+              required
+              value={formData.customer_id}
+              onChange={(e) => handleCustomerChange(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+            >
+              <option value="">-- Select Registered Customer --</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Site / Facility *</label>
+            <select
+              required
+              value={formData.site_id}
+              onChange={(e) => setFormData((p) => ({ ...p, site_id: e.target.value }))}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+            >
+              <option value="">-- Select Site --</option>
+              {(formData.customer_id ? sites.filter(s => s.customer_id === formData.customer_id) : sites).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.site_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 2. AMC Contract & Quarter Selection (Filtered strictly to Customer) */}
         {formData.report_type === 'AMC Service Report' && (
-          <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-200 space-y-2.5">
+          <div className="bg-blue-50/60 p-3.5 rounded-xl border border-blue-200 space-y-3">
             <div>
-              <label className="block font-bold text-blue-900 mb-1">Select AMC Contract *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-blue-900 text-xs">
+                  Select AMC Contract (Filtered to Customer) *
+                </label>
+                {formData.customer_id && (
+                  <span className="text-[10px] text-blue-700 font-bold">
+                    {(amcs.filter(a => a.customer_id === formData.customer_id)).length} active contracts found
+                  </span>
+                )}
+              </div>
               <select
                 value={formData.amc_id}
                 onChange={(e) => handleAMCChange(e.target.value)}
-                className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-medium"
+                className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-medium text-xs"
               >
-                <option value="">-- Choose Active AMC Contract --</option>
-                {amcs.map((a) => (
+                <option value="">
+                  {formData.customer_id ? '-- Choose AMC Contract --' : '-- Please Select Customer First --'}
+                </option>
+                {(formData.customer_id ? amcs.filter(a => a.customer_id === formData.customer_id) : amcs).map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.contract_number} - {a.site_name} ({a.contract_status})
+                    {a.contract_number} • {a.site_name} ({a.contract_status || 'Active'})
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Quarter Selector (Q1, Q2, Q3, Q4) */}
+            <div>
+              <label className="block font-bold text-blue-900 text-xs mb-1.5">
+                AMC Quarter / Service Cycle *
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setFormData(p => ({ ...p, quarter: q, visit_number: `Visit #${q.replace('Q', '')} of 4` }))}
+                    className={`py-2 rounded-xl font-black text-xs transition-all border ${
+                      formData.quarter === q
+                        ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
+                        : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-100/50'
+                    }`}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Auto Filled Start / End Dates */}
@@ -350,7 +442,7 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
               </div>
             </div>
 
-            {/* AMC Contract Period & Sales Specialist Banner (Requirements 23 & 36) */}
+            {/* AMC Contract Period & Sales Specialist Banner */}
             <div className="bg-white/80 p-2.5 rounded-lg border border-blue-200 text-xs flex items-center justify-between flex-wrap gap-2">
               <div>
                 <span className="text-[10px] font-bold text-blue-800 uppercase block">AMC Contract Period</span>
@@ -369,42 +461,6 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
             </div>
           </div>
         )}
-
-        {/* Customer & Site */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">Customer / Company *</label>
-            <select
-              required
-              value={formData.customer_id}
-              onChange={(e) => setFormData((p) => ({ ...p, customer_id: e.target.value }))}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
-            >
-              <option value="">-- Select Customer --</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">Site / Facility *</label>
-            <select
-              required
-              value={formData.site_id}
-              onChange={(e) => setFormData((p) => ({ ...p, site_id: e.target.value }))}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
-            >
-              <option value="">-- Select Site --</option>
-              {sites.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.site_name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
 
         {/* System & Job Number */}
         <div className="grid grid-cols-2 gap-3">

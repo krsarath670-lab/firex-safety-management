@@ -13,6 +13,7 @@ import QuickAddCustomerModal from './QuickAddCustomerModal';
 import AMCChecklistModal from './AMCChecklistModal';
 import AMCSupervisorReviewModal from './AMCSupervisorReviewModal';
 import AMCServiceReportModal from './AMCServiceReportModal';
+import CreateAMCReportModal from './CreateAMCReportModal';
 
 export default function AMCView({ onStartInspectionForVisit }) {
   const { currentUser, showToast, allUsers, fetchMonthlyAmcSchedule, companySettings } = useApp();
@@ -25,6 +26,9 @@ export default function AMCView({ onStartInspectionForVisit }) {
   const [tab, setTab] = useState('contracts');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'Active' | 'Expiring Soon' | 'Expired'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Create AMC Report Modal
+  const [showCreateAmcReportModal, setShowCreateAmcReportModal] = useState(false);
 
   // Dedicated AMC Detail Modal & Tab
   const [viewingContractDetail, setViewingContractDetail] = useState(null);
@@ -1021,15 +1025,23 @@ export default function AMCView({ onStartInspectionForVisit }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowCreateAmcReportModal(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all transform hover:scale-[1.02]"
+              title="Create new AMC periodic report with customer & quarter selection"
+            >
+              <FileText className="w-4 h-4 text-emerald-200" />
+              <span>Create AMC Report</span>
+            </button>
             {tab === 'contracts' && (
               <button
                 onClick={() => exportAmcToExcel(filteredContracts)}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
                 title="Export AMC Contracts to Excel (Requirement 11)"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span>Export AMC to Excel</span>
+                <span>Export to Excel</span>
               </button>
             )}
             {!isTechnician && (
@@ -4407,34 +4419,134 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 </div>
               )}
 
-              {/* TAB 4: REPORTS */}
+              {/* TAB 4: REPORTS (Requirement 7: Show reports by quarter Q1-Q4) */}
               {detailTab === 'reports' && (
                 <div className="space-y-3">
-                  <p className="text-slate-500 text-xs">
-                    Official inspection and service completion reports recorded for AMC agreement <strong className="text-slate-800">{viewingContractDetail.contract_number}</strong>.
-                  </p>
-                  {(viewingContractDetail.visits || []).filter(v => v.status === 'Completed' || v.status === 'Approved' || v.report_id).length === 0 ? (
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center">
-                      <span className="font-semibold text-slate-700 block text-xs">No Final Reports Generated Yet</span>
-                      <span className="text-[11px] text-slate-400">Complete service visits and obtain supervisor approval to generate Civil Defense certified reports.</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                        AMC Service Reports by Quarter
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Periodic maintenance compliance reports for contract <strong className="text-slate-800">{viewingContractDetail.contract_number}</strong>.
+                      </p>
                     </div>
-                  ) : (
-                    (viewingContractDetail.visits || []).filter(v => v.status === 'Completed' || v.status === 'Approved' || v.report_id).map(v => (
-                      <div key={v.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-xs text-navy-900">{v.quarter || `Visit #${v.visit_number}`} Service Report</div>
-                          <div className="text-[11px] text-slate-500">{v.actual_service_date || v.scheduled_date} • Tech: {v.technician_name} • Sup: {v.supervisor_name}</div>
-                        </div>
-                        <button
-                          onClick={() => setPreviewingReportVisit(v)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1"
+                    <button
+                      onClick={() => {
+                        setShowCreateAmcReportModal(true);
+                      }}
+                      className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New AMC Report</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey, qIdx) => {
+                      const visits = viewingContractDetail.visits || [];
+                      const matchedVisit = visits.find(v => v.quarter === qKey || v.visit_number === (qIdx + 1));
+                      const isCompleted = matchedVisit?.status === 'Completed' || matchedVisit?.status === 'Approved' || matchedVisit?.report_id;
+                      const isInProgress = matchedVisit?.checklist_status === 'In Progress' || matchedVisit?.checklist_status === 'Submitted';
+
+                      // Scheduled Date
+                      const baseDateStr = viewingContractDetail.service_start_date || viewingContractDetail.start_date || new Date().toISOString().slice(0, 10);
+                      const baseDate = new Date(baseDateStr);
+                      const offsetMonths = qIdx * 3;
+                      const calcDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + offsetMonths, baseDate.getDate());
+                      const schedDateStr = matchedVisit?.scheduled_date || calcDate.toISOString().slice(0, 10);
+
+                      const visitForReport = matchedVisit || {
+                        id: `vis-${viewingContractDetail.id}-${qKey}`,
+                        contract_id: viewingContractDetail.id,
+                        amc_contract_id: viewingContractDetail.id,
+                        contract_number: viewingContractDetail.contract_number,
+                        customer_id: viewingContractDetail.customer_id,
+                        customer_name: viewingContractDetail.customer_name,
+                        site_id: viewingContractDetail.site_id,
+                        site_name: viewingContractDetail.site_name,
+                        quarter: qKey,
+                        visit_number: qIdx + 1,
+                        scheduled_date: schedDateStr,
+                        actual_service_date: new Date().toISOString().slice(0, 10),
+                        supervisor_name: viewingContractDetail.assigned_supervisor || 'Supervisor',
+                        technician_name: viewingContractDetail.assigned_technician || 'Technician',
+                        systems: viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
+                        status: 'Scheduled'
+                      };
+
+                      return (
+                        <div 
+                          key={qKey}
+                          className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between space-y-2.5 ${
+                            isCompleted 
+                              ? 'bg-emerald-50/50 border-emerald-200 shadow-xs' 
+                              : isInProgress
+                              ? 'bg-amber-50/50 border-amber-200 shadow-xs'
+                              : 'bg-white border-slate-200'
+                          }`}
                         >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>View Report (PDF)</span>
-                        </button>
-                      </div>
-                    ))
-                  )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-navy-900 font-mono">
+                                {qKey} — Report
+                              </span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isCompleted
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : isInProgress
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}>
+                                {isCompleted ? 'Completed' : isInProgress ? 'Draft / In Progress' : 'Pending'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono text-slate-400">
+                              Visit #{qIdx + 1}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-slate-600 space-y-0.5">
+                            <div>Scheduled: <strong className="text-slate-800">{schedDateStr}</strong></div>
+                            {matchedVisit?.actual_service_date && (
+                              <div>Actual Date: <strong className="text-navy-900">{matchedVisit.actual_service_date}</strong></div>
+                            )}
+                            {matchedVisit?.report_number && (
+                              <div className="text-emerald-700 font-mono font-bold">Report: {matchedVisit.report_number}</div>
+                            )}
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                            {isCompleted ? (
+                              <button
+                                onClick={() => setPreviewingReportVisit(visitForReport)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                                <span>View Report (PDF)</span>
+                              </button>
+                            ) : isInProgress ? (
+                              <button
+                                onClick={() => setActiveChecklistVisit(visitForReport)}
+                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
+                              >
+                                <Wrench className="w-3.5 h-3.5" />
+                                <span>Continue Checklist</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setActiveChecklistVisit(visitForReport)}
+                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-sm transition-all"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-emerald-200" />
+                                <span>Make Report</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -4655,6 +4767,21 @@ export default function AMCView({ onStartInspectionForVisit }) {
         <AMCServiceReportModal
           visit={previewingReportVisit}
           onClose={() => setPreviewingReportVisit(null)}
+        />
+      )}
+
+      {/* CREATE AMC REPORT WIZARD (CUSTOMER + CONTRACT + QUARTER + VISIT) */}
+      {showCreateAmcReportModal && (
+        <CreateAMCReportModal
+          onClose={() => setShowCreateAmcReportModal(false)}
+          onOpenChecklist={(v) => {
+            setShowCreateAmcReportModal(false);
+            setActiveChecklistVisit(v);
+          }}
+          onViewReport={(v) => {
+            setShowCreateAmcReportModal(false);
+            setPreviewingReportVisit(v);
+          }}
         />
       )}
 

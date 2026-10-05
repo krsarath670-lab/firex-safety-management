@@ -3,8 +3,11 @@ import { useApp } from '../context/AppContext';
 import { 
   FileSpreadsheet, Plus, Search, Eye, Edit, Trash2, 
   CheckCircle2, Clock, ShieldCheck, ArrowRight, Download, 
-  Printer, UserCheck, AlertCircle
+  Printer, UserCheck, AlertCircle, FileText, Sparkles
 } from 'lucide-react';
+import CreateAMCReportModal from './CreateAMCReportModal';
+import AMCChecklistModal from './AMCChecklistModal';
+import AMCServiceReportModal from './AMCServiceReportModal';
 
 export default function ReportsView({ onNewReport, onEditReport, onPreviewReport }) {
   const { currentUser, showToast } = useApp();
@@ -13,6 +16,11 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const [statusFilter, setStatusFilter] = useState('all');
   const [preparedByFilter, setPreparedByFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // AMC Report Workflow Modals
+  const [showCreateAmcModal, setShowCreateAmcModal] = useState(false);
+  const [checklistVisit, setChecklistVisit] = useState(null);
+  const [previewingVisit, setPreviewingVisit] = useState(null);
 
   const role = currentUser?.role || 'Technician';
   const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
@@ -159,13 +167,23 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
           </p>
         </div>
         {canPrepareReports ? (
-          <button
-            onClick={onNewReport}
-            className="px-3 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Report</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateAmcModal(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition-all transform hover:scale-[1.02]"
+              title="Create new AMC periodic report with customer & quarter selection"
+            >
+              <FileText className="w-4 h-4 text-emerald-200" />
+              <span>Create AMC Report</span>
+            </button>
+            <button
+              onClick={onNewReport}
+              className="px-3 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Other Report</span>
+            </button>
+          </div>
         ) : (
           <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
             {role} • View Only Mode
@@ -255,6 +273,11 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     <span className="text-xs font-mono font-bold text-navy-900 bg-slate-100 px-2 py-0.5 rounded">
                       {r.report_number}
                     </span>
+                    {r.quarter && (
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300">
+                        {r.quarter}
+                      </span>
+                    )}
                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${getStatusBadge(r.status)}`}>
                       {r.status}
                     </span>
@@ -406,6 +429,46 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
             </div>
           );
         })
+      )}
+
+      {/* CREATE AMC REPORT MODAL (Customer -> AMC Contract -> Quarter -> Visit Selection) */}
+      {showCreateAmcModal && (
+        <CreateAMCReportModal
+          onClose={() => setShowCreateAmcModal(false)}
+          onOpenChecklist={(visit) => {
+            setShowCreateAmcModal(false);
+            setActiveChecklistVisit(visit);
+          }}
+          onViewReport={(visit) => {
+            setShowCreateAmcModal(false);
+            setPreviewingVisit(visit);
+          }}
+        />
+      )}
+
+      {/* DIGITAL AMC CHECKLIST MODAL */}
+      {activeChecklistVisit && (
+        <AMCChecklistModal
+          visit={activeChecklistVisit}
+          onClose={() => setActiveChecklistVisit(null)}
+          onRefresh={loadReports}
+          onViewReport={(v) => {
+            setActiveChecklistVisit(null);
+            setPreviewingVisit(v);
+            loadReports();
+          }}
+        />
+      )}
+
+      {/* OFFICIAL CIVIL DEFENSE AMC SERVICE REPORT PDF MODAL */}
+      {previewingVisit && (
+        <AMCServiceReportModal
+          visit={previewingVisit}
+          onClose={() => {
+            setPreviewingVisit(null);
+            loadReports();
+          }}
+        />
       )}
 
     </div>

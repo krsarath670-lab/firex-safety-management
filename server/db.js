@@ -3944,6 +3944,53 @@ class Database {
       this.saveSiteEquipment(site.id, extEquip);
     }
 
+    // Sync to db.reports so report history is populated immediately under Customer + AMC + Quarter
+    if (!db.reports) db.reports = [];
+    const cleanContractNum = (contract?.contract_number || 'AMC').replace(/[^A-Za-z0-9]/g, '');
+    const reportNumber = `RPT-AMC-${cleanContractNum}-V${visit.visit_number || 1}`;
+
+    let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber);
+    const reportStatus = visit.status === 'Completed' || visit.checklist_status === 'Approved' ? 'Completed' : (isSubmitting ? 'Submitted' : 'Draft');
+    const rptData = {
+      report_number: reportNumber,
+      report_type: 'AMC Service Report',
+      amc_id: contract?.id || visit.amc_contract_id,
+      amc_contract_id: contract?.id || visit.amc_contract_id,
+      amc_number: contract?.contract_number || 'AMC',
+      amc_visit_id: visit.id,
+      visit_id: visit.id,
+      visit_number: visit.visit_number,
+      quarter: visit.quarter,
+      customer_id: visit.customer_id || contract?.customer_id,
+      customer_name: visit.customer_name || contract?.customer_name,
+      site_id: visit.site_id || contract?.site_id,
+      site_name: visit.site_name || contract?.site_name,
+      service_date: visit.actual_service_date || visit.scheduled_date,
+      contract_start_date: contract?.start_date,
+      contract_end_date: contract?.end_date,
+      supervisor_name: visit.supervisor_name,
+      technician_name: visit.technician_name,
+      prepared_by_name: currentUser?.name || visit.technician_name,
+      prepared_by_user_id: currentUser?.id || visit.technician_id,
+      prepared_date: new Date().toISOString().slice(0, 10),
+      systems: visit.systems || contract?.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+      checklist_data: visit.checklist_data,
+      status: reportStatus,
+      updated_at: new Date().toISOString()
+    };
+    if (report) {
+      Object.assign(report, rptData);
+    } else {
+      report = {
+        id: `rpt-amc-${Date.now()}`,
+        ...rptData,
+        created_at: new Date().toISOString()
+      };
+      db.reports.push(report);
+    }
+    visit.report_id = report.id;
+    visit.report_number = report.report_number;
+
     visit.updated_at = new Date().toISOString();
     this.write(db);
     this.logAudit(currentUser.id, isSubmitting ? 'SUBMIT_AMC_CHECKLIST' : 'SAVE_AMC_CHECKLIST', 'amc_visits', visit.id, `${isSubmitting ? 'Submitted' : 'Saved'} AMC checklist for visit #${visit.visit_number}`);

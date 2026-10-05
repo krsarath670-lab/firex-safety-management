@@ -7,6 +7,9 @@ import {
   CheckCircle2, Clock, Calendar, RefreshCw, Edit, Hash, Globe, Layers, ArrowLeft, Trash2
 } from 'lucide-react';
 import QuickAddCustomerModal from './QuickAddCustomerModal';
+import CreateAMCReportModal from './CreateAMCReportModal';
+import AMCServiceReportModal from './AMCServiceReportModal';
+import AMCChecklistModal from './AMCChecklistModal';
 
 export default function CustomerSiteView() {
   const { currentUser, showToast, setActiveTab } = useApp();
@@ -24,6 +27,13 @@ export default function CustomerSiteView() {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomerDetails, setSelectedCustomerDetails] = useState(null);
   const [customerDetailTab, setCustomerDetailTab] = useState('overview'); // 'overview' | 'sites' | 'amc' | 'jobs' | 'faults' | 'reports' | 'quotations' | 'history'
+
+  // AMC Service Reports Modals & State
+  const [showCreateAmcReportModal, setShowCreateAmcReportModal] = useState(false);
+  const [selectedAmcForReport, setSelectedAmcForReport] = useState(null);
+  const [selectedQuarterForReport, setSelectedQuarterForReport] = useState('Q1');
+  const [previewingReportVisit, setPreviewingReportVisit] = useState(null);
+  const [activeChecklistVisit, setActiveChecklistVisit] = useState(null);
   
   // Site Modal
   const [showAddSiteModal, setShowAddSiteModal] = useState(false);
@@ -1323,28 +1333,235 @@ export default function CustomerSiteView() {
 
               {/* 6. REPORTS */}
               {customerDetailTab === 'reports' && (
-                <div className="space-y-3">
-                  <span className="font-bold text-slate-700 text-xs block">
-                    Inspection &amp; Service Reports ({selectedCustomerDetails.reports?.length || 0})
-                  </span>
-
-                  {selectedCustomerDetails.reports?.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                      No inspection reports generated yet.
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <FileCheck className="w-4 h-4 text-emerald-600" />
+                        <span>AMC Service Reports by Quarter</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Official quarterly fire safety service reports &amp; checklists linked to contracts
+                      </p>
                     </div>
-                  ) : (
-                    selectedCustomerDetails.reports?.map(r => (
-                      <div key={r.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-blue-700">{r.report_number || r.id}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                            {r.status || 'Approved'}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAmcForReport(selectedCustomerDetails.amcContracts?.[0] || null);
+                        setSelectedQuarterForReport('Q1');
+                        setShowCreateAmcReportModal(true);
+                      }}
+                      className="px-3 py-1.5 bg-navy-900 text-white rounded-xl text-xs font-bold hover:bg-navy-800 transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Create AMC Report</span>
+                    </button>
+                  </div>
+
+                  {/* AMC Contracts & Quarterly Service Reports */}
+                  {selectedCustomerDetails.amcContracts && selectedCustomerDetails.amcContracts.length > 0 ? (
+                    selectedCustomerDetails.amcContracts.map((contract) => (
+                      <div key={contract.id} className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200 text-xs">
+                          <div>
+                            <span className="font-mono font-black text-blue-700 text-sm">{contract.contract_number}</span>
+                            <span className="ml-2 font-bold text-slate-700">• {contract.site_name}</span>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              Period: <strong className="text-slate-700">{contract.start_date} to {contract.end_date}</strong>
+                              {contract.systems_covered && (
+                                <span className="ml-2 text-slate-600">
+                                  ({Array.isArray(contract.systems_covered) ? contract.systems_covered.join(', ') : contract.systems_covered})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                            contract.contract_status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {contract.contract_status || 'Active'}
                           </span>
                         </div>
-                        <div className="text-slate-600 text-[11px]">{r.date || r.created_at?.slice(0, 10)} • {r.site_name}</div>
+
+                        {/* 4 Quarters: Q1, Q2, Q3, Q4 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                          {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey, qIdx) => {
+                            const visitNumber = qIdx + 1;
+                            const v = (contract.visits || []).find(vis => vis.quarter === qKey || vis.visit_number === visitNumber);
+                            const hasReport = !!v?.report_id || !!(selectedCustomerDetails.reports || []).find(r => r.amc_id === contract.id && r.quarter === qKey);
+                            const isCompleted = v?.status === 'Completed' || v?.checklist?.checklist_status === 'Submitted' || hasReport;
+                            const isInProgress = !isCompleted && (v?.status === 'In Progress' || v?.checklist || (selectedCustomerDetails.reports || []).find(r => r.amc_id === contract.id && r.quarter === qKey && r.status === 'Draft'));
+                            const statusLabel = isCompleted ? 'Completed' : (isInProgress ? 'Draft / In Progress' : 'Pending');
+
+                            const fallbackVisit = v || {
+                              id: `visit-${contract.id}-${qKey}`,
+                              amc_id: contract.id,
+                              amc_contract_number: contract.contract_number,
+                              customer_id: selectedCustomerDetails.customer.id,
+                              customer_name: selectedCustomerDetails.customer.name,
+                              site_id: contract.site_id,
+                              site_name: contract.site_name,
+                              visit_number: visitNumber,
+                              quarter: qKey,
+                              scheduled_date: contract.start_date || '',
+                              service_type: 'Quarterly Routine Maintenance',
+                              systems_covered: contract.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+                              supervisor_name: contract.assigned_supervisor || '',
+                              technician_name: contract.assigned_technician || ''
+                            };
+
+                            return (
+                              <div
+                                key={qKey}
+                                className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                                  isCompleted
+                                    ? 'bg-emerald-50/60 border-emerald-200 hover:border-emerald-300'
+                                    : isInProgress
+                                      ? 'bg-amber-50/60 border-amber-200 hover:border-amber-300'
+                                      : 'bg-white border-slate-200 hover:border-slate-300'
+                                }`}
+                              >
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-extrabold text-xs text-slate-900">{qKey} — Report</span>
+                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                      isCompleted
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                        : isInProgress
+                                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                          : 'bg-slate-100 text-slate-600 border-slate-300'
+                                    }`}>
+                                      {statusLabel}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-[11px] text-slate-600 space-y-0.5">
+                                    <div>
+                                      <span className="text-slate-400">Scheduled:</span>{' '}
+                                      <strong className="text-slate-700">{v?.scheduled_date || v?.date || 'With schedule'}</strong>
+                                    </div>
+                                    {v?.actual_service_date && (
+                                      <div>
+                                        <span className="text-slate-400">Serviced:</span>{' '}
+                                        <strong className="text-emerald-700">{v.actual_service_date}</strong>
+                                      </div>
+                                    )}
+                                    <div className="truncate">
+                                      <span className="text-slate-400">Tech:</span>{' '}
+                                      <span className="text-slate-800 font-medium">{v?.technician_name || contract.assigned_technician || 'Not assigned'}</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="text-slate-400">Sup:</span>{' '}
+                                      <span className="text-slate-800 font-medium">{v?.supervisor_name || contract.assigned_supervisor || 'Not assigned'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 mt-2 border-t border-slate-100">
+                                  {isCompleted ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewingReportVisit(fallbackVisit)}
+                                      className="w-full py-1.5 bg-emerald-700 text-white rounded-lg text-[11px] font-bold hover:bg-emerald-800 transition-colors flex items-center justify-center gap-1 shadow-sm"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" />
+                                      <span>View PDF Report</span>
+                                    </button>
+                                  ) : isInProgress ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveChecklistVisit(fallbackVisit)}
+                                      className="w-full py-1.5 bg-amber-600 text-white rounded-lg text-[11px] font-bold hover:bg-amber-700 transition-colors flex items-center justify-center gap-1 shadow-sm"
+                                    >
+                                      <Wrench className="w-3.5 h-3.5" />
+                                      <span>Continue Checklist</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAmcForReport(contract);
+                                        setSelectedQuarterForReport(qKey);
+                                        setShowCreateAmcReportModal(true);
+                                      }}
+                                      className="w-full py-1.5 bg-navy-900 text-white rounded-lg text-[11px] font-bold hover:bg-navy-800 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" />
+                                      <span>Make Report</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-500 text-center">
+                      No AMC contracts linked to this customer yet. Add an AMC contract to generate quarterly service reports.
+                    </div>
                   )}
+
+                  {/* All Customer Reports & Documents */}
+                  <div className="pt-2 space-y-2">
+                    <span className="font-bold text-slate-700 text-xs block">
+                      All Inspection &amp; Service Documents ({selectedCustomerDetails.reports?.length || 0})
+                    </span>
+                    {selectedCustomerDetails.reports?.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        No general inspection reports recorded yet.
+                      </div>
+                    ) : (
+                      selectedCustomerDetails.reports?.map(r => (
+                        <div key={r.id} className="p-3 bg-white rounded-xl border border-slate-200 space-y-1 text-xs shadow-xs hover:border-blue-300 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-blue-700">{r.report_number || r.id}</span>
+                              {r.quarter && (
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                                  {r.quarter}
+                                </span>
+                              )}
+                              <span className="text-slate-600 font-medium text-[11px]">{r.report_type || 'AMC Service Report'}</span>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                              r.status === 'Approved' || r.status === 'Completed'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {r.status || 'Approved'}
+                            </span>
+                          </div>
+                          <div className="text-slate-500 text-[11px] flex justify-between items-center">
+                            <span>{r.date || r.created_at?.slice(0, 10)} • {r.site_name}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const matchedVisit = (selectedCustomerDetails.amcContracts || [])
+                                  .flatMap(c => c.visits || [])
+                                  .find(v => v.id === r.visit_id || v.report_id === r.id);
+                                setPreviewingReportVisit(matchedVisit || {
+                                  id: r.visit_id || r.id,
+                                  report_id: r.id,
+                                  report_number: r.report_number,
+                                  quarter: r.quarter,
+                                  customer_name: selectedCustomerDetails.customer.name,
+                                  site_name: r.site_name,
+                                  scheduled_date: r.date,
+                                  actual_service_date: r.date,
+                                  supervisor_name: r.supervisor_name,
+                                  technician_name: r.technician_name
+                                });
+                              }}
+                              className="text-blue-700 font-bold hover:underline"
+                            >
+                              View PDF
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1404,6 +1621,49 @@ export default function CustomerSiteView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AMC CHECKLIST MODAL */}
+      {activeChecklistVisit && (
+        <AMCChecklistModal
+          visit={activeChecklistVisit}
+          onClose={() => setActiveChecklistVisit(null)}
+          onRefresh={() => {
+            if (selectedCustomerDetails?.customer?.id) {
+              loadCustomerDetails(selectedCustomerDetails.customer.id);
+            }
+          }}
+          onViewReport={(v) => {
+            setActiveChecklistVisit(null);
+            setPreviewingReportVisit(v);
+          }}
+        />
+      )}
+
+      {/* AMC SERVICE REPORT PDF MODAL */}
+      {previewingReportVisit && (
+        <AMCServiceReportModal
+          visit={previewingReportVisit}
+          onClose={() => setPreviewingReportVisit(null)}
+        />
+      )}
+
+      {/* CREATE AMC REPORT WIZARD (CUSTOMER + CONTRACT + QUARTER + VISIT) */}
+      {showCreateAmcReportModal && (
+        <CreateAMCReportModal
+          initialCustomerId={selectedCustomerDetails?.customer?.id || ''}
+          initialContractId={selectedAmcForReport?.id || ''}
+          initialQuarter={selectedQuarterForReport || 'Q1'}
+          onClose={() => setShowCreateAmcReportModal(false)}
+          onOpenChecklist={(v) => {
+            setShowCreateAmcReportModal(false);
+            setActiveChecklistVisit(v);
+          }}
+          onViewReport={(v) => {
+            setShowCreateAmcReportModal(false);
+            setPreviewingReportVisit(v);
+          }}
+        />
       )}
 
     </div>

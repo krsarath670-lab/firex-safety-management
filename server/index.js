@@ -729,7 +729,11 @@ app.get('/api/customers/:id/details', (req, res) => {
   const sites = (db.get('sites') || []).filter(s => s.customer_id === custId);
   const siteIds = new Set(sites.map(s => s.id));
 
-  let amcContracts = (db.get('amc_contracts') || []).filter(a => a.customer_id === custId || siteIds.has(a.site_id));
+  const allVisits = db.get('amc_visits') || [];
+  let amcContracts = (db.get('amc_contracts') || []).filter(a => a.customer_id === custId || siteIds.has(a.site_id)).map(c => ({
+    ...c,
+    visits: allVisits.filter(v => v.contract_id === c.id || v.amc_contract_id === c.id || v.amc_id === c.id)
+  }));
   let jobs = (db.get('jobs') || []).filter(j => j.customer_id === custId || siteIds.has(j.site_id));
   const faults = (db.get('faults') || []).filter(f => f.customer_id === custId || siteIds.has(f.site_id));
   const reports = (db.get('reports') || []).filter(r => r.customer_id === custId || siteIds.has(r.site_id));
@@ -2730,7 +2734,7 @@ app.post('/api/reports', (req, res) => {
     contact_person: cust ? (cust.contact_person || cust.contact_mobile) : (body.contact_person || ''),
     contact_number: cust ? (cust.contact_mobile || cust.phone) : (body.contact_number || ''),
     report_number,
-    quarter: db.getQuarter(body.date || nowAudit.iso),
+    quarter: body.quarter || (body.date ? db.getQuarter(body.date) : db.getQuarter(nowAudit.iso)),
     status: body.status || 'Draft',
 
     // Automatic Server-Side Creator & Prepared By identity (Requirements 3, 6, 7)
@@ -2775,6 +2779,22 @@ app.post('/api/reports', (req, res) => {
   // Link to job if provided
   if (body.job_id) {
     db.update('jobs', body.job_id, { report_id: newReport.id });
+  }
+
+  // Link to AMC visit if provided
+  if (body.visit_id || body.amc_visit_id) {
+    const targetVisitId = body.visit_id || body.amc_visit_id;
+    const visits = db.get('amc_visits') || [];
+    const targetVisit = visits.find(v => v.id === targetVisitId);
+    if (targetVisit) {
+      db.update('amc_visits', targetVisit.id, {
+        report_id: newReport.id,
+        report_number: newReport.report_number,
+        actual_service_date: body.actual_service_date || body.date || targetVisit.actual_service_date || targetVisit.scheduled_date,
+        status: newReport.status === 'Completed' || newReport.status === 'Approved' ? 'Completed' : (targetVisit.status === 'Completed' ? 'Completed' : 'In Progress'),
+        checklist_status: newReport.status === 'Completed' || newReport.status === 'Approved' ? 'Approved' : (targetVisit.checklist_status || 'Submitted')
+      });
+    }
   }
 
   db.logAudit(req.user.id, 'CREATE_REPORT', 'reports', newReport.id, `Created ${body.report_type} ${report_number} (Prepared By: ${authUser.name}, ${authUser.role})`);
