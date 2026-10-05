@@ -2280,12 +2280,12 @@ app.put('/api/invoices/:id', (req, res) => {
 });
 
 app.delete('/api/invoices/:id', (req, res) => {
-  // STRICT REQUIREMENT 10: ONLY ACCOUNTS USERS CAN DELETE INVOICES.
-  // GM, Engineer, Supervisor, Technician, Sales, Projects Manager cannot delete invoices.
-  if (req.user.role !== 'Accounts') {
+  // STRICT REQUIREMENT: ONLY ACCOUNTS & ADMIN/GM USERS CAN DELETE INVOICES.
+  // Supervisor, Technician, Engineer, Sales, Projects Manager cannot delete invoices.
+  if (!['Accounts', 'GM', 'Admin'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: ONLY Accounts users are permitted to delete invoices.'
+      message: 'Access restricted: ONLY authorized Accounts or Admin users are permitted to delete invoices.'
     });
   }
 
@@ -2302,7 +2302,7 @@ app.delete('/api/invoices/:id', (req, res) => {
     db.write(dbData);
   }
 
-  db.logAudit(req.user.id, 'DELETE_INVOICE', 'invoices', req.params.id, `Accounts user ${req.user.name} permanently deleted invoice ${existing.invoice_number}`);
+  db.logAudit(req.user.id, 'DELETE_INVOICE', 'invoices', req.params.id, `User ${req.user.name} (${req.user.role}) permanently deleted invoice ${existing.invoice_number}`);
   res.json({ message: 'Invoice permanently deleted successfully.' });
 });
 

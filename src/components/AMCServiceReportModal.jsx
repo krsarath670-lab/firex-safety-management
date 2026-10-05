@@ -14,32 +14,47 @@ export default function AMCServiceReportModal({ visit, onClose }) {
 
   const [checklistData, setChecklistData] = useState(visit?.checklist_data || null);
   const [loadingChecklist, setLoadingChecklist] = useState(!visit?.checklist_data);
+  const [customerDetails, setCustomerDetails] = useState(null);
+  const [siteDetails, setSiteDetails] = useState(null);
+  const [contractDetails, setContractDetails] = useState(null);
 
   useEffect(() => {
-    if (!visit?.id) return;
-    if (visit.checklist_data) {
-      setChecklistData(visit.checklist_data);
-      setLoadingChecklist(false);
-      return;
-    }
-    const fetchChecklist = async () => {
+    if (!visit) return;
+    const fetchFullDetails = async () => {
       try {
         setLoadingChecklist(true);
-        const res = await fetch(`/api/amc-visits/${visit.id}/checklist`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.checklist) {
-            setChecklistData(data.checklist);
+        // 1. Fetch checklist data (which includes customer, site, contract)
+        if (visit.id) {
+          const res = await fetch(`/api/amc-visits/${visit.id}/checklist`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.checklist) setChecklistData(data.checklist);
+            if (data?.customer) setCustomerDetails(data.customer);
+            if (data?.site) setSiteDetails(data.site);
+            if (data?.contract) setContractDetails(data.contract);
+          }
+        }
+        // 2. Fallback direct customer fetch if customerDetails not loaded yet
+        const custId = visit.customer_id;
+        if (custId && !customerDetails) {
+          const resCust = await fetch(`/api/customers/${custId}/details`);
+          if (resCust.ok) {
+            const cData = await resCust.json();
+            if (cData?.customer) setCustomerDetails(cData.customer);
+            if (cData?.sites && cData.sites.length > 0) {
+              const matchedSite = cData.sites.find(s => s.id === visit.site_id) || cData.sites[0];
+              setSiteDetails(matchedSite);
+            }
           }
         }
       } catch (err) {
-        console.error('Failed to load checklist for report:', err);
+        console.error('Failed to load full AMC report details:', err);
       } finally {
         setLoadingChecklist(false);
       }
     };
-    fetchChecklist();
-  }, [visit?.id, visit?.checklist_data]);
+    fetchFullDetails();
+  }, [visit?.id, visit?.customer_id]);
 
   if (!visit) return null;
 
@@ -89,7 +104,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -102,7 +119,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      while (heightLeft >= 0) {
+      while (heightLeft > 2) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
@@ -237,59 +254,110 @@ export default function AMCServiceReportModal({ visit, onClose }) {
         </div>
 
         {/* Contract & Site Details Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           
           {/* Customer & Site Details Box */}
           <div className="border border-slate-300 rounded-lg p-3 bg-slate-50/70 space-y-1.5">
-            <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-wider pb-1 border-b border-slate-200">
-              Customer &amp; Facility Details
+            <h3 className="text-[10px] font-black uppercase text-slate-800 tracking-wider pb-1 border-b border-slate-200 flex items-center justify-between">
+              <span>CUSTOMER &amp; FACILITY DETAILS</span>
+              <span className="font-mono text-[9px] text-blue-800 font-bold">
+                {customerDetails?.customer_code || customerDetails?.code || ''}
+              </span>
             </h3>
             <div className="space-y-1 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Client Name</span>
-                <span className="font-black text-slate-900">{visit.customer_name || 'VIP Client'}</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Customer / Company Name</span>
+                <span className="font-black text-slate-900 text-sm">
+                  {customerDetails?.name || visit.customer_name || 'Customer'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Contact Person</span>
+                  <span className="font-bold text-slate-800">
+                    {customerDetails?.contact_person || siteDetails?.contact_person || 'Facility Representative'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Phone</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {customerDetails?.phone || customerDetails?.contact_mobile || siteDetails?.contact_number || 'N/A'}
+                  </span>
+                </div>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Premises / Building</span>
-                <span className="font-bold text-slate-900">{visit.site_name || 'Main Facility'}</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Email</span>
+                <span className="text-slate-800 font-medium">
+                  {customerDetails?.email || siteDetails?.email || 'N/A'}
+                </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Site Address</span>
-                <span className="text-slate-700">{visit.site_address || 'Kingdom of Bahrain'}</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Customer Address</span>
+                <span className="text-slate-700">
+                  {customerDetails?.address || customerDetails?.formatted_address || 'Kingdom of Bahrain'}
+                </span>
+              </div>
+              <div className="pt-1.5 border-t border-slate-200">
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Site / Building Name</span>
+                <span className="font-black text-navy-900">
+                  {siteDetails?.site_name || visit.site_name || 'Main Facility'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Site Address</span>
+                <span className="text-slate-700">
+                  {siteDetails?.site_address || siteDetails?.formatted_address || visit.site_address || customerDetails?.address || 'Kingdom of Bahrain'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* AMC Contract & Visit Details Box */}
           <div className="border border-slate-300 rounded-lg p-3 bg-slate-50/70 space-y-1.5">
-            <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-wider pb-1 border-b border-slate-200">
+            <h3 className="text-[10px] font-black uppercase text-slate-800 tracking-wider pb-1 border-b border-slate-200">
               Contract &amp; Visit Specifications
             </h3>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">AMC Contract No.</span>
-                <span className="font-black text-red-700 font-mono">{visit.contract_number || 'AMC-2026'}</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">AMC Contract No.</span>
+                <span className="font-black text-red-700 font-mono">
+                  {contractDetails?.contract_number || visit.contract_number || visit.amc_contract_number || 'AMC-2026'}
+                </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Service Visit</span>
-                <span className="font-bold text-slate-900">Visit #{visit.visit_number} ({visit.quarter || 'Q1'})</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Service Visit</span>
+                <span className="font-bold text-slate-900">
+                  Visit #{visit.visit_number || visit.service_sequence || 1} ({visit.quarter || 'Q1'})
+                </span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Scheduled Date</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Scheduled Date</span>
                 <span className="font-medium text-slate-700">{visit.scheduled_date}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 font-semibold block">Actual Service Date</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Actual Service Date</span>
                 <span className="font-black text-slate-900">{visit.actual_service_date || visit.scheduled_date}</span>
+              </div>
+              <div>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Contract Start Date</span>
+                <span className="font-semibold text-slate-800">{contractDetails?.start_date || visit.amc_start_date || visit.contract_start_date || '01-Jan-2026'}</span>
+              </div>
+              <div>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Contract End Date</span>
+                <span className="font-semibold text-slate-800">{contractDetails?.end_date || visit.amc_end_date || visit.contract_end_date || '31-Dec-2026'}</span>
               </div>
               <div className="col-span-2 pt-1 border-t border-slate-200 grid grid-cols-2 gap-2">
                 <div>
-                  <span className="text-[9px] text-slate-500 font-semibold block">Supervisor</span>
-                  <span className="font-bold text-slate-900">{visit.supervisor_name || 'Certified Engineer'}</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Supervisor</span>
+                  <span className="font-bold text-slate-900">
+                    {visit.supervisor_name || contractDetails?.assigned_supervisor || 'Sarath Kr'}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-500 font-semibold block">Lead Technician</span>
-                  <span className="font-bold text-slate-900">{visit.technician_name || 'Specialist'}</span>
+                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Lead Technician</span>
+                  <span className="font-bold text-slate-900">
+                    {visit.technician_name || contractDetails?.assigned_technician || 'Abdul Majeed'}
+                  </span>
                 </div>
                 <div className="pt-1 border-t border-slate-100">
                   <span className="text-[9px] text-indigo-700 font-bold block">Prepared By</span>

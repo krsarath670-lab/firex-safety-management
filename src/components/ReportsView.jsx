@@ -19,7 +19,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
 
   // AMC Report Workflow Modals
   const [showCreateAmcModal, setShowCreateAmcModal] = useState(false);
-  const [checklistVisit, setChecklistVisit] = useState(null);
+  const [activeChecklistVisit, setActiveChecklistVisit] = useState(null);
   const [previewingVisit, setPreviewingVisit] = useState(null);
 
   const role = currentUser?.role || 'Technician';
@@ -340,17 +340,17 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                   </span>
                   {r.submitted_at && (
                     <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
-                      Submitted by {r.submitted_by_name || 'Preparer'} ({r.submitted_by_role || 'Technician'}) • {r.submitted_at.slice(0, 10)}
+                      Submitted by {r.submitted_by_name || 'Preparer'} ({r.submitted_by_role || 'Technician'}) • {String(r.submitted_at).slice(0, 10)}
                     </span>
                   )}
                   {r.reviewed_at && (
                     <span className="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded">
-                      Reviewed by {r.reviewed_by_name || 'Lead'} ({r.reviewed_by_role || 'Supervisor'}) • {r.reviewed_at.slice(0, 10)}
+                      Reviewed by {r.reviewed_by_name || 'Lead'} ({r.reviewed_by_role || 'Supervisor'}) • {String(r.reviewed_at).slice(0, 10)}
                     </span>
                   )}
                   {(r.completed_at || r.approved_at) && (
                     <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">
-                      Completed by {r.completed_by_name || r.approved_by_name || 'Lead'} ({r.completed_by_role || r.approved_by_role || 'Supervisor'}) • {(r.completed_at || r.approved_at).slice(0, 10)}
+                      Completed by {r.completed_by_name || r.approved_by_name || 'Lead'} ({r.completed_by_role || r.approved_by_role || 'Supervisor'}) • {String(r.completed_at || r.approved_at).slice(0, 10)}
                     </span>
                   )}
                 </div>

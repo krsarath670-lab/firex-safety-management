@@ -16,7 +16,7 @@ import {
 export default function AccountsView() {
   const { currentUser, showToast, companySettings, allUsers } = useApp();
 
-  const isAccountsUser = currentUser?.role === 'Accounts';
+  const isAccountsUser = ['Accounts', 'GM', 'Admin'].includes(currentUser?.role);
 
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -1371,8 +1371,8 @@ export default function AccountsView() {
               </div>
             </div>
             
-            <p className="text-xs text-slate-700 leading-relaxed font-semibold">
-              Are you sure you want to permanently delete this invoice?
+            <p className="text-xs text-slate-800 leading-relaxed font-bold">
+              Are you sure you want to permanently delete this invoice and its related payment records?
             </p>
 
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
@@ -1383,7 +1383,7 @@ export default function AccountsView() {
             </div>
 
             <p className="text-[11px] text-slate-400 italic">
-              This action cannot be undone. Associated test payment records will also be cleaned.
+              This action cannot be undone. Associated test payment records will also be cleaned and account balances will be recalculated.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -1391,18 +1391,18 @@ export default function AccountsView() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setDeletingInvoice(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-xs uppercase transition-colors"
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 type="button"
                 disabled={isDeleting}
                 onClick={() => handleDeleteInvoice(deletingInvoice.id)}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black text-xs uppercase flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>{isDeleting ? 'Deleting...' : 'Permanently Delete'}</span>
+                <span>{isDeleting ? 'DELETING...' : 'DELETE'}</span>
               </button>
             </div>
           </div>

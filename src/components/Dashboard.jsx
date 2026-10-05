@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatBHD } from '../utils/formatters';
 import SalesMonthlyReportModal from './SalesMonthlyReportModal';
+import AMCChecklistModal from './AMCChecklistModal';
+import AMCServiceReportModal from './AMCServiceReportModal';
 import { 
   FileCheck, AlertOctagon, Calendar, Wrench, FileQuestion, 
   Flame, CheckCircle2, FileSpreadsheet, Building2, Plus, 
@@ -11,10 +13,23 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onNewReport }) {
-  const { dashboardStats, currentUser, setActiveTab, setActiveModal } = useApp();
+  const { dashboardStats, currentUser, setActiveTab, setActiveModal, fetchStats } = useApp();
 
   const [upcomingTab, setUpcomingTab] = useState('next7Days'); // 'today' | 'next7Days' | 'next30Days'
   const [showSalesMonthlyReport, setShowSalesMonthlyReport] = useState(false);
+  const [activeChecklistVisit, setActiveChecklistVisit] = useState(null);
+  const [previewingReportVisit, setPreviewingReportVisit] = useState(null);
+  const [duplicateModalVisit, setDuplicateModalVisit] = useState(null);
+
+  const handleMakeReportClick = (visit) => {
+    // Check if report already exists for this AMC visit (Requirement 9)
+    const hasReport = visit.report_id || visit.has_report || visit.status === 'Completed' || visit.checklist_status === 'Submitted' || visit.checklist_status === 'Approved';
+    if (hasReport) {
+      setDuplicateModalVisit(visit);
+    } else {
+      setActiveChecklistVisit(visit);
+    }
+  };
 
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
@@ -277,7 +292,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{v.site_name}</h4>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {v.customer_name} • Tech: <span className="font-semibold text-slate-700">{v.technician_name || 'Unassigned'}</span>
+                    {v.customer_name} • Tech: <span className="font-semibold text-slate-700">{v.technician_name || 'Abdul Majeed'}</span> • Supervisor: <span className="font-semibold text-slate-700">{v.supervisor_name || 'Sarath Kr'}</span>
                   </p>
                 </div>
               </div>
@@ -292,6 +307,16 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 </span>
 
                 <button
+                  type="button"
+                  onClick={() => handleMakeReportClick(v)}
+                  className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-black flex items-center gap-1 shadow-sm transition-all"
+                  title="Make or view AMC checklist and service report"
+                >
+                  <FileText className="w-3 h-3 text-emerald-200" />
+                  <span>MAKE REPORT</span>
+                </button>
+
+                <button
                   onClick={() => onStartInspection(v)}
                   className="px-2.5 py-1 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
                 >
@@ -303,6 +328,111 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           ))
         )}
       </div>
+
+      {/* DUPLICATE REPORT PREVENTION MODAL (Requirement 9) */}
+      {duplicateModalVisit && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-slate-900 leading-tight">
+                  A report already exists for this AMC visit.
+                </h3>
+                <p className="text-xs text-slate-600">
+                  A checklist or periodic service report has already been initiated or submitted for this scheduled visit. Please select an action below:
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs space-y-1 font-mono">
+              <div className="text-slate-800 font-bold">{duplicateModalVisit.site_name || duplicateModalVisit.customer_name}</div>
+              <div className="text-slate-600">Contract: <span className="font-bold text-navy-900">{duplicateModalVisit.contract_number || duplicateModalVisit.amc_contract_number || 'AMC-2026'}</span> • Visit #{duplicateModalVisit.visit_number || duplicateModalVisit.service_sequence || 1} ({duplicateModalVisit.quarter || 'Q1'})</div>
+              <div className="text-slate-600">Scheduled: <span className="font-bold">{duplicateModalVisit.scheduled_date}</span> • Status: <span className="font-bold text-emerald-700">{duplicateModalVisit.status}</span></div>
+              <div className="text-slate-600">Supervisor: <span className="font-bold">{duplicateModalVisit.supervisor_name || 'Sarath Kr'}</span> • Tech: <span className="font-bold">{duplicateModalVisit.technician_name || 'Abdul Majeed'}</span></div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = duplicateModalVisit;
+                    setDuplicateModalVisit(null);
+                    setActiveChecklistVisit(v);
+                  }}
+                  className="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>OPEN REPORT</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = duplicateModalVisit;
+                    setDuplicateModalVisit(null);
+                    setActiveChecklistVisit(v);
+                  }}
+                  className="px-3 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-sm transition-all uppercase"
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>EDIT REPORT</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const v = duplicateModalVisit;
+                  setDuplicateModalVisit(null);
+                  setPreviewingReportVisit(v);
+                }}
+                className="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all uppercase"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                <span>VIEW FINAL REPORT</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDuplicateModalVisit(null)}
+                className="w-full px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors uppercase"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AMC CHECKLIST MODAL */}
+      {activeChecklistVisit && (
+        <AMCChecklistModal
+          visit={activeChecklistVisit}
+          onClose={() => setActiveChecklistVisit(null)}
+          onRefresh={() => {
+            if (typeof fetchStats === 'function') fetchStats();
+          }}
+          onViewReport={(v) => {
+            setActiveChecklistVisit(null);
+            setPreviewingReportVisit(v);
+          }}
+        />
+      )}
+
+      {/* OFFICIAL CIVIL DEFENSE AMC SERVICE REPORT MODAL */}
+      {previewingReportVisit && (
+        <AMCServiceReportModal
+          visit={previewingReportVisit}
+          onClose={() => {
+            setPreviewingReportVisit(null);
+            if (typeof fetchStats === 'function') fetchStats();
+          }}
+        />
+      )}
     </div>
   );
 

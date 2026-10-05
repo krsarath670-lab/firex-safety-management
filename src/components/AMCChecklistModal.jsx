@@ -22,7 +22,7 @@ const EXTINGUISHER_CAPACITIES = [
 ];
 
 export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewReport }) {
-  const { currentUser, showToast } = useApp();
+  const { currentUser, showToast, allUsers = [] } = useApp();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('fire_alarm'); // 'fire_alarm' | 'fire_fighting' | 'extinguishers' | 'defects' | 'signoff'
@@ -30,6 +30,10 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
   // Data states
   const [checklistMeta, setChecklistMeta] = useState(null);
   const [actualServiceDate, setActualServiceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [assignedSupervisorId, setAssignedSupervisorId] = useState(visit?.supervisor_id || '');
+  const [assignedSupervisorName, setAssignedSupervisorName] = useState(visit?.supervisor_name || 'Sarath Kr');
+  const [assignedTechnicianId, setAssignedTechnicianId] = useState(visit?.technician_id || '');
+  const [assignedTechnicianName, setAssignedTechnicianName] = useState(visit?.technician_name || currentUser?.name || 'Abdul Majeed');
   const [fireAlarmItems, setFireAlarmItems] = useState([]);
   const [fireFightingItems, setFireFightingItems] = useState([]);
   const [extinguisherItems, setExtinguisherItems] = useState([]);
@@ -66,6 +70,12 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
           setFireFightingItems(chk.fire_fighting_items || []);
           setExtinguisherItems(chk.extinguisher_items || []);
           setActualServiceDate(data.visit.actual_service_date || new Date().toISOString().slice(0, 10));
+          if (data.visit?.supervisor_id) setAssignedSupervisorId(data.visit.supervisor_id);
+          if (data.visit?.supervisor_name) setAssignedSupervisorName(data.visit.supervisor_name);
+          else if (data.contract?.assigned_supervisor) setAssignedSupervisorName(data.contract.assigned_supervisor);
+          if (data.visit?.technician_id) setAssignedTechnicianId(data.visit.technician_id);
+          if (data.visit?.technician_name) setAssignedTechnicianName(data.visit.technician_name);
+          else if (data.contract?.assigned_technician) setAssignedTechnicianName(data.contract.assigned_technician);
           setCustomerSignature(chk.customer_signature || null);
           setTechnicianNotes(chk.technician_notes || '');
         } else {
@@ -212,6 +222,10 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       setSaving(true);
       const payload = {
         actual_service_date: actualServiceDate,
+        supervisor_id: assignedSupervisorId,
+        supervisor_name: assignedSupervisorName,
+        technician_id: assignedTechnicianId,
+        technician_name: assignedTechnicianName,
         fire_alarm_items: fireAlarmItems,
         fire_fighting_items: fireFightingItems,
         extinguisher_items: extinguisherItems,
@@ -238,8 +252,12 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
           onViewReport({
             ...visit,
             actual_service_date: actualServiceDate,
+            supervisor_id: assignedSupervisorId,
+            supervisor_name: assignedSupervisorName,
+            technician_id: assignedTechnicianId,
+            technician_name: assignedTechnicianName,
             checklist_data: payload,
-            prepared_by_name: currentUser?.name || visit.technician_name,
+            prepared_by_name: currentUser?.name || assignedTechnicianName,
             prepared_at: new Date().toISOString()
           });
         }
@@ -267,6 +285,10 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       setSaving(true);
       const payload = {
         actual_service_date: actualServiceDate,
+        supervisor_id: assignedSupervisorId,
+        supervisor_name: assignedSupervisorName,
+        technician_id: assignedTechnicianId,
+        technician_name: assignedTechnicianName,
         fire_alarm_items: fireAlarmItems,
         fire_fighting_items: fireFightingItems,
         extinguisher_items: extinguisherItems,
@@ -408,11 +430,47 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
           </div>
           <div>
             <span className="text-[9px] text-slate-400 uppercase font-semibold block">Supervisor</span>
-            <span className="font-bold text-white truncate block">{visit.supervisor_name || 'Unassigned'}</span>
+            <select
+              value={assignedSupervisorId || ''}
+              onChange={(e) => {
+                const sId = e.target.value;
+                setAssignedSupervisorId(sId);
+                const u = allUsers.find(x => String(x.id) === String(sId));
+                if (u) setAssignedSupervisorName(u.name);
+              }}
+              className="bg-navy-800 text-white text-[11px] font-bold px-1.5 py-0.5 rounded border border-navy-700 outline-none w-full"
+            >
+              <option value="">{assignedSupervisorName || 'Select Supervisor'}</option>
+              {allUsers
+                .filter(u => ['Supervisor', 'Engineer', 'Projects Manager', 'GM', 'Admin'].includes(u.role))
+                .map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.role})
+                  </option>
+                ))}
+            </select>
           </div>
           <div>
             <span className="text-[9px] text-slate-400 uppercase font-semibold block">Lead Technician</span>
-            <span className="font-bold text-white truncate block">{visit.technician_name || currentUser.name}</span>
+            <select
+              value={assignedTechnicianId || ''}
+              onChange={(e) => {
+                const tId = e.target.value;
+                setAssignedTechnicianId(tId);
+                const u = allUsers.find(x => String(x.id) === String(tId));
+                if (u) setAssignedTechnicianName(u.name);
+              }}
+              className="bg-navy-800 text-white text-[11px] font-bold px-1.5 py-0.5 rounded border border-navy-700 outline-none w-full"
+            >
+              <option value="">{assignedTechnicianName || 'Select Technician'}</option>
+              {allUsers
+                .filter(u => ['Technician', 'Engineer', 'Supervisor'].includes(u.role))
+                .map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.role})
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
       </div>

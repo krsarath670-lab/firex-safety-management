@@ -315,26 +315,37 @@ class ErrorBoundary extends React.Component {
   }
   render() {
     if (this.state.hasError) {
+      const errMessage = this.state.error?.message || 'Unexpected application error';
       return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-white text-center">
           <div className="max-w-md w-full bg-white text-slate-800 p-6 rounded-3xl shadow-2xl space-y-4 border border-slate-200">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center font-black text-xl">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl mx-auto flex items-center justify-center font-black text-xl">
               FX
             </div>
             <h2 className="text-base font-black text-navy-900">FIREX Fire &amp; Safety Service Management</h2>
-            <p className="text-xs text-slate-600">The application encountered a temporary display issue. Attempting auto-recovery.</p>
+            <p className="text-xs text-slate-700 font-semibold">
+              Unable to load this module. Please try again.
+            </p>
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-left">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Technical Details:</span>
+              <p className="font-mono text-[11px] text-red-600 break-words">{errMessage}</p>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => this.setState({ hasError: false, error: null })}
-                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 shadow-md transition-all"
+                className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 shadow-md transition-all"
               >
-                Retry
+                Try Again
               </button>
               <button
-                onClick={() => window.location.reload()}
-                className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all border border-slate-200"
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.hash = '';
+                  window.location.reload();
+                }}
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all border border-slate-200"
               >
-                Reload
+                Return to Home
               </button>
             </div>
           </div>
