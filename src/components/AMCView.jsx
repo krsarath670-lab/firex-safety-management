@@ -6,7 +6,7 @@ import {
   FileCheck, Calendar, Clock, AlertTriangle, CheckCircle2, 
   Search, Plus, ShieldCheck, ChevronRight, ChevronLeft, Sliders, Bell, 
   Building2, UserCheck, Flame, Wrench, RefreshCw, Filter, Eye, Grid, List,
-  Trash2, Edit, Printer, Download, FileSpreadsheet, X
+  Trash2, Edit, Printer, Download, FileSpreadsheet, X, FileText
 } from 'lucide-react';
 
 import QuickAddCustomerModal from './QuickAddCustomerModal';
@@ -2062,13 +2062,14 @@ export default function AMCView({ onStartInspectionForVisit }) {
                           </button>
                         )}
 
-                        {/* View AMC Report PDF (Requirements 9-11) */}
+                        {/* MAKE REPORT / View AMC Report PDF (Requirements 9-11) */}
                         <button
                           onClick={() => setPreviewingReportVisit(v)}
-                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1 transition-all"
+                          className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center gap-1 shadow-sm transition-all"
+                          title="Generate or view official A4 Civil Defense AMC Service Report"
                         >
-                          <Eye className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Report (PDF)</span>
+                          <FileText className="w-3.5 h-3.5 text-emerald-100" />
+                          <span>MAKE REPORT</span>
                         </button>
 
                         {/* Reassign Visit Staff Button (Requirement 1) */}
@@ -4177,7 +4178,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                 <span>Digital Checklist</span>
                               </button>
 
-                              {/* Service Report (PDF) Button */}
+                              {/* MAKE REPORT / Service Report (PDF) Button */}
                               <button
                                 onClick={() => {
                                   const matched = (viewingContractDetail.visits || []).find(v => (v.quarter === activeQuarterTab || v.visit_number === (qTabIdx + 1))) || {
@@ -4198,10 +4199,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                   };
                                   setPreviewingReportVisit(matched);
                                 }}
-                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs border border-slate-300 flex items-center gap-1 transition-all"
+                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
                               >
-                                <Printer className="w-3.5 h-3.5 text-slate-600" />
-                                <span>Report (PDF)</span>
+                                <FileText className="w-3.5 h-3.5 text-emerald-100" />
+                                <span>MAKE REPORT</span>
                               </button>
                             </div>
                           </div>
@@ -4378,11 +4379,11 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
                           <button
                             onClick={() => setPreviewingReportVisit(v)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold flex items-center gap-1 transition-all"
-                            title="View official AMC Service Report (PDF)"
+                            className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center gap-1 shadow-sm transition-all"
+                            title="Generate or view official A4 Civil Defense AMC Service Report"
                           >
-                            <Printer className="w-3.5 h-3.5 text-slate-600" />
-                            <span>Report (PDF)</span>
+                            <FileText className="w-3.5 h-3.5 text-emerald-100" />
+                            <span>MAKE REPORT</span>
                           </button>
 
                           {['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (

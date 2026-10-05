@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Printer, Download, Share2, Shield, CheckCircle2, 
@@ -9,17 +9,49 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 export default function AMCServiceReportModal({ visit, onClose }) {
-  const { showToast, companySettings } = useApp();
+  const { showToast, companySettings, currentUser } = useApp();
   const reportRef = useRef(null);
+
+  const [checklistData, setChecklistData] = useState(visit?.checklist_data || null);
+  const [loadingChecklist, setLoadingChecklist] = useState(!visit?.checklist_data);
+
+  useEffect(() => {
+    if (!visit?.id) return;
+    if (visit.checklist_data) {
+      setChecklistData(visit.checklist_data);
+      setLoadingChecklist(false);
+      return;
+    }
+    const fetchChecklist = async () => {
+      try {
+        setLoadingChecklist(true);
+        const res = await fetch(`/api/amc-visits/${visit.id}/checklist`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.checklist) {
+            setChecklistData(data.checklist);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load checklist for report:', err);
+      } finally {
+        setLoadingChecklist(false);
+      }
+    };
+    fetchChecklist();
+  }, [visit?.id, visit?.checklist_data]);
 
   if (!visit) return null;
 
-  const chk = visit.checklist_data || {};
+  const chk = checklistData || visit.checklist_data || {};
   const faItems = chk.fire_alarm_items || [];
   const ffItems = chk.fire_fighting_items || [];
   const extItems = chk.extinguisher_items || [];
   const customerSig = chk.customer_signature;
   const supervisorRev = chk.supervisor_review;
+
+  const preparedByName = visit.prepared_by_name || currentUser?.name || visit.technician_name || 'Certified Inspector';
+  const preparationDate = visit.prepared_at?.slice(0, 10) || visit.actual_service_date || new Date().toISOString().slice(0, 10);
 
   const allItems = [...faItems, ...ffItems, ...extItems];
   const okCount = allItems.filter(i => i.status === 'OK').length;
@@ -250,7 +282,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                 <span className="text-[10px] text-slate-500 font-semibold block">Actual Service Date</span>
                 <span className="font-black text-slate-900">{visit.actual_service_date || visit.scheduled_date}</span>
               </div>
-              <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between">
+              <div className="col-span-2 pt-1 border-t border-slate-200 grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-[9px] text-slate-500 font-semibold block">Supervisor</span>
                   <span className="font-bold text-slate-900">{visit.supervisor_name || 'Certified Engineer'}</span>
@@ -258,6 +290,14 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                 <div>
                   <span className="text-[9px] text-slate-500 font-semibold block">Lead Technician</span>
                   <span className="font-bold text-slate-900">{visit.technician_name || 'Specialist'}</span>
+                </div>
+                <div className="pt-1 border-t border-slate-100">
+                  <span className="text-[9px] text-indigo-700 font-bold block">Prepared By</span>
+                  <span className="font-black text-indigo-950">{preparedByName}</span>
+                </div>
+                <div className="pt-1 border-t border-slate-100">
+                  <span className="text-[9px] text-slate-500 font-semibold block">Preparation Date</span>
+                  <span className="font-bold text-slate-900">{preparationDate}</span>
                 </div>
               </div>
             </div>
@@ -596,29 +636,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                 </div>
               </div>
 
-              {/* Box 2: Field Technician */}
+              {/* Box 2: Field Technician / Prepared By */}
               <div className="border border-slate-300 rounded-lg p-2.5 bg-slate-50 flex flex-col justify-between min-h-[140px]">
                 <div>
-                  <span className="text-[9px] font-black uppercase text-slate-500 block">
-                    2. Certified Lead Technician
+                  <span className="text-[9px] font-black uppercase text-indigo-700 block">
+                    2. Prepared By (Technician / Engineer)
                   </span>
-                  <p className="font-bold text-slate-900 text-xs">
-                    {visit.technician_name || 'Lead Technician'}
+                  <p className="font-black text-slate-900 text-xs">
+                    {preparedByName}
                   </p>
                   <p className="text-[10px] text-blue-700 font-medium">
-                    Certified Fire Safety Specialist
+                    {currentUser?.designation || currentUser?.role || 'Fire Safety Specialist'}
                   </p>
                 </div>
 
                 <div className="h-14 my-1 bg-white border border-slate-200 rounded flex items-center justify-center p-1 text-center">
                   <div className="space-y-0.5">
-                    <span className="text-[9px] text-emerald-700 font-black block">✓ Digitally Signed &amp; Audited</span>
-                    <span className="text-[8px] font-mono text-slate-400">UID: {visit.technician_id || 'TECH-FX'}</span>
+                    <span className="text-[9px] text-emerald-700 font-black block">✓ Digitally Prepared &amp; Audited</span>
+                    <span className="text-[8px] font-mono text-slate-400">UID: {currentUser?.id || visit.technician_id || 'TECH-FX'}</span>
                   </div>
                 </div>
 
                 <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-200 flex justify-between">
-                  <span>Date: {visit.actual_service_date || visit.scheduled_date}</span>
+                  <span>Prepared: {preparationDate}</span>
                   <span>Execution: Complete</span>
                 </div>
               </div>

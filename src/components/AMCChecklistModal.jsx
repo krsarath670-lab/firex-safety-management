@@ -204,6 +204,57 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     ...extinguisherItems.filter(i => i.status === 'NOT OK').map(i => ({ ...i, category: 'Fire Extinguishers', item: `${i.type} (${i.capacity})` }))
   ];
 
+  const canPrepareReports = ['GM', 'Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+
+  // Directly generate report: saves checklist progress and opens official A4 AMC Service Report
+  const handleMakeReport = async () => {
+    try {
+      setSaving(true);
+      const payload = {
+        actual_service_date: actualServiceDate,
+        fire_alarm_items: fireAlarmItems,
+        fire_fighting_items: fireFightingItems,
+        extinguisher_items: extinguisherItems,
+        customer_signature: customerSignature,
+        technician_notes: technicianNotes,
+        submit: false,
+        status: visit.status === 'Completed' || visit.status === 'Approved' ? visit.status : 'Checklist Completed'
+      };
+
+      const res = await fetch(`/api/amc-visits/${visit.id}/checklist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        showToast('Checklist saved! Opening AMC Service Report...', 'success');
+        if (onRefresh) onRefresh();
+        if (onViewReport) {
+          onViewReport({
+            ...visit,
+            actual_service_date: actualServiceDate,
+            checklist_data: payload,
+            prepared_by_name: currentUser?.name || visit.technician_name,
+            prepared_at: new Date().toISOString()
+          });
+        }
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Error saving checklist', 'error');
+      }
+    } catch (err) {
+      console.error('Make report error:', err);
+      showToast('Network error generating report', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Save or Submit checklist
   const handleSaveChecklist = async (isSubmit = false) => {
     if (isSubmit && !customerSignature) {
@@ -316,20 +367,23 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
               <span className="hidden sm:inline">Save Draft</span>
             </button>
 
-            {onViewReport && (
+            {canPrepareReports && onViewReport && (
               <button
-                onClick={() => onViewReport(visit)}
-                className="px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-md transition-colors"
+                type="button"
+                onClick={handleMakeReport}
+                disabled={saving}
+                className="px-3 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition-all border border-emerald-400/30"
+                title="Save checklist & generate official AMC Service Report"
               >
-                <Eye className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">View PDF</span>
+                <FileText className="w-3.5 h-3.5 text-emerald-200" />
+                <span>MAKE REPORT</span>
               </button>
             )}
 
             <button
               onClick={() => handleSaveChecklist(true)}
               disabled={saving}
-              className="px-3 sm:px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-lg shadow-emerald-900/30 transition-colors"
+              className="px-3 sm:px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-lg shadow-emerald-900/30 transition-colors"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Submit</span>
@@ -1294,7 +1348,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                 Submitting this checklist will mark the inspection as <strong>Checklist Completed</strong> and advance it to <strong>Supervisor Review</strong>. The assigned Supervisor will review findings, defects, and photo evidence before authorizing the final Civil Defense AMC Service Report PDF.
               </p>
               
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-2 flex flex-wrap items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => handleSaveChecklist(false)}
@@ -1307,11 +1361,22 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                   type="button"
                   onClick={() => handleSaveChecklist(true)}
                   disabled={saving}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-900/40 flex items-center gap-1.5"
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
                 >
                   <Send className="w-4 h-4" />
                   <span>Submit Checklist</span>
                 </button>
+                {canPrepareReports && onViewReport && (
+                  <button
+                    type="button"
+                    onClick={handleMakeReport}
+                    disabled={saving}
+                    className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-900/50 flex items-center gap-1.5 transform hover:scale-[1.02] transition-all"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>MAKE REPORT</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
