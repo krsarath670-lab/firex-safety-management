@@ -125,6 +125,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
+        r.document_number?.toLowerCase().includes(q) ||
         r.report_number?.toLowerCase().includes(q) ||
         r.customer_name?.toLowerCase().includes(q) ||
         r.site_name?.toLowerCase().includes(q) ||
@@ -271,7 +272,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-bold text-navy-900 bg-slate-100 px-2 py-0.5 rounded">
-                      {r.report_number}
+                      {r.document_number || r.report_number}
                     </span>
                     {r.quarter && (
                       <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300">

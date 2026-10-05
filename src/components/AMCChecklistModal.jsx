@@ -364,6 +364,11 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                 <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
                   {contract.contract_number || 'AMC-2026'} • Visit #{visit.visit_number}
                 </span>
+                {(visit.document_number || visit.report_number) && (
+                  <span className="text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                    {visit.document_number || visit.report_number}
+                  </span>
+                )}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   visit.checklist_status === 'Approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
                   visit.checklist_status === 'Submitted' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :

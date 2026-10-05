@@ -96,6 +96,12 @@ export default function AMCServiceReportModal({ visit, onClose }) {
     });
   });
 
+  const docNumber = visit.document_number || (visit.report_number && visit.report_number.startsWith('FX ') ? visit.report_number : null) || (() => {
+    const d = new Date(visit.actual_service_date || visit.scheduled_date || Date.now());
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `FX AMC RPT-${m}-001`;
+  })();
+
   const handleDownloadPDF = async () => {
     try {
       showToast('Compiling official A4 Civil Defense report...', 'info');
@@ -126,7 +132,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`FIREX_AMC_Report_${visit.contract_number || 'Contract'}_Visit_${visit.visit_number}.pdf`);
+      pdf.save(`${docNumber.replace(/\s+/g, '_')}.pdf`);
       showToast('Official AMC Service Report downloaded successfully!', 'success');
     } catch (err) {
       console.error('PDF error:', err);
@@ -203,22 +209,23 @@ export default function AMCServiceReportModal({ visit, onClose }) {
         {/* PAGE 1: OFFICIAL LETTERHEAD & SERVICE JOB CARD HEADER                     */}
         {/* ========================================================================= */}
         
-        {/* Bilingual Letterhead Banner */}
+        {/* Bilingual Letterhead Banner (Requirements 6 & 7) */}
         <div className="border-b-2 border-red-600 pb-3 mb-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <img
                 src={companySettings?.logo_url || '/logo.png'}
                 alt="FIREX Logo"
-                className="h-16 w-auto object-contain"
-                onError={(e) => { e.target.style.display = 'none'; }}
+                className="h-16 w-auto object-contain shrink-0 max-w-[120px]"
+                crossOrigin="anonymous"
+                onError={(e) => { e.target.src = '/logo.png'; }}
               />
               <div>
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-red-600">
-                  FIREX FIRE &amp; SAFETY
+                  {companySettings?.company_name || 'FIREX FIRE & SAFETY'}
                 </h1>
                 <p className="text-sm font-bold text-slate-800" dir="rtl">
-                  شركة فايركس لأدوات السلامه ذ.م.م
+                  {companySettings?.arabic_name || 'شركة فايركس لأدوات السلامه ذ.م.م'}
                 </p>
                 <p className="text-[10px] font-bold text-slate-600 tracking-wide">
                   Safety Items W.L.L. • Al Seef, Kingdom of Bahrain
@@ -226,29 +233,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
               </div>
             </div>
 
-            <div className="text-right text-[10px] text-slate-600 font-semibold space-y-0.5">
-              <p className="font-mono text-slate-900 font-bold">CR No: {companySettings?.cr_no || '96850 1'}</p>
-              <p className="font-mono text-slate-900 font-bold">VAT No: {companySettings?.vat_no || '220006271900002'}</p>
+            <div className="text-right text-[10px] text-slate-600 font-semibold space-y-0.5 shrink-0">
+              <p className="font-mono text-slate-900 font-bold">CR No: {companySettings?.cr_no || companySettings?.cr_number || '96850 1'}</p>
+              <p className="font-mono text-slate-900 font-bold">VAT No: {companySettings?.vat_no || companySettings?.vat_number || '220006271900002'}</p>
               <p>Email: {companySettings?.email || 'service@firexbahrain.com'}</p>
               <p>Tel: {companySettings?.phone || '+973 1716 2240'}</p>
             </div>
           </div>
         </div>
 
-        {/* Official Document Banner */}
-        <div className="bg-navy-900 text-white px-4 py-2 rounded-lg flex items-center justify-between mb-4">
+        {/* Official Document Banner (Requirements 8 & 9: Removed Civil Defence audit, added FX Document No) */}
+        <div className="bg-navy-900 text-white px-4 py-2.5 rounded-lg flex items-center justify-between mb-4 shadow-sm">
           <div>
-            <span className="text-[9px] uppercase tracking-widest font-black text-amber-400 block">
-              KINGDOM OF BAHRAIN • CIVIL DEFENSE COMPLIANT AUDIT
-            </span>
-            <h2 className="text-sm sm:text-base font-black tracking-wide">
+            <h2 className="text-sm sm:text-base font-black tracking-wide uppercase">
               ANNUAL MAINTENANCE CONTRACT (AMC) PERIODIC SERVICE REPORT
             </h2>
+            <p className="text-[10px] text-slate-300 font-medium">
+              Periodic Comprehensive Fire Protection Systems Maintenance &amp; Inspection
+            </p>
           </div>
-          <div className="text-right">
-            <span className="text-[9px] font-mono uppercase block text-slate-300">Doc Reference</span>
-            <span className="text-xs font-mono font-black text-amber-300">
-              RPT-AMC-{visit.contract_number || '2026'}-V{visit.visit_number}
+          <div className="text-right shrink-0">
+            <span className="text-[9px] font-mono uppercase block text-slate-300">Document No.</span>
+            <span className="text-xs sm:text-sm font-mono font-black text-amber-300 tracking-wider">
+              {docNumber}
             </span>
           </div>
         </div>
@@ -318,6 +325,12 @@ export default function AMCServiceReportModal({ visit, onClose }) {
               Contract &amp; Visit Specifications
             </h3>
             <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">Document No.</span>
+                <span className="font-black text-navy-900 font-mono text-xs">
+                  {docNumber}
+                </span>
+              </div>
               <div>
                 <span className="text-[9.5px] uppercase font-bold text-slate-500 block">AMC Contract No.</span>
                 <span className="font-black text-red-700 font-mono">

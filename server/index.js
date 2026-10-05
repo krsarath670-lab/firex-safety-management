@@ -2665,6 +2665,14 @@ app.get('/api/reports/:id', (req, res) => {
   });
 });
 
+app.get('/api/reports/next-number', (req, res) => {
+  const jobType = req.query.job_type || 'AMC';
+  const docType = req.query.doc_type || 'RPT';
+  const date = req.query.date || new Date();
+  const nextNumber = db.previewNextDocumentNumber(jobType, docType, date);
+  res.json({ document_number: nextNumber });
+});
+
 app.post('/api/reports', (req, res) => {
   // STRICT PERMISSION CHECK (Requirement 1 & 14):
   // Only Projects Manager, Engineer, Supervisor, and Technician can prepare reports
@@ -2677,7 +2685,6 @@ app.post('/api/reports', (req, res) => {
   }
 
   const body = req.body;
-  const count = (db.get('reports') || []).length + 1;
   const amcs = db.get('amc_contracts') || [];
   const jobs = db.get('jobs') || [];
   const users = db.get('users') || [];
@@ -2711,22 +2718,15 @@ app.post('/api/reports', (req, res) => {
     body.sales_person_name = sp.name;
   }
 
-  let typeCode = 'RPT';
-  if (body.report_type === 'AMC Service Report') typeCode = 'AMC';
-  else if (body.report_type === 'Work Completion Report') typeCode = 'WCR';
-  else if (body.report_type === 'Fault Report') typeCode = 'FLT';
-  else if (body.report_type === 'Inspection Report') typeCode = 'INSP';
-  else if (body.report_type === 'Testing & Commissioning Report') typeCode = 'TCR';
-  else if (body.report_type === 'Project Report') typeCode = 'PRJ';
-  else if (body.report_type === 'Fit-Out Report') typeCode = 'FIT';
-  else if (body.report_type === 'Installation Report') typeCode = 'INST';
-  else if (body.report_type === 'Breakdown Report') typeCode = 'BRK';
-  else if (body.report_type === 'Supply Report') typeCode = 'SUP';
-
   const cust = body.customer_id ? db.getById('customers', body.customer_id) : null;
   const site = body.site_id ? db.getById('sites', body.site_id) : null;
 
-  const report_number = body.report_number || `RPT-${typeCode}-${new Date().getFullYear()}-${String(count).padStart(3, '0')}`;
+  // Determine Job Type (Requirements 1, 4, 12)
+  const jobType = body.job_type || (job ? job.job_type : null) || (amc ? 'AMC' : null) || body.report_type || 'AMC';
+
+  // Automatic FX Document Numbering: FX [JOB TYPE] [DOC TYPE]-[MONTH]-[RUNNING NUMBER] (Requirements 1-5, 12, 13)
+  const document_number = db.generateDocumentNumber(jobType, 'RPT', body.date || new Date());
+  const report_number = document_number;
   const isSubmitted = body.status === 'Submitted';
 
   const newReport = db.insert('reports', {
@@ -2737,6 +2737,7 @@ app.post('/api/reports', (req, res) => {
     site_address: site ? site.site_address : (body.site_address || ''),
     contact_person: cust ? (cust.contact_person || cust.contact_mobile) : (body.contact_person || ''),
     contact_number: cust ? (cust.contact_mobile || cust.phone) : (body.contact_number || ''),
+    document_number,
     report_number,
     quarter: body.quarter || (body.date ? db.getQuarter(body.date) : db.getQuarter(nowAudit.iso)),
     status: body.status || 'Draft',
@@ -2855,6 +2856,14 @@ app.put('/api/reports/:id', (req, res) => {
   delete updates.prepared_time;
   delete updates.created_at;
   delete updates.created_by;
+
+  // IMMUTABILITY: Document number and report number cannot be altered once issued (Requirement 11)
+  if (existing.document_number) {
+    updates.document_number = existing.document_number;
+  }
+  if (existing.report_number) {
+    updates.report_number = existing.report_number;
+  }
 
   const nowAudit = getAuditDateTime();
   const users = db.get('users') || [];

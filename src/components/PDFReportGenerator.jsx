@@ -24,7 +24,9 @@ export default function PDFReportGenerator({ report, onClose }) {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -37,14 +39,14 @@ export default function PDFReportGenerator({ report, onClose }) {
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      while (heightLeft >= 0) {
+      while (heightLeft > 2) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`${report.report_number || 'Fire_Safety_Report'}.pdf`);
+      pdf.save(`${(report.document_number || report.report_number || 'Fire_Safety_Report').replace(/\s+/g, '_')}.pdf`);
       showToast('PDF downloaded successfully!', 'success');
     } catch (err) {
       console.error('PDF error:', err);
@@ -58,7 +60,7 @@ export default function PDFReportGenerator({ report, onClose }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${report.report_type} - ${report.report_number}`,
+          title: `${report.report_type} - ${report.document_number || report.report_number}`,
           text: `Fire & Safety Engineering Service Report for ${report.site_name || 'Client Premises'}. Status: ${report.status}`,
           url: window.location.href
         });
@@ -119,110 +121,56 @@ export default function PDFReportGenerator({ report, onClose }) {
         className="w-full max-w-3xl bg-white shadow-2xl rounded-xl p-6 sm:p-10 text-slate-900 font-sans border border-slate-300 mb-12"
       >
         
-        {/* Company Header / Official Letterhead Banner */}
-        {companySettings?.use_custom_letterhead !== false && (companySettings?.letterhead_url || '/letterhead.png') ? (
-          <div className="border-b-2 border-navy-900 pb-3 mb-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex-1 w-full max-w-xl">
-                <img
-                  src={companySettings?.letterhead_url || '/letterhead.png'}
-                  alt={companySettings?.company_name || 'FIREX Letterhead'}
-                  className="w-full max-h-24 sm:max-h-28 object-contain object-left"
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    e.target.src = '/letterhead.png';
-                  }}
-                />
-              </div>
-
-              <div className="sm:text-right shrink-0">
-                <span className="inline-block px-3 py-1 bg-navy-900 text-white text-xs font-black rounded-lg uppercase tracking-wider shadow-sm">
-                  {report.report_type}
-                </span>
-                <p className="text-xs font-mono font-bold text-slate-800 mt-1.5">
-                  Doc #: {report.report_number}
-                </p>
-                <p className="text-[11px] text-slate-500">Date: {report.date}</p>
-                {report.status && (
-                  <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    report.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                    report.status === 'Reviewed' ? 'bg-blue-100 text-blue-800' :
-                    report.status === 'Submitted' ? 'bg-purple-100 text-purple-800' :
-                    'bg-amber-100 text-amber-800'
-                  }`}>
-                    Status: {report.status}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Official Credentials sub-bar under letterhead banner */}
-            <div className="mt-2 flex flex-wrap items-center justify-between text-[11px] text-slate-700 border-t border-slate-200 pt-1.5 font-medium">
-              <span className="font-mono font-bold">
-                CR No.: {companySettings?.cr_number || companySettings?.cr_no || '96850 1'} <span className="mx-1">•</span> VAT No.: {companySettings?.vat_number || companySettings?.vat_no || '220006271900002'}
-              </span>
-              <span>{companySettings?.address || 'Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain'}</span>
-              <span className="font-bold text-navy-900">Tel: {companySettings?.phone || '+973 1716 2240'}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="border-b-2 border-navy-900 pb-4 mb-4 flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div className="flex items-start space-x-3.5">
-              {companySettings?.logo_url ? (
-                <img
-                  src={companySettings.logo_url}
-                  alt="Company Logo"
-                  className="w-16 h-16 rounded-xl object-contain bg-white border border-slate-200 shadow-sm p-1 shrink-0"
-                  crossOrigin="anonymous"
-                  onError={(e) => { e.target.src = '/logo.png'; }}
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-safety-red to-orange-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                  <Shield className="w-8 h-8" />
-                </div>
-              )}
+        {/* Bilingual Company Letterhead Banner (Requirements 6 & 7) */}
+        <div className="border-b-2 border-red-600 pb-3 mb-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img
+                src={companySettings?.logo_url || '/logo.png'}
+                alt="FIREX Logo"
+                className="h-16 w-auto object-contain shrink-0 max-w-[120px]"
+                crossOrigin="anonymous"
+                onError={(e) => { e.target.src = '/logo.png'; }}
+              />
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-navy-900">
-                  {companySettings?.company_name || 'FIREX'}
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-red-600">
+                  {companySettings?.company_name || 'FIREX FIRE & SAFETY'}
                 </h1>
-                {companySettings?.arabic_name && (
-                  <p className="text-xs text-safety-red font-bold" dir="rtl">
-                    {companySettings.arabic_name}
-                  </p>
-                )}
-                <div className="text-xs text-slate-600 font-semibold mt-0.5 space-y-0.5">
-                  <p>{companySettings?.address_line_1 || 'Villa 13, Building 2373, Road 2831'}</p>
-                  <p>{companySettings?.address_line_2 && companySettings?.address_line_3 ? `${companySettings.address_line_2}, ${companySettings.address_line_3}` : (companySettings?.address || 'Al Seef, Block 428, Bahrain')}</p>
-                </div>
-                <div className="text-[11px] text-slate-700 font-mono font-bold mt-1">
-                  <span>CR No.: {companySettings?.cr_number || companySettings?.cr_no || '96850 1'}</span>
-                  <span className="mx-2">•</span>
-                  <span>VAT No.: {companySettings?.vat_number || companySettings?.vat_no || '220006271900002'}</span>
-                </div>
+                <p className="text-sm font-bold text-slate-800" dir="rtl">
+                  {companySettings?.arabic_name || 'شركة فايركس لأدوات السلامه ذ.م.م'}
+                </p>
+                <p className="text-[10px] font-bold text-slate-600 tracking-wide">
+                  Safety Items W.L.L. • Al Seef, Kingdom of Bahrain
+                </p>
               </div>
             </div>
 
-            <div className="sm:text-right shrink-0">
-              <span className="inline-block px-3 py-1 bg-navy-900 text-white text-xs font-black rounded-lg uppercase tracking-wider shadow-sm">
-                {report.report_type}
-              </span>
-              <p className="text-xs font-mono font-bold text-slate-800 mt-1.5">
-                Doc #: {report.report_number}
-              </p>
-              <p className="text-[11px] text-slate-500">Date: {report.date}</p>
-              {report.status && (
-                <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  report.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' :
-                  report.status === 'Reviewed' ? 'bg-blue-100 text-blue-800' :
-                  report.status === 'Submitted' ? 'bg-purple-100 text-purple-800' :
-                  'bg-amber-100 text-amber-800'
-                }`}>
-                  Status: {report.status}
-                </span>
-              )}
+            <div className="text-right text-[10px] text-slate-600 font-semibold space-y-0.5 shrink-0">
+              <p className="font-mono text-slate-900 font-bold">CR No: {companySettings?.cr_no || companySettings?.cr_number || '96850 1'}</p>
+              <p className="font-mono text-slate-900 font-bold">VAT No: {companySettings?.vat_no || companySettings?.vat_number || '220006271900002'}</p>
+              <p>Email: {companySettings?.email || 'service@firexbahrain.com'}</p>
+              <p>Tel: {companySettings?.phone || '+973 1716 2240'}</p>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Official Document Banner (Requirements 8 & 9: Shows standard FX Document Number) */}
+        <div className="bg-navy-900 text-white px-4 py-2.5 rounded-lg flex items-center justify-between mb-4 shadow-sm">
+          <div>
+            <h2 className="text-sm sm:text-base font-black tracking-wide uppercase">
+              {report.report_type || 'ENGINEERING SERVICE REPORT'}
+            </h2>
+            <p className="text-[10px] text-slate-300 font-medium">
+              Official Fire &amp; Safety Service &amp; Maintenance Record
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <span className="text-[9px] font-mono uppercase block text-slate-300">Document No.</span>
+            <span className="text-xs sm:text-sm font-mono font-black text-amber-300 tracking-wider">
+              {report.document_number || report.report_number}
+            </span>
+          </div>
+        </div>
 
         {/* TWO SEPARATE SECTIONS: Company Information & Customer Information (Requirement 5) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-4">
@@ -478,7 +426,7 @@ export default function PDFReportGenerator({ report, onClose }) {
               <span>Official Report Preparation &amp; Review Sign-off</span>
             </h3>
             <span className="text-[10px] font-mono text-slate-500">
-              Doc Ref: {report.report_number}
+              Doc Ref: {report.document_number || report.report_number}
             </span>
           </div>
 

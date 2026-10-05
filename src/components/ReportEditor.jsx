@@ -47,6 +47,33 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState('customer'); // 'customer' | 'supervisor'
 
+  const [docNumberPreview, setDocNumberPreview] = useState(
+    initialData?.document_number || initialData?.report_number || ''
+  );
+
+  // Fetch real-time preview of next available FX Document Number
+  useEffect(() => {
+    if (initialData?.id) return;
+    let isCancelled = false;
+    const fetchNextNumber = async () => {
+      try {
+        const res = await fetch(`/api/reports/next-number?job_type=${encodeURIComponent(formData.report_type || 'AMC')}&date=${encodeURIComponent(formData.date || new Date().toISOString().slice(0, 10))}`, {
+          headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && data.document_number) {
+            setDocNumberPreview(data.document_number);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed previewing next document number', e);
+      }
+    };
+    fetchNextNumber();
+    return () => { isCancelled = true; };
+  }, [formData.report_type, formData.date, initialData?.id, currentUser]);
+
   // Load auxiliary data
   useEffect(() => {
     const fetchData = async () => {
@@ -209,6 +236,8 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     const finalReport = {
       ...formData,
       status: targetStatus,
+      document_number: initialData?.document_number || docNumberPreview || undefined,
+      report_number: initialData?.report_number || docNumberPreview || undefined,
       // Immutable Prepared By Identity
       prepared_by_name: initialData?.prepared_by_name || currentUser.name,
       prepared_by_role: initialData?.prepared_by_role || currentUser.role,
@@ -290,6 +319,31 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
           <p className="text-[9px] text-slate-400 italic">
             * Identity is automatically captured server-side from your authenticated account and locked into the permanent audit trail. Manual name entry is strictly disallowed.
           </p>
+        </div>
+
+        {/* Official Document Number Banner (Requirements 1-5, 9) */}
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center font-black text-sm tracking-wider shadow-sm">
+              FX
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                Official Document Number (Automatic Sequence)
+              </span>
+              <span className="text-sm sm:text-base font-mono font-black text-navy-900 tracking-tight">
+                {docNumberPreview || 'Generating FX Sequence...'}
+              </span>
+            </div>
+          </div>
+          <div className="sm:text-right">
+            <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200">
+              FX [JOB TYPE] RPT-[MM]-[RUNNING NUMBER]
+            </span>
+            <span className="block text-[9px] text-slate-500 mt-1">
+              • Sequence resets to 001 each month • Zero manual entry • Duplicate protected
+            </span>
+          </div>
         </div>
 
         {/* Report Type Selector */}

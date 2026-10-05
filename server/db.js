@@ -1584,8 +1584,151 @@ class Database {
     if (norm.includes('inspect') || norm === 'ins' || norm === 'insp') return 'INS';
     if (norm.includes('test') || norm.includes('commission') || norm === 'tst') return 'TST';
     if (norm.includes('emergency') || norm.includes('eco') || norm.includes('call-out') || norm.includes('callout')) return 'ECO';
-    if (norm === 'other' || norm === 'oth') return 'OTH';
     return 'OTH';
+  }
+
+  // Configurable Job Type Prefix mapping (Requirements 4 & 12)
+  getJobTypePrefix(jobType) {
+    if (!jobType) return 'AMC';
+    const clean = String(jobType).trim();
+    const settings = this.getSettings();
+    const customMap = settings?.job_type_prefixes || {};
+    if (customMap[clean]) return customMap[clean];
+
+    const lower = clean.toLowerCase();
+    const foundKey = Object.keys(customMap).find(k => k.toLowerCase() === lower);
+    if (foundKey) return customMap[foundKey];
+
+    // Standard Default Mappings (Requirements 1, 4, 12)
+    if (lower.includes('amc') || lower.includes('annual maintenance')) return 'AMC';
+    if (lower.includes('fit-out') || lower.includes('fit out') || lower.includes('fitout') || lower === 'fo') return 'FO';
+    if (lower.includes('project') || lower === 'prj') return 'PRJ';
+    if (lower.includes('emergency') || lower.includes('call-out') || lower === 'emg') return 'EMG';
+    if (lower.includes('breakdown') || lower === 'brk') return 'BRK';
+    if (lower.includes('supply') || lower === 'sup') return 'SUP';
+    if (lower.includes('install') || lower === 'inst') return 'INST';
+    if (lower.includes('testing') || lower.includes('commission') || lower === 'tcr') return 'TCR';
+    if (lower.includes('inspect') || lower === 'insp') return 'INSP';
+    if (lower.includes('work completion') || lower === 'wcr') return 'WCR';
+    if (lower.includes('fault') || lower === 'flt') return 'FLT';
+
+    // Fallback: 3-4 uppercase alphanumeric characters
+    return clean.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'GEN';
+  }
+
+  // Preview next available FX Document Number without advancing persistent sequence
+  previewNextDocumentNumber(jobType = 'AMC', docType = 'RPT', dateInput = new Date()) {
+    const db = this.read();
+    let d = dateInput ? new Date(dateInput) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+
+    const monthNum = String(d.getMonth() + 1).padStart(2, '0'); // 2-digit month: 01 to 12 (Requirement 2)
+    const year = d.getFullYear();
+    const prefix = this.getJobTypePrefix(jobType); // Configurable prefix: AMC, FO, PRJ (Requirement 4 & 12)
+    const cleanDocType = String(docType || 'RPT').trim().toUpperCase();
+
+    // Regex to match existing numbers for this prefix and month:
+    // Format: FX [JOB TYPE] [DOC TYPE]-[MONTH]-[RUNNING NUMBER]
+    const regex = new RegExp(`^FX\\s+${prefix}\\s+${cleanDocType}-${monthNum}-(\\d+)$`, 'i');
+    let maxSeq = 0;
+
+    (db.reports || []).forEach(r => {
+      const numStr = r.document_number || r.report_number;
+      if (numStr) {
+        const match = String(numStr).trim().match(regex);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+
+    (db.amc_visits || []).forEach(v => {
+      const numStr = v.document_number || v.report_number;
+      if (numStr) {
+        const match = String(numStr).trim().match(regex);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+
+    const seqKey = `${prefix}_${cleanDocType}_${year}-${monthNum}`;
+    const trackedSeq = (db.document_sequences && db.document_sequences[seqKey]) || 0;
+    if (trackedSeq > maxSeq) maxSeq = trackedSeq;
+
+    const nextSeq = maxSeq + 1;
+    const seqStr = String(nextSeq).padStart(3, '0');
+    return `FX ${prefix} ${cleanDocType}-${monthNum}-${seqStr}`;
+  }
+
+  // Automatic Unique Document Number Generator (Requirements 1-5, 12, 13)
+  // Format: FX [JOB TYPE] [DOCUMENT TYPE]-[MONTH]-[RUNNING NUMBER]
+  // e.g. FX AMC RPT-10-001, FX FO RPT-10-001, FX PRJ RPT-10-001
+  generateDocumentNumber(jobType = 'AMC', docType = 'RPT', dateInput = new Date()) {
+    const db = this.read();
+    let d = dateInput ? new Date(dateInput) : new Date();
+    if (isNaN(d.getTime())) d = new Date();
+
+    const monthNum = String(d.getMonth() + 1).padStart(2, '0'); // 2-digit month: 01 to 12 (Requirement 2)
+    const year = d.getFullYear();
+    const prefix = this.getJobTypePrefix(jobType); // Configurable prefix: AMC, FO, PRJ (Requirement 4 & 12)
+    const cleanDocType = String(docType || 'RPT').trim().toUpperCase();
+
+    // Regex to match existing numbers for this prefix and month:
+    const regex = new RegExp(`^FX\\s+${prefix}\\s+${cleanDocType}-${monthNum}-(\\d+)$`, 'i');
+
+    let maxSeq = 0;
+
+    // 1. Check reports in DB
+    (db.reports || []).forEach(r => {
+      const numStr = r.document_number || r.report_number;
+      if (numStr) {
+        const match = String(numStr).trim().match(regex);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+
+    // 2. Check AMC visits in DB
+    (db.amc_visits || []).forEach(v => {
+      const numStr = v.document_number || v.report_number;
+      if (numStr) {
+        const match = String(numStr).trim().match(regex);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+
+    // 3. Check emergency calls in DB
+    (db.emergency_calls || []).forEach(c => {
+      const numStr = c.document_number || c.report_number;
+      if (numStr) {
+        const match = String(numStr).trim().match(regex);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+
+    // 4. Sequence tracker in DB for concurrency protection & month-reset integrity (Requirement 5 & 13)
+    if (!db.document_sequences) db.document_sequences = {};
+    const seqKey = `${prefix}_${cleanDocType}_${year}-${monthNum}`;
+    const trackedSeq = db.document_sequences[seqKey] || 0;
+    if (trackedSeq > maxSeq) maxSeq = trackedSeq;
+
+    const nextSeq = maxSeq + 1;
+    db.document_sequences[seqKey] = nextSeq;
+    this.write(db);
+
+    const seqStr = String(nextSeq).padStart(3, '0');
+    return `FX ${prefix} ${cleanDocType}-${monthNum}-${seqStr}`;
   }
 
   // Generate unique job number based on type and year: e.g. FX-AMC-2026-001, FX-FIT-2026-001
@@ -3946,12 +4089,24 @@ class Database {
 
     // Sync to db.reports so report history is populated immediately under Customer + AMC + Quarter
     if (!db.reports) db.reports = [];
-    const cleanContractNum = (contract?.contract_number || 'AMC').replace(/[^A-Za-z0-9]/g, '');
-    const reportNumber = `RPT-AMC-${cleanContractNum}-V${visit.visit_number || 1}`;
+    
+    // Auto FX Document Number (Requirements 1, 8, 11, 13)
+    let reportNumber = visit.document_number || visit.report_number;
+    if (!reportNumber || !String(reportNumber).startsWith('FX ')) {
+      const existingRep = db.reports.find(r => r.amc_visit_id === visit.id || r.visit_id === visit.id);
+      if (existingRep?.document_number && String(existingRep.document_number).startsWith('FX ')) {
+        reportNumber = existingRep.document_number;
+      } else if (existingRep?.report_number && String(existingRep.report_number).startsWith('FX ')) {
+        reportNumber = existingRep.report_number;
+      } else {
+        reportNumber = this.generateDocumentNumber('AMC', 'RPT', visit.actual_service_date || visit.scheduled_date);
+      }
+    }
 
-    let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber);
+    let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber || r.document_number === reportNumber);
     const reportStatus = visit.status === 'Completed' || visit.checklist_status === 'Approved' ? 'Completed' : (isSubmitting ? 'Submitted' : 'Draft');
     const rptData = {
+      document_number: reportNumber,
       report_number: reportNumber,
       report_type: 'AMC Service Report',
       amc_id: contract?.id || visit.amc_contract_id,
@@ -3989,6 +4144,7 @@ class Database {
       db.reports.push(report);
     }
     visit.report_id = report.id;
+    visit.document_number = report.document_number || report.report_number;
     visit.report_number = report.report_number;
 
     visit.updated_at = new Date().toISOString();
@@ -4029,11 +4185,21 @@ class Database {
 
       // Ensure official report record exists in db.reports
       if (!db.reports) db.reports = [];
-      const cleanContractNum = (contract?.contract_number || 'AMC').replace(/[^A-Za-z0-9]/g, '');
-      const reportNumber = `RPT-AMC-${cleanContractNum}-V${visit.visit_number || 1}`;
+      let reportNumber = visit.document_number || visit.report_number;
+      if (!reportNumber || !String(reportNumber).startsWith('FX ')) {
+        const existingRep = db.reports.find(r => r.amc_visit_id === visit.id || r.visit_id === visit.id);
+        if (existingRep?.document_number && String(existingRep.document_number).startsWith('FX ')) {
+          reportNumber = existingRep.document_number;
+        } else if (existingRep?.report_number && String(existingRep.report_number).startsWith('FX ')) {
+          reportNumber = existingRep.report_number;
+        } else {
+          reportNumber = this.generateDocumentNumber('AMC', 'RPT', visit.actual_service_date || visit.scheduled_date);
+        }
+      }
 
-      let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber);
+      let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber || r.document_number === reportNumber);
       const reportData = {
+        document_number: reportNumber,
         report_number: reportNumber,
         report_type: 'AMC Service Report',
         amc_id: contract?.id || visit.amc_contract_id,
@@ -4073,6 +4239,8 @@ class Database {
         db.reports.push(report);
       }
       visit.report_id = report.id;
+      visit.document_number = report.document_number || report.report_number;
+      visit.report_number = report.report_number;
     } else {
       // Returned to Technician
       visit.checklist_status = 'In Progress';
