@@ -2058,8 +2058,8 @@ class Database {
           status,
           scheduled_date: scheduledDate,
           actual_visit_date: firstVisit?.actual_service_date || (firstVisit?.status === 'Completed' ? firstVisit.scheduled_date : null),
-          technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : (contract.assigned_technician || 'Abdul Majeed'),
-          supervisor_name: firstVisit ? (firstVisit.supervisor_name || 'Sarath Kr') : (contract.assigned_supervisor || 'Sarath Kr'),
+          technician_name: firstVisit ? (firstVisit.technician_name || firstVisit.assigned_technician) : (contract.assigned_technician || contract.technician_name || 'Unassigned Technician'),
+          supervisor_name: firstVisit ? (firstVisit.supervisor_name || firstVisit.assigned_supervisor) : (contract.assigned_supervisor || contract.supervisor_name || 'Unassigned Supervisor'),
           systems_inspected: systemsInspected,
           systems_label: systemsLabel,
           checklist: {},
@@ -2976,10 +2976,10 @@ class Database {
         sales_person_id: spId,
         sales_person_name: sp ? sp.name : (v.sales_person_name || 'Unassigned'),
         technician_id: techId,
-        technician_name: tech ? tech.name : 'Rajesh Kumar',
+        technician_name: tech ? tech.name : (v.technician_name || v.assigned_technician || 'Unassigned Technician'),
         supervisor_id: supId,
-        supervisor_name: sup ? sup.name : 'Tariq Mahmoud',
-        contract_number: v.contract_number || (contract ? contract.contract_number : 'AMC-2026'),
+        supervisor_name: sup ? sup.name : (v.supervisor_name || v.assigned_supervisor || 'Unassigned Supervisor'),
+        contract_number: v.contract_number || (contract ? contract.contract_number : 'AMC-N/A'),
         contract_start: contract ? contract.start_date : '',
         contract_end: contract ? contract.end_date : '',
         contract_value: contractVal,
@@ -3055,7 +3055,7 @@ class Database {
         customer_name: cust ? cust.name : 'Unknown Customer',
         site_name: site ? site.site_name : 'Unknown Site',
         sales_person_name: sp ? sp.name : (v.sales_person_name || 'Unassigned'),
-        technician_name: tech ? tech.name : 'Rajesh Kumar'
+        technician_name: tech ? tech.name : (v.technician_name || v.assigned_technician || 'Unassigned Technician')
       };
     };
 

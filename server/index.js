@@ -1565,12 +1565,12 @@ app.get('/api/amc-visits', (req, res) => {
       day: v.day || db.getDayName(v.scheduled_date),
       day_of_week: v.day_of_week || v.day || db.getDayName(v.scheduled_date),
       status: v.status || v.visit_status || 'Scheduled',
-      contract_number: v.contract_number || (amc ? amc.contract_number : 'AMC-2026'),
+      contract_number: v.contract_number || (amc ? amc.contract_number : 'AMC-N/A'),
       site_name: site ? site.site_name : 'N/A',
       site_address: site ? site.site_address : 'N/A',
       customer_name: customer ? customer.name : 'N/A',
       sales_person_name: sp ? sp.name : 'Unassigned',
-      technician_name: tech ? tech.name : 'Rajesh Kumar'
+      technician_name: tech ? tech.name : (v.technician_name || v.assigned_technician || 'Unassigned')
     };
   });
 
@@ -1619,15 +1619,15 @@ app.post('/api/amc-visits', requirePermission('canScheduleVisits'), (req, res) =
   const newVisit = db.insert('amc_visits', {
     amc_contract_id: contractId,
     amc_id: contractId,
-    contract_number: amc ? amc.contract_number : 'AMC-2026',
+    contract_number: amc ? amc.contract_number : (req.body.contract_number || 'AMC-GEN'),
     customer_id: amc ? amc.customer_id : req.body.customer_id,
     site_id: amc ? amc.site_id : req.body.site_id,
     sales_person_id: amc ? amc.sales_person_id : null,
     visit_number: visit_number || 1,
     scheduled_date,
-    technician_id: technician_id || assigned_technician || 'usr-tech',
-    assigned_technician: technician_id || assigned_technician || 'usr-tech',
-    assigned_team: assigned_team || 'Team Alpha (Tariq & Rajesh)',
+    technician_id: technician_id || assigned_technician || null,
+    assigned_technician: technician_id || assigned_technician || 'Unassigned',
+    assigned_team: assigned_team || 'FireX Service Team',
     system_type: system_type || system || 'Fire Alarm',
     system: system_type || system || 'Fire Alarm',
     status: 'Scheduled',
@@ -1843,8 +1843,8 @@ app.get('/api/jobs', (req, res) => {
       site_address: site ? site.site_address : '',
       sales_person_id: j.sales_person_id,
       sales_person_name: sp ? sp.name : (j.sales_person_name || 'Unassigned'),
-      supervisor_name: sup ? sup.name : 'Sarath Kr',
-      technician_name: tech ? tech.name : 'Abdul Majeed',
+      supervisor_name: sup ? sup.name : (j.supervisor_name || 'Unassigned Supervisor'),
+      technician_name: tech ? tech.name : (j.technician_name || 'Unassigned Technician'),
       is_on_hold: !!j.is_on_hold,
       hold_type: j.hold_type || null,
       hold_reason: j.hold_reason || null,
