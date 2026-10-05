@@ -131,15 +131,15 @@ app.post('/api/auth/setup-first-user', (req, res) => {
 });
 
 app.post('/api/auth/login', (req, res) => {
-  const { userId, role, identifier, password, pin } = req.body;
+  const { userId, role, identifier, username, password, pin } = req.body;
   const inputSecret = (password || pin || '').toString().trim();
   const users = db.get('users') || [];
 
   let user = null;
   if (userId) {
     user = users.find(u => u.id === userId);
-  } else if (identifier) {
-    const idf = identifier.toString().trim().toLowerCase();
+  } else if (identifier || username) {
+    const idf = (identifier || username).toString().trim().toLowerCase();
     user = users.find(u => 
       (u.username && u.username.toLowerCase() === idf) ||
       (u.id && u.id.toLowerCase() === idf) ||
