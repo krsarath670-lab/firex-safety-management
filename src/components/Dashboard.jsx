@@ -277,7 +277,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{v.site_name}</h4>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {v.customer_name} • Tech: <span className="font-semibold text-slate-700">{v.technician_name || 'Rajesh Kumar'}</span>
+                    {v.customer_name} • Tech: <span className="font-semibold text-slate-700">{v.technician_name || 'Unassigned'}</span>
                   </p>
                 </div>
               </div>

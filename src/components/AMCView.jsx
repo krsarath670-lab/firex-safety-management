@@ -3705,28 +3705,40 @@ export default function AMCView({ onStartInspectionForVisit }) {
               {detailTab === 'overview' && (
                 <div className="space-y-4">
                   {/* Key Info Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Contract Period</span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="font-semibold text-slate-800 text-xs">
                         {viewingContractDetail.start_date} to {viewingContractDetail.end_date}
                       </span>
                     </div>
                     <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Supervisor</span>
+                      <span className="font-bold text-navy-900 block truncate text-xs">
+                        {viewingContractDetail.assigned_supervisor || viewingContractDetail.supervisor_name || 'Unassigned'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Technician / Eng.</span>
+                      <span className="font-bold text-navy-900 block truncate text-xs">
+                        {viewingContractDetail.assigned_technician || viewingContractDetail.technician_name || 'Unassigned'}
+                      </span>
+                    </div>
+                    <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Sales Specialist</span>
-                      <span className="font-bold text-navy-900 block truncate">
+                      <span className="font-bold text-navy-900 block truncate text-xs">
                         {viewingContractDetail.sales_person_name || 'Unassigned'}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Contract Type</span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="font-semibold text-slate-800 text-xs">
                         {viewingContractDetail.contract_type || 'Comprehensive'}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Quotation Reference</span>
-                      <span className="font-mono font-bold text-slate-800">
+                      <span className="font-mono font-bold text-slate-800 text-xs">
                         {viewingContractDetail.quotation_number || 'N/A'}
                       </span>
                     </div>
@@ -4005,7 +4017,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                                 systems: contractSystems,
                                                 systems_label: contractSystems.join(' + '),
                                                 system_type: contractSystems[0] || 'Fire Alarm',
-                                                technician_name: qRec.technician_name || 'Rajesh Kumar'
+                                                technician_name: qRec.technician_name || viewingContractDetail.assigned_technician || 'Unassigned Technician'
                                               };
                                               openCompleteVisitModal(targetVis);
                                             }}
@@ -4037,19 +4049,12 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       const qRec = viewingContractDetail.quarters?.[activeQuarterTab] || {
                         status: 'Not Started',
                         scheduled_date: defaultQuarterDate,
-                        technician_name: viewingContractDetail.sales_person_name || 'Abdul Majeed',
-                        supervisor_name: 'Sarath Kr',
+                        technician_name: viewingContractDetail.assigned_technician || viewingContractDetail.technician_name || 'Unassigned Technician',
+                        supervisor_name: viewingContractDetail.assigned_supervisor || viewingContractDetail.supervisor_name || 'Unassigned Supervisor',
                         systems: viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
                         findings: { pass: 0, fail: 0, needs_attention: 0 },
                         report_status: 'Draft',
-                        checklist_items: [
-                          { item: 'Fire Alarm Control Panel Main Power & Battery Backups', status: 'Pass' },
-                          { item: 'Optical Smoke Detectors Loop Sampling & Response', status: 'Pass' },
-                          { item: 'Break Glass Manual Call Points & Audio Flashers', status: 'Pass' },
-                          { item: 'Sprinkler Risers, Flow Switches & OS&Y Valve Tamper Switches', status: 'Pass' },
-                          { item: 'Jockey & Main Diesel Fire Pump Automatic Cut-in Pressure', status: 'Pass' },
-                          { item: 'Portable Fire Extinguishers Pressure Gauge & Tagging', status: 'Pass' }
-                        ]
+                        checklist_items: []
                       };
 
                       const cyclePeriods = getContractCyclePeriods(contractAnchorDate);
@@ -4143,13 +4148,60 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                 </button>
                               )}
 
-                              {/* Print PDF Report */}
+                              {/* Digital Checklist Button */}
                               <button
-                                onClick={() => showToast(`Generating official ${activeQuarterTab} Civil Defence PDF report...`, 'info')}
+                                onClick={() => {
+                                  const matched = (viewingContractDetail.visits || []).find(v => (v.quarter === activeQuarterTab || v.visit_number === (qTabIdx + 1))) || {
+                                    id: `vis-${viewingContractDetail.id}-${activeQuarterTab}`,
+                                    contract_id: viewingContractDetail.id,
+                                    contract_number: viewingContractDetail.contract_number,
+                                    customer_id: viewingContractDetail.customer_id,
+                                    customer_name: viewingContractDetail.customer_name,
+                                    site_id: viewingContractDetail.site_id,
+                                    site_name: viewingContractDetail.site_name,
+                                    quarter: activeQuarterTab,
+                                    visit_number: qTabIdx + 1,
+                                    scheduled_date: qRec.scheduled_date || defaultQuarterDate,
+                                    technician_id: viewingContractDetail.technician_id,
+                                    technician_name: qRec.technician_name || viewingContractDetail.assigned_technician || 'Unassigned Technician',
+                                    supervisor_id: viewingContractDetail.supervisor_id,
+                                    supervisor_name: qRec.supervisor_name || viewingContractDetail.assigned_supervisor || 'Unassigned Supervisor',
+                                    systems: viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
+                                    status: qRec.status || 'Scheduled'
+                                  };
+                                  setActiveChecklistVisit(matched);
+                                }}
+                                className="px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
+                              >
+                                <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                                <span>Digital Checklist</span>
+                              </button>
+
+                              {/* Service Report (PDF) Button */}
+                              <button
+                                onClick={() => {
+                                  const matched = (viewingContractDetail.visits || []).find(v => (v.quarter === activeQuarterTab || v.visit_number === (qTabIdx + 1))) || {
+                                    id: `vis-${viewingContractDetail.id}-${activeQuarterTab}`,
+                                    contract_id: viewingContractDetail.id,
+                                    contract_number: viewingContractDetail.contract_number,
+                                    customer_id: viewingContractDetail.customer_id,
+                                    customer_name: viewingContractDetail.customer_name,
+                                    site_id: viewingContractDetail.site_id,
+                                    site_name: viewingContractDetail.site_name,
+                                    quarter: activeQuarterTab,
+                                    visit_number: qTabIdx + 1,
+                                    scheduled_date: qRec.scheduled_date || defaultQuarterDate,
+                                    technician_name: qRec.technician_name || viewingContractDetail.assigned_technician || 'Unassigned Technician',
+                                    supervisor_name: qRec.supervisor_name || viewingContractDetail.assigned_supervisor || 'Unassigned Supervisor',
+                                    systems: viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
+                                    status: qRec.status || 'Completed'
+                                  };
+                                  setPreviewingReportVisit(matched);
+                                }}
                                 className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs border border-slate-300 flex items-center gap-1 transition-all"
                               >
-                                <Printer className="w-3.5 h-3.5" />
-                                <span>Print PDF</span>
+                                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                                <span>Report (PDF)</span>
                               </button>
                             </div>
                           </div>
@@ -4162,15 +4214,19 @@ export default function AMCView({ onStartInspectionForVisit }) {
                             </div>
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400 block">Actual Visit Date</span>
-                              <span className="font-semibold text-blue-700">{qRec.visit_date || 'Completed on Schedule'}</span>
+                              <span className="font-semibold text-blue-700">{qRec.visit_date || (qRec.status === 'Completed' ? 'Completed' : 'Pending')}</span>
                             </div>
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400 block">Lead Technician</span>
-                              <span className="font-bold text-slate-900 truncate block">{qRec.technician_name || 'Rajesh Kumar'}</span>
+                              <span className="font-bold text-slate-900 truncate block">
+                                {qRec.technician_name || viewingContractDetail.assigned_technician || viewingContractDetail.technician_name || 'Unassigned'}
+                              </span>
                             </div>
                             <div>
                               <span className="text-[10px] uppercase font-bold text-slate-400 block">Civil Defence Sign-off</span>
-                              <span className="font-bold text-emerald-700 truncate block">{qRec.approved_by || qRec.supervisor_name || 'Eng. Tariq Mahmoud'}</span>
+                              <span className="font-bold text-emerald-700 truncate block">
+                                {qRec.approved_by || qRec.supervisor_name || viewingContractDetail.assigned_supervisor || viewingContractDetail.supervisor_name || 'Pending Approval'}
+                              </span>
                             </div>
                           </div>
 
@@ -4262,46 +4318,122 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
               {/* TAB 3: VISITS WITH QUARTERS */}
               {detailTab === 'visits' && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {(viewingContractDetail.visits || []).length === 0 ? (
                     <p className="text-slate-400 text-center py-6">No scheduled visits generated for this contract.</p>
                   ) : (
                     (viewingContractDetail.visits || []).map(v => (
-                      <div key={v.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                            {v.quarter || 'Q1'}
-                          </span>
-                          <div>
-                            <div className="font-bold text-slate-900">
-                              Visit #{v.visit_number} • {v.system || v.system_type}
-                            </div>
-                            <div className="text-[11px] text-slate-500">
-                              {v.scheduled_date} {v.day && `(${v.day})`} • Tech: {v.technician_name || 'Unassigned'}
-                            </div>
+                      <div key={v.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                              {v.quarter || `Visit #${v.visit_number}`}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSystemColor(v.system_type || v.system)}`}>
+                              {v.systems_label || v.system_type || v.system}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              v.status === 'Completed' || v.status === 'Approved'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : v.status === 'In Progress' || v.status === 'Awaiting Review'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}>
+                              {v.status || 'Scheduled'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-600 flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-slate-800">
+                              <Calendar className="w-3.5 h-3.5 text-blue-600 inline mr-1" />
+                              {v.scheduled_date} {v.day && `(${v.day})`}
+                            </span>
+                            <span>•</span>
+                            <span>Supervisor: <strong className="text-slate-800">{v.supervisor_name || viewingContractDetail.assigned_supervisor || 'Unassigned'}</strong></span>
+                            <span>•</span>
+                            <span>Tech: <strong className="text-slate-800">{v.technician_name || viewingContractDetail.assigned_technician || 'Unassigned'}</strong></span>
                           </div>
                         </div>
-                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                          v.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {v.status || 'Scheduled'}
-                        </span>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => setActiveChecklistVisit(v)}
+                            className="px-2.5 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-all"
+                            title="Open digital inspection checklist"
+                          >
+                            <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                            <span>Checklist</span>
+                          </button>
+
+                          {['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
+                            <button
+                              onClick={() => setReviewingVisit(v)}
+                              className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold flex items-center gap-1 transition-all"
+                              title="Review technician checklist submission"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>Review</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => setPreviewingReportVisit(v)}
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold flex items-center gap-1 transition-all"
+                            title="View official AMC Service Report (PDF)"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Report (PDF)</span>
+                          </button>
+
+                          {['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
+                            <button
+                              onClick={() => {
+                                setAssigningVisit(v);
+                                setAssignSupervisorId(v.supervisor_id || viewingContractDetail.supervisor_id || '');
+                                setAssignTechnicianId(v.technician_id || viewingContractDetail.technician_id || '');
+                              }}
+                              className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-bold flex items-center gap-1 transition-all"
+                              title="Assign Supervisor and Technician for this visit"
+                            >
+                              <UserCheck className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Assign</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
                 </div>
               )}
 
-              {/* TAB 3: REPORTS */}
+              {/* TAB 4: REPORTS */}
               {detailTab === 'reports' && (
-                <div className="space-y-2">
-                  <p className="text-slate-500 text-[11px]">
-                    Official inspection and service completion reports recorded for AMC {viewingContractDetail.contract_number}.
+                <div className="space-y-3">
+                  <p className="text-slate-500 text-xs">
+                    Official inspection and service completion reports recorded for AMC agreement <strong className="text-slate-800">{viewingContractDetail.contract_number}</strong>.
                   </p>
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
-                    <span className="font-semibold text-slate-700 block">Civil Defence Certified AMC Reports</span>
-                    <span className="text-[11px] text-slate-400">Available in Reports tab for download and printing.</span>
-                  </div>
+                  {(viewingContractDetail.visits || []).filter(v => v.status === 'Completed' || v.status === 'Approved' || v.report_id).length === 0 ? (
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center">
+                      <span className="font-semibold text-slate-700 block text-xs">No Final Reports Generated Yet</span>
+                      <span className="text-[11px] text-slate-400">Complete service visits and obtain supervisor approval to generate Civil Defense certified reports.</span>
+                    </div>
+                  ) : (
+                    (viewingContractDetail.visits || []).filter(v => v.status === 'Completed' || v.status === 'Approved' || v.report_id).map(v => (
+                      <div key={v.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-xs text-navy-900">{v.quarter || `Visit #${v.visit_number}`} Service Report</div>
+                          <div className="text-[11px] text-slate-500">{v.actual_service_date || v.scheduled_date} • Tech: {v.technician_name} • Sup: {v.supervisor_name}</div>
+                        </div>
+                        <button
+                          onClick={() => setPreviewingReportVisit(v)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>View Report (PDF)</span>
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
 
