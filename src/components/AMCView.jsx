@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 
 import QuickAddCustomerModal from './QuickAddCustomerModal';
+import AMCChecklistModal from './AMCChecklistModal';
+import AMCSupervisorReviewModal from './AMCSupervisorReviewModal';
+import AMCServiceReportModal from './AMCServiceReportModal';
 
 export default function AMCView({ onStartInspectionForVisit }) {
   const { currentUser, showToast, allUsers, fetchMonthlyAmcSchedule, companySettings } = useApp();
@@ -65,6 +68,15 @@ export default function AMCView({ onStartInspectionForVisit }) {
   const [contractToDelete, setContractToDelete] = useState(null);
   const [isDeletingContract, setIsDeletingContract] = useState(false);
 
+  // Digital AMC Checklist & Service Report Modals
+  const [activeChecklistVisit, setActiveChecklistVisit] = useState(null);
+  const [reviewingVisit, setReviewingVisit] = useState(null);
+  const [previewingReportVisit, setPreviewingReportVisit] = useState(null);
+  const [assigningVisit, setAssigningVisit] = useState(null);
+  const [assignSupervisorId, setAssignSupervisorId] = useState('');
+  const [assignTechnicianId, setAssignTechnicianId] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
+
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
@@ -77,15 +89,19 @@ export default function AMCView({ onStartInspectionForVisit }) {
   ];
 
   const salesUsers = (allUsers || []).filter(u => u.role === 'Sales');
-  const supervisorUsers = (allUsers || []).filter(u => u.role === 'Supervisor');
-  const technicianUsers = (allUsers || []).filter(u => u.role === 'Technician');
+  const supervisorUsers = (allUsers || []).filter(u => u.role === 'Supervisor' || u.role === 'GM');
+  const technicianUsers = (allUsers || []).filter(u => ['Technician', 'Engineer'].includes(u.role));
+  const effectiveSupervisorUsers = supervisorUsers.length > 0 ? supervisorUsers : (allUsers || []).filter(u => u.status !== 'Inactive');
+  const effectiveTechnicianUsers = technicianUsers.length > 0 ? technicianUsers : (allUsers || []).filter(u => u.status !== 'Inactive');
 
-  // New Contract Form State with dynamic VAT and real Sales user
+  // New Contract Form State with dynamic VAT, Supervisor & Technician
   const defaultNewContract = () => {
     const defaultVat = companySettings?.vat_percent !== undefined ? Number(companySettings.vat_percent) : 10;
     const defaultVal = 350.000;
     const defaultVatAmt = (defaultVal * defaultVat) / 100;
     const firstSales = salesUsers[0];
+    const firstSup = effectiveSupervisorUsers[0];
+    const firstTech = effectiveTechnicianUsers[0];
     const todayStr = new Date().toISOString().slice(0, 10);
     const oneYearLater = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().slice(0, 10);
 
@@ -97,6 +113,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
       end_date: oneYearLater,
       service_start_date: todayStr,
       extinguisher_start_date: '',
+      supervisor_id: firstSup ? firstSup.id : '',
+      assigned_supervisor: firstSup ? firstSup.name : '',
+      technician_id: firstTech ? firstTech.id : '',
+      assigned_technician: firstTech ? firstTech.name : '',
       renewal_date: '',
       systems_covered: ['Fire Alarm', 'Fire Fighting'],
       contract_value: defaultVal,
@@ -1317,6 +1337,26 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     </div>
                   </div>
 
+                  {/* Personnel Row: Assigned Supervisor & Technician (Requirement 1 & 14) */}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/80 px-2.5 py-1.5 rounded-xl">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-slate-400 block leading-tight">Supervisor</span>
+                          <span className="font-bold text-slate-800 text-[11px]">{c.assigned_supervisor || c.supervisor_name || 'Unassigned'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5 text-emerald-600" />
+                        <div>
+                          <span className="text-[9px] uppercase font-bold text-slate-400 block leading-tight">Lead Tech / Engineer</span>
+                          <span className="font-bold text-slate-800 text-[11px]">{c.assigned_technician || c.technician_name || 'Unassigned'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Systems Covered Badges with visit breakdown */}
                   <div className="mt-3">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
@@ -1985,11 +2025,11 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       </div>
                       <div>
                         <span className="text-slate-400 font-semibold block text-[10px] uppercase">Assigned Supervisor</span>
-                        <span className="font-bold text-slate-800 truncate block">{v.supervisor_name || 'Tariq Mahmoud'}</span>
+                        <span className="font-bold text-slate-800 truncate block">{v.supervisor_name || 'Unassigned Supervisor'}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 font-semibold block text-[10px] uppercase">Assigned Technician</span>
-                        <span className="font-bold text-slate-800 truncate block">{v.technician_name || 'Rajesh Kumar'}</span>
+                        <span className="font-bold text-slate-800 truncate block">{v.technician_name || 'Unassigned Technician'}</span>
                       </div>
                     </div>
 
@@ -2001,7 +2041,66 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
                     {/* Actions Row */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Digital AMC Checklist Button (Requirements 3-8) */}
+                        <button
+                          onClick={() => setActiveChecklistVisit(v)}
+                          className="px-3 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Digital Checklist</span>
+                        </button>
+
+                        {/* Supervisor Review Button (Requirement 18) */}
+                        {isManagement && (
+                          <button
+                            onClick={() => setReviewingVisit(v)}
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold flex items-center gap-1 transition-all"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Supervisor Review</span>
+                          </button>
+                        )}
+
+                        {/* View AMC Report PDF (Requirements 9-11) */}
+                        <button
+                          onClick={() => setPreviewingReportVisit(v)}
+                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1 transition-all"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Report (PDF)</span>
+                        </button>
+
+                        {/* Reassign Visit Staff Button (Requirement 1) */}
+                        {isManagement && (
+                          <button
+                            onClick={() => {
+                              setAssigningVisit(v);
+                              setAssignSupervisorId(v.supervisor_id || '');
+                              setAssignTechnicianId(v.technician_id || '');
+                            }}
+                            className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
+                            title="Reassign Supervisor or Technician for this visit without changing contract default"
+                          >
+                            <UserCheck className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Assign</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => {
+                            setReschedulingVisit(v);
+                            setNewRescheduleDate(v.scheduled_date);
+                          }}
+                          className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Reschedule</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Status Toggle */}
+                      <div className="flex items-center gap-1">
                         {(v.visit_status || v.status) !== 'Completed' ? (
                           <button
                             onClick={() => openCompleteVisitModal(v)}
@@ -2018,29 +2117,7 @@ export default function AMCView({ onStartInspectionForVisit }) {
                             Re-schedule
                           </button>
                         )}
-
-                        <button
-                          onClick={() => {
-                            setReschedulingVisit(v);
-                            setNewRescheduleDate(v.scheduled_date);
-                          }}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1"
-                        >
-                          <Clock className="w-3 h-3 text-slate-500" />
-                          <span>Reschedule Date</span>
-                        </button>
                       </div>
-
-                      {/* Start Inspection */}
-                      <button
-                        onClick={() => {
-                          if (onStartInspectionForVisit) onStartInspectionForVisit(v);
-                        }}
-                        className="px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
-                      >
-                        <Wrench className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Start Inspection</span>
-                      </button>
                     </div>
                   </div>
                 ))
@@ -2393,6 +2470,59 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         ))}
                       </select>
                     )}
+                  </div>
+                </div>
+
+                {/* Assigned Engineering & Technical Staff (Requirement 1) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-200">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Supervisor *</span>
+                    </label>
+                    <select
+                      required
+                      value={newContract.supervisor_id || ''}
+                      onChange={(e) => {
+                        const u = effectiveSupervisorUsers.find(usr => usr.id === e.target.value);
+                        setNewContract(p => ({
+                          ...p,
+                          supervisor_id: e.target.value,
+                          assigned_supervisor: u ? u.name : ''
+                        }));
+                      }}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-navy-900 text-xs"
+                    >
+                      <option value="">-- Select Supervisor --</option>
+                      {effectiveSupervisorUsers.map(su => (
+                        <option key={su.id} value={su.id}>{su.name} ({su.role})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                      <Wrench className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Technician / Engineer *</span>
+                    </label>
+                    <select
+                      required
+                      value={newContract.technician_id || ''}
+                      onChange={(e) => {
+                        const u = effectiveTechnicianUsers.find(usr => usr.id === e.target.value);
+                        setNewContract(p => ({
+                          ...p,
+                          technician_id: e.target.value,
+                          assigned_technician: u ? u.name : ''
+                        }));
+                      }}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-navy-900 text-xs"
+                    >
+                      <option value="">-- Select Technician / Engineer --</option>
+                      {effectiveTechnicianUsers.map(tu => (
+                        <option key={tu.id} value={tu.id}>{tu.name} ({tu.role})</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -2814,6 +2944,59 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         <span className="text-[9px] text-slate-400 block font-normal">Ownership locked</span>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Assigned Engineering & Technical Staff (Requirement 1) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-200">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Assigned Supervisor *</span>
+                    </label>
+                    <select
+                      value={editingContract.supervisor_id || ''}
+                      onChange={(e) => {
+                        const u = effectiveSupervisorUsers.find(usr => usr.id === e.target.value);
+                        setEditingContract(p => ({
+                          ...p,
+                          supervisor_id: e.target.value,
+                          assigned_supervisor: u ? u.name : '',
+                          supervisor_name: u ? u.name : ''
+                        }));
+                      }}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-navy-900 text-xs"
+                    >
+                      <option value="">-- Select Supervisor --</option>
+                      {effectiveSupervisorUsers.map(su => (
+                        <option key={su.id} value={su.id}>{su.name} ({su.role})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                      <Wrench className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Assigned Technician / Engineer *</span>
+                    </label>
+                    <select
+                      value={editingContract.technician_id || ''}
+                      onChange={(e) => {
+                        const u = effectiveTechnicianUsers.find(usr => usr.id === e.target.value);
+                        setEditingContract(p => ({
+                          ...p,
+                          technician_id: e.target.value,
+                          assigned_technician: u ? u.name : '',
+                          technician_name: u ? u.name : ''
+                        }));
+                      }}
+                      className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold text-navy-900 text-xs"
+                    >
+                      <option value="">-- Select Technician / Engineer --</option>
+                      {effectiveTechnicianUsers.map(tu => (
+                        <option key={tu.id} value={tu.id}>{tu.name} ({tu.role})</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -4298,6 +4481,145 @@ export default function AMCView({ onStartInspectionForVisit }) {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DIGITAL AMC CHECKLIST MODAL */}
+      {activeChecklistVisit && (
+        <AMCChecklistModal
+          visit={activeChecklistVisit}
+          onClose={() => setActiveChecklistVisit(null)}
+          onRefresh={() => {
+            loadData();
+            if (tab === 'schedule') loadMonthlySchedule();
+          }}
+          onViewReport={(v) => {
+            setActiveChecklistVisit(null);
+            setPreviewingReportVisit(v);
+          }}
+        />
+      )}
+
+      {/* SUPERVISOR REVIEW MODAL */}
+      {reviewingVisit && (
+        <AMCSupervisorReviewModal
+          visit={reviewingVisit}
+          onClose={() => setReviewingVisit(null)}
+          onRefresh={() => {
+            loadData();
+            if (tab === 'schedule') loadMonthlySchedule();
+          }}
+          onViewReport={(v) => {
+            setReviewingVisit(null);
+            setPreviewingReportVisit(v);
+          }}
+        />
+      )}
+
+      {/* AMC SERVICE REPORT PDF MODAL */}
+      {previewingReportVisit && (
+        <AMCServiceReportModal
+          visit={previewingReportVisit}
+          onClose={() => setPreviewingReportVisit(null)}
+        />
+      )}
+
+      {/* REASSIGN VISIT STAFF MODAL */}
+      {assigningVisit && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-5 shadow-2xl max-w-sm w-full space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-xs font-black uppercase text-slate-900 flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-blue-600" />
+                <span>Reassign Visit #{assigningVisit.visit_number} Staff</span>
+              </h3>
+              <button onClick={() => setAssigningVisit(null)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Supervisor</label>
+                <select
+                  value={assignSupervisorId}
+                  onChange={(e) => setAssignSupervisorId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold"
+                >
+                  <option value="">-- Keep Current ({assigningVisit.supervisor_name || 'Unassigned'}) --</option>
+                  {effectiveSupervisorUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Technician / Engineer</label>
+                <select
+                  value={assignTechnicianId}
+                  onChange={(e) => setAssignTechnicianId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-bold"
+                >
+                  <option value="">-- Keep Current ({assigningVisit.technician_name || 'Unassigned'}) --</option>
+                  {effectiveTechnicianUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-[10px] text-slate-500 italic">
+                * Note: Changing staff for this individual service visit does not alter the parent AMC contract's default assignment.
+              </p>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAssigningVisit(null)}
+                  className="w-1/2 py-2 border border-slate-200 rounded-xl font-bold text-slate-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={assignSaving}
+                  onClick={async () => {
+                    try {
+                      setAssignSaving(true);
+                      const sup = effectiveSupervisorUsers.find(u => u.id === assignSupervisorId);
+                      const tech = effectiveTechnicianUsers.find(u => u.id === assignTechnicianId);
+                      const res = await fetch(`/api/amc-visits/${assigningVisit.id}/assignment`, {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'x-user-role': currentUser.role,
+                          'x-user-id': currentUser.id
+                        },
+                        body: JSON.stringify({
+                          supervisor_id: assignSupervisorId || undefined,
+                          supervisor_name: sup?.name || undefined,
+                          technician_id: assignTechnicianId || undefined,
+                          technician_name: tech?.name || undefined
+                        })
+                      });
+                      if (res.ok) {
+                        showToast('Visit staff assignment updated successfully', 'success');
+                        setAssigningVisit(null);
+                        loadData();
+                        if (tab === 'schedule') loadMonthlySchedule();
+                      } else {
+                        showToast('Error updating assignment', 'error');
+                      }
+                    } catch (e) {
+                      showToast('Network error updating assignment', 'error');
+                    } finally {
+                      setAssignSaving(false);
+                    }
+                  }}
+                  className="w-1/2 py-2 bg-navy-900 text-white rounded-xl font-bold"
+                >
+                  Save Assignment
+                </button>
+              </div>
             </div>
           </div>
         </div>

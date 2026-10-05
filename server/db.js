@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const amcChecklist = require('./amcChecklist');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
@@ -749,6 +750,14 @@ class Database {
     }
     if (!data.emergency_calls) {
       data.emergency_calls = [];
+      modified = true;
+    }
+    if (!data.equipment) {
+      data.equipment = [];
+      modified = true;
+    }
+    if (!data.amc_checklists) {
+      data.amc_checklists = [];
       modified = true;
     }
 
@@ -2474,6 +2483,8 @@ class Database {
     const users = db.users || [];
     const sp = users.find(u => u.id === contract.sales_person_id);
     const salesPersonName = sp ? sp.name : (contract.sales_person_name || 'Unassigned');
+    const supervisorUser = users.find(u => u.id === contract.supervisor_id || (contract.assigned_supervisor && u.name.toLowerCase() === contract.assigned_supervisor.toLowerCase()));
+    const techUser = users.find(u => u.id === contract.technician_id || (contract.assigned_technician && u.name.toLowerCase() === contract.assigned_technician.toLowerCase()));
 
     const calculatedSchedule = this.calculateAmcSchedule(contract);
 
@@ -2547,15 +2558,17 @@ class Database {
           system_type: item.systems_label,
           system: item.systems_label,
           services_status: initialStatus,
-          assigned_team: "Team Alpha (Tariq & Rajesh)",
-          assigned_technician: contract.technician_id || "usr-tech",
-          technician_id: contract.technician_id || "usr-tech",
-          technician_name: contract.assigned_technician || 'Abdul Majeed',
-          supervisor_id: contract.supervisor_id || "usr-sup",
-          supervisor_name: contract.assigned_supervisor || 'Sarath Kr',
+          assigned_team: contract.assigned_team || "FireX Service Team",
+          assigned_technician: contract.assigned_technician || contract.technician_name || (techUser ? techUser.name : 'Unassigned Technician'),
+          technician_id: contract.technician_id || (techUser ? techUser.id : null),
+          technician_name: contract.assigned_technician || contract.technician_name || (techUser ? techUser.name : 'Unassigned Technician'),
+          assigned_supervisor: contract.assigned_supervisor || contract.supervisor_name || (supervisorUser ? supervisorUser.name : 'Unassigned Supervisor'),
+          supervisor_id: contract.supervisor_id || (supervisorUser ? supervisorUser.id : null),
+          supervisor_name: contract.assigned_supervisor || contract.supervisor_name || (supervisorUser ? supervisorUser.name : 'Unassigned Supervisor'),
           report_id: null,
           status: "Scheduled",
           visit_status: "Scheduled",
+          checklist_status: "Draft",
           remarks: `Routine ${item.systems_label} safety compliance inspection #${item.visit_number}`,
           photos: [],
           created_at: new Date().toISOString(),
@@ -3736,6 +3749,315 @@ class Database {
       activeCriticalEmergency: calls.some(c => c.priority === 'Critical' && !['Closed', 'Cancelled', 'Approved'].includes(c.status))
     };
   }
+
+  // --- DIGITAL AMC CHECKLIST & SERVICE REPORT ENGINE (Requirements 1-20) ---
+  getSiteEquipment(siteId) {
+    const db = this.read();
+    if (!db.equipment) db.equipment = [];
+    return db.equipment.filter(e => e.site_id === siteId);
+  }
+
+  saveSiteEquipment(siteId, items) {
+    const db = this.read();
+    if (!db.equipment) db.equipment = [];
+    if (!Array.isArray(items)) return [];
+
+    items.forEach(item => {
+      const idx = db.equipment.findIndex(e => e.id === item.id || (e.site_id === siteId && e.serial_number && e.serial_number === item.serial_number));
+      if (idx >= 0) {
+        db.equipment[idx] = { ...db.equipment[idx], ...item, site_id: siteId, updated_at: new Date().toISOString() };
+      } else {
+        db.equipment.push({
+          id: item.id || `eq-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          site_id: siteId,
+          ...item,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+
+    this.write(db);
+    return db.equipment.filter(e => e.site_id === siteId);
+  }
+
+  getAmcVisitChecklist(visitId) {
+    const db = this.read();
+    const visit = (db.amc_visits || []).find(v => v.id === visitId);
+    if (!visit) return null;
+
+    const contract = (db.amc_contracts || []).find(c => c.id === visit.amc_contract_id || c.id === visit.amc_id);
+    const site = (db.sites || []).find(s => s.id === visit.site_id);
+    const customer = (db.customers || []).find(c => c.id === visit.customer_id);
+
+    // If checklist already exists on visit, return it
+    if (visit.checklist_data && (visit.checklist_data.fire_alarm_items?.length || visit.checklist_data.fire_fighting_items?.length)) {
+      return {
+        visit,
+        contract,
+        site,
+        customer,
+        checklist: visit.checklist_data
+      };
+    }
+
+    // Reuse previous visit's equipment data for same contract or site to avoid re-entry
+    const previousVisit = (db.amc_visits || []).find(
+      v => (v.amc_contract_id === visit.amc_contract_id || v.site_id === visit.site_id) &&
+           v.id !== visit.id &&
+           v.checklist_data &&
+           v.checklist_data.fire_alarm_items?.length
+    );
+
+    const siteEquipment = this.getSiteEquipment(site?.id);
+    const initialChecklist = amcChecklist.buildInitialChecklist(site, contract, visit, previousVisit, siteEquipment);
+
+    visit.checklist_data = initialChecklist;
+    visit.checklist_status = initialChecklist.status || "Draft";
+    this.write(db);
+
+    return {
+      visit,
+      contract,
+      site,
+      customer,
+      checklist: initialChecklist
+    };
+  }
+
+  saveAmcVisitChecklist(visitId, payload, currentUser) {
+    const db = this.read();
+    const visit = (db.amc_visits || []).find(v => v.id === visitId);
+    if (!visit) return null;
+
+    const contract = (db.amc_contracts || []).find(c => c.id === visit.amc_contract_id || c.id === visit.amc_id);
+    const site = (db.sites || []).find(s => s.id === visit.site_id);
+
+    // Update actual service date
+    if (payload.actual_service_date) {
+      visit.actual_service_date = payload.actual_service_date;
+    } else if (!visit.actual_service_date) {
+      visit.actual_service_date = new Date().toISOString().slice(0, 10);
+    }
+
+    // Update personnel if provided (individual visit assignment)
+    if (payload.supervisor_id || payload.assigned_supervisor) {
+      visit.supervisor_id = payload.supervisor_id || visit.supervisor_id;
+      visit.supervisor_name = payload.assigned_supervisor || payload.supervisor_name || visit.supervisor_name;
+    }
+    if (payload.technician_id || payload.assigned_technician) {
+      visit.technician_id = payload.technician_id || visit.technician_id;
+      visit.technician_name = payload.assigned_technician || payload.technician_name || visit.technician_name;
+    }
+
+    const isSubmitting = payload.submit === true || payload.status === 'Submitted';
+    const status = isSubmitting ? 'Submitted' : (payload.status || 'In Progress');
+    visit.checklist_status = status;
+    if (isSubmitting) {
+      visit.status = 'In Progress';
+      visit.visit_status = 'In Progress';
+      visit.report_status = 'Supervisor Review';
+    }
+
+    visit.checklist_data = {
+      status,
+      submitted_at: isSubmitting ? new Date().toISOString() : (visit.checklist_data?.submitted_at || null),
+      submitted_by: isSubmitting ? currentUser.name : (visit.checklist_data?.submitted_by || null),
+      fire_alarm_items: payload.fire_alarm_items || visit.checklist_data?.fire_alarm_items || [],
+      fire_fighting_items: payload.fire_fighting_items || visit.checklist_data?.fire_fighting_items || [],
+      extinguisher_items: payload.extinguisher_items || visit.checklist_data?.extinguisher_items || [],
+      defects: payload.defects || [],
+      customer_signature: payload.customer_signature || visit.checklist_data?.customer_signature || null,
+      technician_signature: payload.technician_signature || visit.checklist_data?.technician_signature || null,
+      technician_notes: payload.technician_notes !== undefined ? payload.technician_notes : (visit.checklist_data?.technician_notes || ''),
+      supervisor_review: visit.checklist_data?.supervisor_review || null,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser.name
+    };
+
+    // Defect Automation: Generate/update defects in db.faults for NOT OK items
+    if (!db.faults) db.faults = [];
+    const allItems = [
+      ...(visit.checklist_data.fire_alarm_items || []).map(i => ({ ...i, system: 'Fire Alarm' })),
+      ...(visit.checklist_data.fire_fighting_items || []).map(i => ({ ...i, system: 'Fire Fighting' })),
+      ...(visit.checklist_data.extinguisher_items || []).map(i => ({ ...i, system: 'Fire Extinguishers', item: `${i.type} (${i.capacity || ''})` }))
+    ];
+
+    allItems.forEach(item => {
+      if (item.status === 'NOT OK') {
+        let existingFault = db.faults.find(f => f.visit_id === visit.id && (f.item_id === item.id || f.device_equipment === (item.item || item.type)));
+        if (existingFault) {
+          existingFault.fault_description = item.defect_description || item.remarks || `${item.item} requires maintenance`;
+          existingFault.action_taken = item.recommendation || existingFault.action_taken;
+          existingFault.priority = item.priority || existingFault.priority || 'High';
+          existingFault.photos = item.photos || existingFault.photos || [];
+          existingFault.updated_at = new Date().toISOString();
+        } else {
+          const count = db.faults.length + 1;
+          const faultNumber = `FLT-${new Date().getFullYear()}-${String(count).padStart(3, '0')}`;
+          const newFault = {
+            id: `flt-amc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            fault_number: faultNumber,
+            customer_id: visit.customer_id || contract?.customer_id,
+            customer_name: visit.customer_name || contract?.customer_name || 'Customer',
+            site_id: visit.site_id || contract?.site_id,
+            site_name: visit.site_name || contract?.site_name || 'Site',
+            amc_id: contract?.id || visit.amc_contract_id,
+            amc_contract_id: contract?.id || visit.amc_contract_id,
+            visit_id: visit.id,
+            item_id: item.id,
+            system: item.system,
+            device_equipment: item.item || item.type,
+            location: item.location || (item.floor ? `Floor ${item.floor}` : (site?.site_name || 'Building Wide')),
+            fault_description: item.defect_description || item.remarks || `${item.item || item.type} defect logged during AMC inspection #${visit.visit_number}`,
+            cause: item.cause || 'Routine preventive maintenance inspection discovery',
+            action_taken: item.recommendation || 'Technical replacement/repair proposed',
+            priority: item.priority || 'High',
+            status: 'Open',
+            before_photo: (item.photos && item.photos[0]) || '',
+            photos: item.photos || [],
+            technician_id: visit.technician_id || currentUser.id,
+            technician_name: visit.technician_name || currentUser.name,
+            date: visit.actual_service_date || new Date().toISOString().slice(0, 10),
+            created_at: new Date().toISOString()
+          };
+          db.faults.push(newFault);
+        }
+      }
+    });
+
+    // Sync extinguishers to site equipment
+    if (visit.checklist_data.extinguisher_items?.length && site?.id) {
+      const extEquip = visit.checklist_data.extinguisher_items.map(e => ({
+        id: e.id,
+        system: "Fire Extinguishers",
+        item_name: `${e.type} ${e.capacity || ''}`.trim(),
+        make: e.make,
+        type: e.type,
+        capacity: e.capacity,
+        quantity: e.quantity || 1,
+        serial_number: e.serial_number,
+        location: e.location,
+        floor: e.floor,
+        last_inspected_date: visit.actual_service_date || new Date().toISOString().slice(0, 10),
+        next_due_date: e.next_due_date
+      }));
+      this.saveSiteEquipment(site.id, extEquip);
+    }
+
+    visit.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(currentUser.id, isSubmitting ? 'SUBMIT_AMC_CHECKLIST' : 'SAVE_AMC_CHECKLIST', 'amc_visits', visit.id, `${isSubmitting ? 'Submitted' : 'Saved'} AMC checklist for visit #${visit.visit_number}`);
+
+    return {
+      visit,
+      checklist: visit.checklist_data
+    };
+  }
+
+  reviewAmcVisit(visitId, { action, remarks, supervisor_signature }, currentUser) {
+    const db = this.read();
+    const visit = (db.amc_visits || []).find(v => v.id === visitId);
+    if (!visit) return null;
+
+    const contract = (db.amc_contracts || []).find(c => c.id === visit.amc_contract_id || c.id === visit.amc_id);
+    if (!visit.checklist_data) visit.checklist_data = {};
+
+    visit.checklist_data.supervisor_review = {
+      action,
+      remarks: remarks || '',
+      reviewed_by: currentUser.name,
+      reviewed_by_role: currentUser.role,
+      reviewed_at: new Date().toISOString(),
+      signature: supervisor_signature || null
+    };
+
+    if (action === 'Approve') {
+      visit.checklist_status = 'Approved';
+      visit.status = 'Completed';
+      visit.visit_status = 'Completed';
+      visit.report_status = 'Approved';
+      visit.completed_date = visit.actual_service_date || new Date().toISOString().slice(0, 10);
+      visit.approved_by = currentUser.name;
+      visit.approved_at = new Date().toISOString();
+
+      // Ensure official report record exists in db.reports
+      if (!db.reports) db.reports = [];
+      const cleanContractNum = (contract?.contract_number || 'AMC').replace(/[^A-Za-z0-9]/g, '');
+      const reportNumber = `RPT-AMC-${cleanContractNum}-V${visit.visit_number || 1}`;
+
+      let report = db.reports.find(r => r.amc_visit_id === visit.id || r.report_number === reportNumber);
+      const reportData = {
+        report_number: reportNumber,
+        report_type: 'AMC Service Report',
+        amc_id: contract?.id || visit.amc_contract_id,
+        amc_contract_id: contract?.id || visit.amc_contract_id,
+        amc_number: contract?.contract_number || 'AMC',
+        amc_visit_id: visit.id,
+        visit_number: visit.visit_number,
+        quarter: visit.quarter,
+        customer_id: visit.customer_id,
+        customer_name: visit.customer_name,
+        site_id: visit.site_id,
+        site_name: visit.site_name,
+        service_date: visit.actual_service_date || visit.scheduled_date,
+        contract_start_date: contract?.start_date,
+        contract_end_date: contract?.end_date,
+        supervisor_name: visit.supervisor_name,
+        technician_name: visit.technician_name,
+        systems: visit.systems || contract?.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+        checklist_data: visit.checklist_data,
+        customer_signature: visit.checklist_data.customer_signature,
+        technician_signature: visit.checklist_data.technician_signature,
+        supervisor_signature: supervisor_signature || null,
+        supervisor_remarks: remarks || '',
+        status: 'Approved',
+        work_description: `Executed comprehensive preventive maintenance inspection and Civil Defense compliance audit for ${visit.systems_label || 'fire protection systems'}.`,
+        result: 'Satisfactory & Civil Defense Compliant',
+        recommendations: remarks || 'Maintain regular quarterly inspection schedule.',
+        created_at: visit.checklist_data.submitted_at || new Date().toISOString(),
+        approved_at: new Date().toISOString(),
+        approved_by: currentUser.name
+      };
+
+      if (report) {
+        Object.assign(report, reportData);
+      } else {
+        report = { id: `rpt-amc-${Date.now()}`, ...reportData };
+        db.reports.push(report);
+      }
+      visit.report_id = report.id;
+    } else {
+      // Returned to Technician
+      visit.checklist_status = 'In Progress';
+      visit.status = 'In Progress';
+      visit.visit_status = 'In Progress';
+      visit.report_status = 'Returned';
+      visit.remarks = `Returned by Supervisor (${currentUser.name}): ${remarks || 'Review required'}`;
+    }
+
+    visit.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(currentUser.id, action === 'Approve' ? 'APPROVE_AMC_VISIT' : 'RETURN_AMC_VISIT', 'amc_visits', visit.id, `${action} AMC visit #${visit.visit_number} checklist (${visit.contract_number})`);
+
+    return visit;
+  }
+
+  updateAmcVisitAssignment(visitId, { supervisor_id, supervisor_name, technician_id, technician_name }, currentUser) {
+    const db = this.read();
+    const visit = (db.amc_visits || []).find(v => v.id === visitId);
+    if (!visit) return null;
+
+    if (supervisor_id) visit.supervisor_id = supervisor_id;
+    if (supervisor_name) visit.supervisor_name = supervisor_name;
+    if (technician_id) visit.technician_id = technician_id;
+    if (technician_name) visit.technician_name = technician_name;
+
+    visit.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(currentUser.id, 'ASSIGN_AMC_VISIT', 'amc_visits', visit.id, `Updated assignment: Supervisor=${visit.supervisor_name}, Tech=${visit.technician_name}`);
+    return visit;
+  }
 }
 
 module.exports = new Database();
+

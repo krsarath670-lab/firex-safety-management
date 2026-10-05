@@ -1245,6 +1245,14 @@ const postAmcContractHandler = (req, res) => {
   const numValue = Number(contract_value) || 0;
   const vatCalc = db.calculateVat(numValue, vat_percent);
 
+  const supUser = users.find(u => u.id === req.body.supervisor_id || (req.body.assigned_supervisor && u.name.toLowerCase() === req.body.assigned_supervisor.toLowerCase()));
+  const techUser = users.find(u => u.id === req.body.technician_id || (req.body.assigned_technician && u.name.toLowerCase() === req.body.assigned_technician.toLowerCase()));
+
+  const finalSupervisorId = req.body.supervisor_id || supUser?.id || null;
+  const finalSupervisorName = req.body.assigned_supervisor || supUser?.name || 'Unassigned Supervisor';
+  const finalTechnicianId = req.body.technician_id || techUser?.id || null;
+  const finalTechnicianName = req.body.assigned_technician || techUser?.name || 'Unassigned Technician';
+
   const newContract = db.insert('amc_contracts', {
     contract_number,
     customer_id,
@@ -1256,8 +1264,12 @@ const postAmcContractHandler = (req, res) => {
     end_date,
     service_start_date: service_start_date || start_date,
     extinguisher_start_date: extinguisher_start_date || service_start_date || start_date,
-    assigned_technician: assigned_technician || 'Abdul Majeed',
-    assigned_supervisor: assigned_supervisor || 'Sarath Kr',
+    supervisor_id: finalSupervisorId,
+    assigned_supervisor: finalSupervisorName,
+    supervisor_name: finalSupervisorName,
+    technician_id: finalTechnicianId,
+    assigned_technician: finalTechnicianName,
+    technician_name: finalTechnicianName,
     renewal_date: renewal_date || end_date,
     contract_status: status,
     status: status,
@@ -1303,7 +1315,22 @@ const putAmcContractHandler = (req, res) => {
     });
   }
 
-  const updated = db.updateAmcContract(req.params.id, req.body);
+  const updates = { ...req.body };
+  const users = db.get('users') || [];
+  if (updates.supervisor_id || updates.assigned_supervisor) {
+    const su = users.find(u => u.id === updates.supervisor_id || (updates.assigned_supervisor && u.name.toLowerCase() === updates.assigned_supervisor.toLowerCase()));
+    updates.supervisor_id = updates.supervisor_id || su?.id || existing.supervisor_id;
+    updates.assigned_supervisor = updates.assigned_supervisor || su?.name || existing.assigned_supervisor;
+    updates.supervisor_name = updates.assigned_supervisor;
+  }
+  if (updates.technician_id || updates.assigned_technician) {
+    const tu = users.find(u => u.id === updates.technician_id || (updates.assigned_technician && u.name.toLowerCase() === updates.assigned_technician.toLowerCase()));
+    updates.technician_id = updates.technician_id || tu?.id || existing.technician_id;
+    updates.assigned_technician = updates.assigned_technician || tu?.name || existing.assigned_technician;
+    updates.technician_name = updates.assigned_technician;
+  }
+
+  const updated = db.updateAmcContract(req.params.id, updates);
   db.logAudit(req.user.id, 'UPDATE_AMC', 'amc_contracts', req.params.id, `Updated AMC contract ${existing.contract_number}`);
   res.json(updated);
 };
@@ -1635,6 +1662,48 @@ app.put('/api/amc-visits/:id', (req, res) => {
   const updated = db.update('amc_visits', req.params.id, updates);
   db.logAudit(req.user.id, 'UPDATE_AMC_VISIT', 'amc_visits', req.params.id, `Updated visit to ${updates.status || 'Updated'}`);
   res.json(updated);
+});
+
+// --- DIGITAL AMC CHECKLIST & SERVICE REPORT ROUTES (Requirements 1-20) ---
+app.get('/api/amc-visits/:id/checklist', (req, res) => {
+  const result = db.getAmcVisitChecklist(req.params.id);
+  if (!result) return res.status(404).json({ error: 'Visit not found' });
+  res.json(result);
+});
+
+app.post('/api/amc-visits/:id/checklist', (req, res) => {
+  const result = db.saveAmcVisitChecklist(req.params.id, req.body, req.user);
+  if (!result) return res.status(404).json({ error: 'Visit not found' });
+  res.json(result);
+});
+
+app.post('/api/amc-visits/:id/review', (req, res) => {
+  if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, Engineer, and Supervisor can review AMC checklists.' });
+  }
+  const result = db.reviewAmcVisit(req.params.id, req.body, req.user);
+  if (!result) return res.status(404).json({ error: 'Visit not found' });
+  res.json({ success: true, visit: result });
+});
+
+app.put('/api/amc-visits/:id/assignment', (req, res) => {
+  if (!['GM', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, Engineer, and Supervisor can reassign visits.' });
+  }
+  const result = db.updateAmcVisitAssignment(req.params.id, req.body, req.user);
+  if (!result) return res.status(404).json({ error: 'Visit not found' });
+  res.json({ success: true, visit: result });
+});
+
+app.get('/api/sites/:id/equipment', (req, res) => {
+  const eq = db.getSiteEquipment(req.params.id);
+  res.json(eq);
+});
+
+app.post('/api/sites/:id/equipment', (req, res) => {
+  const items = Array.isArray(req.body) ? req.body : [req.body];
+  const saved = db.saveSiteEquipment(req.params.id, items);
+  res.json(saved);
 });
 
 // --- JOBS MANAGEMENT (Requirements 2-11, 32-37) ---
