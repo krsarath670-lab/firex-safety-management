@@ -4196,42 +4196,41 @@ export default function AMCView({ onStartInspectionForVisit }) {
                               </span>
                               <div className="flex items-center gap-2 text-xs font-black">
                                 <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                  Pass: {qRec.findings?.pass || 6}
+                                  Pass: {qRec.findings?.pass ?? 0}
                                 </span>
                                 <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-800 border border-red-200">
-                                  Fail: {qRec.findings?.fail || 0}
+                                  Fail: {qRec.findings?.fail ?? 0}
                                 </span>
                                 <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
-                                  Needs Attention: {qRec.findings?.needs_attention || 0}
+                                  Needs Attention: {qRec.findings?.needs_attention ?? 0}
                                 </span>
                               </div>
                             </div>
 
                             <div className="divide-y divide-slate-100 text-xs">
-                              {(qRec.checklist_items || [
-                                { item: 'Fire Alarm Control Panel Main Power & Battery Backups', status: 'Pass' },
-                                { item: 'Optical Smoke Detectors Loop Sampling & Response', status: 'Pass' },
-                                { item: 'Break Glass Manual Call Points & Audio Flashers', status: 'Pass' },
-                                { item: 'Sprinkler Risers, Flow Switches & OS&Y Valve Tamper Switches', status: 'Pass' },
-                                { item: 'Jockey & Main Diesel Fire Pump Automatic Cut-in Pressure', status: 'Pass' },
-                                { item: 'Portable Fire Extinguishers Pressure Gauge & Tagging', status: 'Pass' }
-                              ]).map((item, idx) => (
-                                <div key={idx} className="py-2 flex items-center justify-between">
-                                  <span className="font-semibold text-slate-800 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    <span>{item.item}</span>
-                                  </span>
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                    item.status === 'Pass'
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : item.status === 'Fail'
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-amber-100 text-amber-800'
-                                  }`}>
-                                    {item.status}
-                                  </span>
+                              {(qRec.checklist_items && qRec.checklist_items.length > 0) ? (
+                                qRec.checklist_items.map((item, idx) => (
+                                  <div key={idx} className="py-2 flex items-center justify-between">
+                                    <span className="font-semibold text-slate-800 flex items-center gap-2">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                      <span>{item.item}</span>
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                      item.status === 'Pass'
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : item.status === 'Fail'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-amber-100 text-amber-800'
+                                    }`}>
+                                      {item.status}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="py-3 text-center text-xs text-slate-400">
+                                  No checklist items recorded yet for this quarter inspection.
                                 </div>
-                              ))}
+                              )}
                             </div>
                           </div>
 

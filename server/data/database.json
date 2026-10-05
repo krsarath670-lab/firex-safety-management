@@ -70,6 +70,15 @@
   "quotations": [],
   "audit_logs": [
     {
+      "id": "aud-1791190499873",
+      "user_id": "usr-gm-1790621464394",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "usr-gm-1790621464394",
+      "details": "User Eng. Mohamed Hweidi logged in successfully",
+      "timestamp": "2026-10-05T08:54:59.873Z"
+    },
+    {
       "id": "aud-1791180943584",
       "user_id": "usr-gm-1790621464394",
       "action": "LOGIN",

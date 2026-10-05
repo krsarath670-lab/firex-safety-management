@@ -1295,23 +1295,47 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
               <span className="text-[10px] font-black uppercase text-emerald-800 block">Q1 (Jan–Mar)</span>
-              <span className="text-base font-black text-emerald-900 block mt-0.5">{dashboardStats?.quarters_count?.q1 || 12} Verified</span>
-              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">100% Completed</span>
+              <span className="text-base font-black text-emerald-900 block mt-0.5">
+                {dashboardStats?.quarters_count?.q1 || 0} Verified
+              </span>
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">
+                {dashboardStats?.quarters_count?.q1_total > 0
+                  ? `${Math.round(((dashboardStats?.quarters_count?.q1 || 0) / dashboardStats.quarters_count.q1_total) * 100)}% Completed`
+                  : '0 Completed'}
+              </span>
             </div>
             <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
               <span className="text-[10px] font-black uppercase text-blue-800 block">Q2 (Apr–Jun)</span>
-              <span className="text-base font-black text-blue-900 block mt-0.5">{dashboardStats?.quarters_count?.q2 || 8} Active</span>
-              <span className="text-[9px] font-bold text-blue-700 bg-blue-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">In Progress</span>
+              <span className="text-base font-black text-blue-900 block mt-0.5">
+                {dashboardStats?.quarters_count?.q2 || 0} Active
+              </span>
+              <span className="text-[9px] font-bold text-blue-700 bg-blue-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">
+                {dashboardStats?.quarters_count?.q2_total > 0
+                  ? `${dashboardStats?.quarters_count?.q2 || 0} In Progress`
+                  : '0 In Progress'}
+              </span>
             </div>
             <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-center">
               <span className="text-[10px] font-black uppercase text-sky-800 block">Q3 (Jul–Sep)</span>
-              <span className="text-base font-black text-sky-900 block mt-0.5">{dashboardStats?.quarters_count?.q3 || 14} Scheduled</span>
-              <span className="text-[9px] font-bold text-sky-700 bg-sky-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">Upcoming</span>
+              <span className="text-base font-black text-sky-900 block mt-0.5">
+                {dashboardStats?.quarters_count?.q3 || 0} Scheduled
+              </span>
+              <span className="text-[9px] font-bold text-sky-700 bg-sky-100/60 px-1.5 py-0.2 rounded mt-1 inline-block">
+                {dashboardStats?.quarters_count?.q3_total > 0
+                  ? `${dashboardStats?.quarters_count?.q3 || 0} Upcoming`
+                  : '0 Scheduled'}
+              </span>
             </div>
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
               <span className="text-[10px] font-black uppercase text-slate-700 block">Q4 (Oct–Dec)</span>
-              <span className="text-base font-black text-slate-800 block mt-0.5">{dashboardStats?.quarters_count?.q4 || 14} Pending</span>
-              <span className="text-[9px] font-bold text-slate-600 bg-slate-200/60 px-1.5 py-0.2 rounded mt-1 inline-block">Scheduled</span>
+              <span className="text-base font-black text-slate-800 block mt-0.5">
+                {dashboardStats?.quarters_count?.q4 || 0} Pending
+              </span>
+              <span className="text-[9px] font-bold text-slate-600 bg-slate-200/60 px-1.5 py-0.2 rounded mt-1 inline-block">
+                {dashboardStats?.quarters_count?.q4_total > 0
+                  ? `${dashboardStats?.quarters_count?.q4 || 0} Scheduled`
+                  : '0 Pending'}
+              </span>
             </div>
           </div>
         </div>

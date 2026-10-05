@@ -475,8 +475,31 @@ app.get('/api/dashboard/stats', (req, res) => {
   // Financial KPIs (Confidential: GM, Accounts, and management permitted)
   const finSummary = (req.permissions?.canViewFinancials && !isTechnician) ? db.getFinancialSummary(req.user) : null;
 
-  // AMC Quarters Breakdown
+  // AMC Quarters Breakdown from actual database visits & contracts
   const amcsList = db.get('amc_contracts') || [];
+  const amcVisits = db.get('amc_visits') || [];
+
+  const qStats = {
+    q1: { verified: 0, active: 0, scheduled: 0, total: 0 },
+    q2: { verified: 0, active: 0, scheduled: 0, total: 0 },
+    q3: { verified: 0, active: 0, scheduled: 0, total: 0 },
+    q4: { verified: 0, active: 0, scheduled: 0, total: 0 }
+  };
+
+  amcVisits.forEach(v => {
+    const qKey = (v.quarter || (v.visit_number ? `q${v.visit_number}` : 'q1')).toLowerCase();
+    if (qStats[qKey]) {
+      qStats[qKey].total++;
+      if (['Completed', 'Approved', 'Report Approved', 'Closed'].includes(v.status)) {
+        qStats[qKey].verified++;
+      } else if (['In Progress', 'Awaiting Review', 'Under Review'].includes(v.status)) {
+        qStats[qKey].active++;
+      } else {
+        qStats[qKey].scheduled++;
+      }
+    }
+  });
+
   let q1Done = 0, q2Done = 0, q3Done = 0, q4Done = 0;
   amcsList.forEach(a => {
     const q = a.quarters || db.getContractQuarters(a.id);
@@ -485,6 +508,18 @@ app.get('/api/dashboard/stats', (req, res) => {
     if (q?.Q3?.status === 'Completed' || q?.Q3?.status === 'Report Approved') q3Done++;
     if (q?.Q4?.status === 'Completed' || q?.Q4?.status === 'Report Approved') q4Done++;
   });
+
+  const quarters_count = {
+    q1: qStats.q1.verified || q1Done,
+    q2: qStats.q2.active || qStats.q2.verified || q2Done,
+    q3: qStats.q3.scheduled || qStats.q3.verified || q3Done,
+    q4: qStats.q4.scheduled || qStats.q4.verified || q4Done,
+    q1_total: qStats.q1.total || amcsList.length,
+    q2_total: qStats.q2.total || amcsList.length,
+    q3_total: qStats.q3.total || amcsList.length,
+    q4_total: qStats.q4.total || amcsList.length,
+    details: qStats
+  };
 
   res.json({
     role: req.user.role,
@@ -513,11 +548,12 @@ app.get('/api/dashboard/stats', (req, res) => {
     operationalHoldsCount: finSummary ? finSummary.operational_holds_count : 0,
     outstandingCustomersCount: finSummary ? finSummary.outstanding_customers_count : 0,
     // AMC Quarters Progress (Requirements 2, 7)
+    quarters_count,
     amcQuartersProgress: {
-      q1Done,
-      q2Done,
-      q3Done,
-      q4Done,
+      q1Done: quarters_count.q1,
+      q2Done: quarters_count.q2,
+      q3Done: quarters_count.q3,
+      q4Done: quarters_count.q4,
       totalContracts: amcsList.length
     },
     // AMC Service Cards & Radar (Requirement 9)
