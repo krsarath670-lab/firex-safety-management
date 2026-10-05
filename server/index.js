@@ -2562,6 +2562,14 @@ app.get('/api/reports', (req, res) => {
   res.json(enhanced);
 });
 
+app.get('/api/reports/next-number', (req, res) => {
+  const jobType = req.query.job_type || 'AMC';
+  const docType = req.query.doc_type || 'RPT';
+  const date = req.query.date || new Date();
+  const nextNumber = db.previewNextDocumentNumber(jobType, docType, date);
+  res.json({ document_number: nextNumber });
+});
+
 app.get('/api/reports/:id', (req, res) => {
   const report = db.getById('reports', req.params.id);
   if (!report) return res.status(404).json({ error: 'Report not found' });
@@ -2663,14 +2671,6 @@ app.get('/api/reports/:id', (req, res) => {
     completed_date: report.completed_date || (report.completed_at ? report.completed_at.slice(0, 10) : null),
     completed_time: report.completed_time || null
   });
-});
-
-app.get('/api/reports/next-number', (req, res) => {
-  const jobType = req.query.job_type || 'AMC';
-  const docType = req.query.doc_type || 'RPT';
-  const date = req.query.date || new Date();
-  const nextNumber = db.previewNextDocumentNumber(jobType, docType, date);
-  res.json({ document_number: nextNumber });
 });
 
 app.post('/api/reports', (req, res) => {
