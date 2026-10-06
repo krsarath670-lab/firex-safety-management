@@ -297,13 +297,17 @@ const ROLE_PERMISSIONS = {
   'Projects Manager': {
     canViewDashboard: 'projects_only',
     canManageCustomers: true,
+    canViewCustomers: true,
     canManageSites: true,
+    canViewSites: true,
     canManageContracts: true,
     canCreateAMC: false,
     canSubmitAMC: false,
     canApproveAMC: false,
     canGenerateAMCVisits: false,
     canAssignTechnician: true,
+    canAssignSupervisor: true,
+    canAssignEngineer: true,
     canViewFullAMCList: true,
     canViewOtherSalesAMC: true,
     canChangeAMCFrequency: false,
@@ -312,9 +316,15 @@ const ROLE_PERMISSIONS = {
     canCreateBreakdowns: false,
     canCreateFitOuts: true,
     canCreateProjects: true,
+    canManageProjects: true,
+    canViewProjects: true,
     canCreateSupply: true,
     canCreateQuotations: true,
+    canManageQuotations: true,
+    canViewQuotations: true,
     canManageFaults: true,
+    canManageDefects: true,
+    canViewDefects: true,
     canManageMaterials: true,
     canManageReports: 'full',
     canPrepareReports: true,
@@ -322,13 +332,17 @@ const ROLE_PERMISSIONS = {
     canDeleteReports: false,
     canReviewReports: true,
     canApproveReports: true,
+    canCompleteReports: true,
     canManageUsers: false,
     canManageSettings: false,
     canViewFinancials: true,
+    canViewInvoices: true,
+    canViewPayments: true,
+    canManageInvoices: false,
+    canDeleteInvoices: false,
     canViewAllJobs: true,
     canHoldJobsOperational: true,
     canReleaseHold: true,
-    canManageProjects: true,
     canAccessAccounts: false,
     canHoldJobsFinancial: false,
     canViewEmergencyReports: true,
@@ -336,12 +350,37 @@ const ROLE_PERMISSIONS = {
     canEditEmergency: 'projects_operational',
     canAssignEmergency: true,
     canSubmitEmergency: true,
-    canReviewEmergency: false,
+    canReviewEmergency: true,
     canApproveEmergency: false,
     canCloseEmergency: false,
     canDistributeEmergency: true
   }
 };
+
+// Aliases for consistent role mapping (Requirements 1 & 17)
+ROLE_PERMISSIONS['projects_manager'] = ROLE_PERMISSIONS['Projects Manager'];
+ROLE_PERMISSIONS['project_manager'] = ROLE_PERMISSIONS['Projects Manager'];
+ROLE_PERMISSIONS['Project Manager'] = ROLE_PERMISSIONS['Projects Manager'];
+ROLE_PERMISSIONS['PM'] = ROLE_PERMISSIONS['Projects Manager'];
+ROLE_PERMISSIONS['admin'] = ROLE_PERMISSIONS['GM'];
+ROLE_PERMISSIONS['Admin'] = ROLE_PERMISSIONS['GM'];
+
+function normalizeRole(role) {
+  if (!role) return 'Guest';
+  const clean = String(role).trim().toLowerCase().replace(/[\s\-_]+/g, ' ');
+  if (clean === 'projects manager' || clean === 'project manager' || clean === 'pm' || clean === 'projects_manager' || clean === 'project_manager') {
+    return 'Projects Manager';
+  }
+  if (clean === 'gm' || clean === 'general manager' || clean === 'admin' || clean === 'administrator') {
+    return 'GM';
+  }
+  if (clean === 'engineer') return 'Engineer';
+  if (clean === 'supervisor') return 'Supervisor';
+  if (clean === 'technician' || clean === 'tech') return 'Technician';
+  if (clean === 'sales' || clean === 'salesperson') return 'Sales';
+  if (clean === 'accounts' || clean === 'accountant' || clean === 'finance') return 'Accounts';
+  return role;
+}
 
 /**
  * Sanitize job for the calling user's role:
@@ -407,12 +446,13 @@ function authMiddleware(req, res, next) {
   }
   if (!currentUser && userRole) {
     const users = db.get('users') || [];
-    currentUser = users.find(u => u.role.toLowerCase() === userRole.toLowerCase());
+    const norm = normalizeRole(userRole);
+    currentUser = users.find(u => normalizeRole(u.role) === norm);
   }
 
   // If role is explicitly provided in headers (e.g. for testing or API integration), but no user exists in DB with that role, construct valid role user:
   if (!currentUser && userRole) {
-    const roleCapitalized = Object.keys(ROLE_PERMISSIONS).find(r => r.toLowerCase() === userRole.toLowerCase()) || userRole;
+    const roleCapitalized = normalizeRole(userRole);
     currentUser = {
       id: userId || `usr-${roleCapitalized.toLowerCase().replace(/\s+/g, '-')}-1`,
       name: roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
@@ -434,8 +474,13 @@ function authMiddleware(req, res, next) {
     currentUser = users.find(u => u.role === 'Supervisor') || users[0] || null;
   }
 
+  if (currentUser && currentUser.role) {
+    currentUser.role = normalizeRole(currentUser.role);
+  }
+
   req.user = currentUser || { id: 'guest', name: 'Guest', role: 'Guest', designation: 'Setup' };
-  req.permissions = (currentUser && currentUser.role && ROLE_PERMISSIONS[currentUser.role]) ? ROLE_PERMISSIONS[currentUser.role] : {};
+  const userRoleKey = currentUser?.role ? normalizeRole(currentUser.role) : 'Guest';
+  req.permissions = ROLE_PERMISSIONS[userRoleKey] || (currentUser?.role && ROLE_PERMISSIONS[currentUser.role]) || {};
   next();
 }
 
@@ -458,8 +503,10 @@ function requirePermission(permKey) {
  * Role guard generator
  */
 function requireRole(...allowedRoles) {
+  const normAllowed = allowedRoles.map(r => normalizeRole(r));
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
+    const userRole = req.user ? normalizeRole(req.user.role) : 'None';
+    if (!req.user || !normAllowed.includes(userRole)) {
       return res.status(403).json({
         error: "Access Denied",
         message: `Access requires one of the following roles: ${allowedRoles.join(', ')}. Current role: ${req.user ? req.user.role : 'None'}`
@@ -471,6 +518,7 @@ function requireRole(...allowedRoles) {
 
 module.exports = {
   ROLE_PERMISSIONS,
+  normalizeRole,
   authMiddleware,
   requirePermission,
   requireRole,

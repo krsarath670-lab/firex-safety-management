@@ -346,6 +346,16 @@ export default function UserManagementView() {
     return true;
   });
 
+  if (!canManageStaff) {
+    return (
+      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
+        <Shield className="w-10 h-10 text-amber-500 mx-auto" />
+        <h3 className="text-base font-bold text-slate-800">Restricted Administration Module</h3>
+        <p className="text-xs text-slate-500">Only General Management and authorized supervisors have permission to manage staff credentials.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-28 max-w-5xl mx-auto">
       

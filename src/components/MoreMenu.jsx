@@ -2,7 +2,8 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, Building2, Wrench, Package, Sparkles, 
-  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt, Flame
+  Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt, Flame,
+  Briefcase, FileText
 } from 'lucide-react';
 
 export default function MoreMenu({ onSelectView }) {
@@ -11,8 +12,8 @@ export default function MoreMenu({ onSelectView }) {
   const isTechnician = currentUser?.role === 'Technician';
   const isSales = currentUser?.role === 'Sales';
   const isAccounts = currentUser?.role === 'Accounts';
-  const isProjectsManager = currentUser?.role === 'Projects Manager';
-  const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
+  const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
+  const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
   const isGM = currentUser?.role === 'GM';
   const canAccessFinance = isGM || isAccounts || currentUser?.role === 'Engineer';
 
@@ -35,6 +36,25 @@ export default function MoreMenu({ onSelectView }) {
     {
       title: "Operations & Contracts",
       items: [
+        {
+          id: 'projects',
+          label: 'Projects Management',
+          description: 'Project contracts, milestones, jobs, site photos, defects & reports',
+          icon: Briefcase,
+          iconColor: 'text-cyan-700 bg-cyan-50',
+          badge: dashboardStats?.projectsStats?.activeProjects > 0 ? `${dashboardStats.projectsStats.activeProjects} Active` : null,
+          badgeColor: 'bg-cyan-100 text-cyan-800 font-bold',
+          hide: isTechnician
+        },
+        {
+          id: 'reports',
+          label: 'Inspection & Service Reports',
+          description: 'Generate, sign and print standard NFPA reports with official letterhead',
+          icon: FileText,
+          iconColor: 'text-indigo-600 bg-indigo-50',
+          badge: null,
+          hide: false
+        },
         {
           id: 'emergency',
           label: 'Emergency Call-Out & Rapid Response',
@@ -111,7 +131,7 @@ export default function MoreMenu({ onSelectView }) {
           iconColor: 'text-purple-600 bg-purple-50',
           badge: isManagement ? 'Manage' : null,
           badgeColor: 'bg-purple-100 text-purple-800',
-          hide: !isManagement
+          hide: !isManagement || isProjectsManager
         },
         {
           id: 'settings',
@@ -120,7 +140,7 @@ export default function MoreMenu({ onSelectView }) {
           icon: Settings,
           iconColor: 'text-slate-700 bg-slate-100',
           badge: null,
-          hide: false
+          hide: isProjectsManager || isTechnician || isSales
         }
       ]
     }

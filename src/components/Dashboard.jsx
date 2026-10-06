@@ -9,11 +9,12 @@ import {
   Flame, CheckCircle2, FileSpreadsheet, Building2, Plus, 
   ChevronRight, ArrowUpRight, Sparkles, Clock, ShieldAlert,
   FlameKindling, TrendingUp, DollarSign, Package, 
-  Layers, UserCheck, ShieldCheck, FileText, ArrowRight, Users, Receipt, AlertTriangle
+  Layers, UserCheck, ShieldCheck, FileText, ArrowRight, Users, Receipt, AlertTriangle,
+  Briefcase, FolderKanban, CalendarClock, AlertCircle, CheckCircle, Clock4, ClipboardList
 } from 'lucide-react';
 
 export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onNewReport }) {
-  const { dashboardStats, currentUser, setActiveTab, setActiveModal, fetchStats } = useApp();
+  const { dashboardStats, currentUser, setActiveTab, setActiveModal, fetchStats, setProjectsFilter } = useApp();
 
   const [upcomingTab, setUpcomingTab] = useState('next7Days'); // 'today' | 'next7Days' | 'next30Days'
   const [showSalesMonthlyReport, setShowSalesMonthlyReport] = useState(false);
@@ -34,9 +35,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isAccounts = currentUser?.role === 'Accounts';
-  const isProjectsManager = currentUser?.role === 'Projects Manager';
+  const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -1101,6 +1102,8 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   // PROJECTS MANAGER DASHBOARD VIEW
   // ----------------------------------------------------
   if (isProjectsManager) {
+    const pStats = dashboardStats?.projectsStats || {};
+
     return (
       <div className="space-y-4 pb-24">
         {/* Welcome Banner */}
@@ -1110,7 +1113,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             <div>
               <div className="flex items-center space-x-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
-                  Projects &amp; Operations Mode
+                  Projects Manager Mode
                 </span>
                 <span className="text-xs text-slate-300">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1120,12 +1123,31 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 Welcome back, {currentUser?.name}
               </h1>
               <p className="text-xs text-slate-300 mt-0.5">
-                Fit-out contracts, installation milestones, testing &amp; commissioning, and operational holds.
+                Full operational control of fire protection installations, site milestones, engineering defects, and project jobs.
               </p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-cyan-900/60 border border-cyan-700 flex items-center justify-center shadow-inner">
-              <Layers className="w-6 h-6 text-cyan-400" />
+              <Briefcase className="w-6 h-6 text-cyan-400" />
             </div>
+          </div>
+
+          {/* Quick AI & Direct Actions Shortcut */}
+          <div className="mt-3 pt-3 border-t border-cyan-800/60 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center space-x-2">
+              <div className="p-1 rounded bg-amber-500/20 text-amber-400">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs text-slate-200 font-medium">
+                Need technical diction for site reports or handover remarks?
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveModal({ type: 'ai_assistant' })}
+              className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shadow-sm"
+            >
+              <span>AI Engineering Assistant</span>
+              <ArrowUpRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -1144,7 +1166,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                   Active Operational Holds ({dashboardStats.operationalHoldsCount})
                 </h2>
                 <p className="text-xs text-amber-800 mt-0.5 font-medium">
-                  Project or work order(s) held due to site constraints, permits, civil contractor delays or drawing approvals.
+                  Project work order(s) held due to site constraints, civil delays, or pending approvals. Click to view.
                 </p>
               </div>
             </div>
@@ -1152,102 +1174,282 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
           </div>
         )}
 
-        {/* Projects Statistics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-          <div 
-            onClick={() => { setActiveTab('jobs'); }}
-            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
-          >
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Active Projects &amp; Fit-out
-            </span>
-            <div className="mt-1 text-2xl font-black text-slate-900">
-              {dashboardStats?.pendingJobsCount || 0}
-            </div>
-            <span className="text-[10px] text-blue-600 font-semibold block mt-0.5">
-              In progress installations
+        {/* 12 DEDICATED PROJECTS MANAGER KPI CARDS */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <FolderKanban className="w-4 h-4 text-cyan-700" />
+              <span>Project Operations KPI Dashboard</span>
+            </h2>
+            <span className="text-[11px] text-slate-500 font-semibold">
+              Live Real-Time Operational Metrics
             </span>
           </div>
 
-          <div 
-            onClick={() => setActiveTab('amc')}
-            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
-          >
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Expiring AMC Contracts
-            </span>
-            <div className="mt-1 text-2xl font-black text-amber-700">
-              {dashboardStats?.expiring30Days || 0}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {/* 1. Total Projects */}
+            <div 
+              onClick={() => { setProjectsFilter('All'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-cyan-300 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Total Projects
+                </span>
+                <FolderKanban className="w-4 h-4 text-slate-400 group-hover:text-cyan-600 transition-colors" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-slate-900">
+                {pStats.totalProjects || 0}
+              </div>
+              <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                All registered project files
+              </span>
             </div>
-            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
-              Urgent renewal tracking
-            </span>
-          </div>
 
-          <div 
-            onClick={() => setActiveTab('faults')}
-            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
-          >
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Site Faults &amp; Rectification
-            </span>
-            <div className="mt-1 text-2xl font-black text-rose-700">
-              {dashboardStats?.openFaultsCount || 0}
+            {/* 2. Active Projects */}
+            <div 
+              onClick={() => { setProjectsFilter('Active'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-blue-200 bg-blue-50/20 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+                  Active Projects
+                </span>
+                <CheckCircle2 className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-blue-900">
+                {pStats.activeProjects || 0}
+              </div>
+              <span className="text-[10px] text-blue-600 font-semibold block mt-0.5">
+                In progress &amp; scheduled
+              </span>
             </div>
-            <span className="text-[10px] text-rose-600 font-semibold block mt-0.5">
-              Open defect tickets
-            </span>
-          </div>
 
-          <div 
-            onClick={() => setActiveTab('jobs')}
-            className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
-          >
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Operational Holds
-            </span>
-            <div className="mt-1 text-2xl font-black text-amber-600">
-              {dashboardStats?.operationalHoldsCount || 0}
+            {/* 3. Projects Starting Soon */}
+            <div 
+              onClick={() => { setProjectsFilter('Starting Soon'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+                  Starting Soon
+                </span>
+                <CalendarClock className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-indigo-900">
+                {pStats.projectsStartingSoon || 0}
+              </div>
+              <span className="text-[10px] text-indigo-600 font-semibold block mt-0.5">
+                Within next 14 days
+              </span>
             </div>
-            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
-              Site delays / constraints
-            </span>
+
+            {/* 4. Projects Due Soon */}
+            <div 
+              onClick={() => { setProjectsFilter('Due Soon'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-200 bg-amber-50/30 shadow-sm cursor-pointer hover:shadow-md hover:border-amber-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                  Due Soon
+                </span>
+                <Clock className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-amber-900">
+                {pStats.projectsDueSoon || 0}
+              </div>
+              <span className="text-[10px] text-amber-700 font-semibold block mt-0.5">
+                Handover in 14 days
+              </span>
+            </div>
+
+            {/* 5. Completed Projects */}
+            <div 
+              onClick={() => { setProjectsFilter('Completed'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-emerald-200 bg-emerald-50/20 shadow-sm cursor-pointer hover:shadow-md hover:border-emerald-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                  Completed Projects
+                </span>
+                <CheckCircle className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-emerald-900">
+                {pStats.completedProjects || 0}
+              </div>
+              <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
+                Handed over &amp; finished
+              </span>
+            </div>
+
+            {/* 6. Delayed Projects */}
+            <div 
+              onClick={() => { setProjectsFilter('Delayed'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-rose-200 bg-rose-50/30 shadow-sm cursor-pointer hover:shadow-md hover:border-rose-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider">
+                  Delayed Projects
+                </span>
+                <AlertCircle className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-rose-900">
+                {pStats.delayedProjects || 0}
+              </div>
+              <span className="text-[10px] text-rose-700 font-semibold block mt-0.5">
+                Past planned deadline
+              </span>
+            </div>
+
+            {/* 7. Today's Project Jobs */}
+            <div 
+              onClick={() => setActiveTab('jobs')}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Today's Project Jobs
+                </span>
+                <Calendar className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-slate-900">
+                {pStats.todayProjectJobs || 0}
+              </div>
+              <span className="text-[10px] text-blue-600 font-semibold block mt-0.5">
+                Active tasks scheduled today
+              </span>
+            </div>
+
+            {/* 8. Pending Project Jobs */}
+            <div 
+              onClick={() => setActiveTab('jobs')}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Pending Project Jobs
+                </span>
+                <Clock4 className="w-4 h-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-slate-900">
+                {pStats.pendingProjectJobs || 0}
+              </div>
+              <span className="text-[10px] text-indigo-600 font-semibold block mt-0.5">
+                Awaiting site execution
+              </span>
+            </div>
+
+            {/* 9. Open Project Defects */}
+            <div 
+              onClick={() => { setProjectsFilter('Defects'); setActiveTab('projects'); }}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-rose-200 bg-rose-50/20 shadow-sm cursor-pointer hover:shadow-md hover:border-rose-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider">
+                  Open Project Defects
+                </span>
+                <AlertTriangle className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-rose-800">
+                {pStats.openProjectDefects || 0}
+              </div>
+              <span className="text-[10px] text-rose-600 font-semibold block mt-0.5">
+                Snags &amp; punch list items
+              </span>
+            </div>
+
+            {/* 10. Project Quotations */}
+            <div 
+              onClick={() => setActiveTab('quotations')}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-purple-200 bg-purple-50/20 shadow-sm cursor-pointer hover:shadow-md hover:border-purple-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-purple-800 uppercase tracking-wider">
+                  Project Quotations
+                </span>
+                <FileSpreadsheet className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-purple-900">
+                {pStats.projectQuotations || 0}
+              </div>
+              <span className="text-[10px] text-purple-700 font-semibold block mt-0.5">
+                {formatBHD(pStats.projectQuotationsValue || 0)} BHD Total
+              </span>
+            </div>
+
+            {/* 11. Project Invoices */}
+            <div 
+              onClick={() => setActiveTab('accounts')}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-teal-200 bg-teal-50/20 shadow-sm cursor-pointer hover:shadow-md hover:border-teal-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">
+                  Project Invoices
+                </span>
+                <Receipt className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-teal-900">
+                {pStats.projectInvoices || 0}
+              </div>
+              <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
+                {formatBHD(pStats.projectInvoicesValue || 0)} BHD Invoiced
+              </span>
+            </div>
+
+            {/* 12. Outstanding Project Payments */}
+            <div 
+              onClick={() => setActiveTab('accounts')}
+              className="bg-white rounded-xl p-3 sm:p-3.5 border border-amber-300 bg-amber-50/40 shadow-sm cursor-pointer hover:shadow-md hover:border-amber-500 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+                  Outstanding Payments
+                </span>
+                <DollarSign className="w-4 h-4 text-amber-700 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-900 truncate">
+                {formatBHD(pStats.outstandingProjectPayments || 0)}
+              </div>
+              <span className="text-[10px] text-amber-800 font-semibold block mt-0.5">
+                BHD uncollected balance
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Quick Action Shortcuts */}
+        {/* Operational Shortcuts */}
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
           <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-            Operational Shortcuts
+            Projects Operational Shortcuts
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button
+              onClick={() => { setProjectsFilter('All'); setActiveTab('projects'); }}
+              className="p-3 bg-cyan-700 hover:bg-cyan-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+            >
+              <Briefcase className="w-4 h-4 text-white" />
+              <span>Projects Master</span>
+            </button>
             <button
               onClick={() => onStartJob('Project')}
               className="p-3 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
             >
               <Wrench className="w-4 h-4 text-white" />
-              <span>+ New Project</span>
+              <span>+ New Project Job</span>
             </button>
             <button
-              onClick={() => onStartJob('Fit-out')}
+              onClick={() => onNewReport()}
               className="p-3 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
             >
-              <Building2 className="w-4 h-4 text-white" />
-              <span>+ New Fit-Out Job</span>
+              <FileText className="w-4 h-4 text-white" />
+              <span>+ Create Report</span>
             </button>
             <button
-              onClick={() => onStartJob('Testing & Commissioning')}
-              className="p-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
+              onClick={() => { setProjectsFilter('Defects'); setActiveTab('projects'); }}
+              className="p-3 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
             >
-              <CheckCircle2 className="w-4 h-4 text-white" />
-              <span>+ T&amp;C Inspection</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('jobs')}
-              className="p-3 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <Briefcase className="w-4 h-4 text-white" />
-              <span>All Work Orders</span>
+              <AlertTriangle className="w-4 h-4 text-white" />
+              <span>Manage Defects</span>
             </button>
           </div>
         </div>
@@ -1255,7 +1457,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
         {/* Emergency Call-Outs & Rapid Response */}
         {renderEmergencyCalloutWidget()}
 
-        {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
+        {/* AMC Service Cards — Active Contracts & Dynamic Cycles */}
         {renderAmcServiceCardsWidget()}
 
         {/* Upcoming AMC Visits Widget */}

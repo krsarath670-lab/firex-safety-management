@@ -8,7 +8,7 @@ export default function BottomNav() {
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isAccounts = currentUser?.role === 'Accounts';
-  const isProjectsManager = currentUser?.role === 'Projects Manager';
+  const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
 
   const emergencyBadge = (dashboardStats?.emergencyStats?.active > 0) 
@@ -47,7 +47,7 @@ export default function BottomNav() {
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
       { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
-      { id: 'jobs', label: 'Projects', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
+      { id: 'projects', label: 'Projects', icon: Briefcase, badge: dashboardStats?.projectsStats?.activeProjects || null },
       { id: 'customers', label: 'Sites', icon: Building2, badge: null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
       { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.operationalHoldsCount > 0 ? dashboardStats.operationalHoldsCount : null }
@@ -79,7 +79,7 @@ export default function BottomNav() {
       <div className="max-w-lg mx-auto flex items-center justify-around h-16 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id || (item.id === 'more' && ['reports', 'faults', 'materials', 'settings', 'ai', 'quotations'].includes(activeTab));
+          const isActive = activeTab === item.id || (item.id === 'more' && ['reports', 'faults', 'materials', 'settings', 'ai', 'quotations', 'projects'].includes(activeTab));
           
           return (
             <button

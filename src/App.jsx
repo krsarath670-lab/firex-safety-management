@@ -18,6 +18,7 @@ import AccountsView from './components/AccountsView';
 import UserManagementView from './components/UserManagementView';
 import MoreMenu from './components/MoreMenu';
 import EmergencyCalloutView from './components/EmergencyCalloutView';
+import ProjectsView from './components/ProjectsView';
 import AIAssistantModal from './components/AIAssistantModal';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
@@ -233,15 +234,17 @@ function AppContent() {
             />
           )}
 
+          {activeTab === 'projects' && <ProjectsView />}
+
           {activeTab === 'faults' && <FaultsView />}
 
           {activeTab === 'customers' && <CustomerSiteView />}
 
           {activeTab === 'materials' && <MaterialsView />}
 
-          {activeTab === 'settings' && <CompanySettingsView />}
+          {activeTab === 'settings' && !['Projects Manager', 'projects_manager', 'Project Manager', 'PM', 'Technician'].includes(currentUser?.role) && <CompanySettingsView />}
 
-          {activeTab === 'users' && <UserManagementView />}
+          {activeTab === 'users' && !['Projects Manager', 'projects_manager', 'Project Manager', 'PM', 'Technician', 'Sales'].includes(currentUser?.role) && <UserManagementView />}
 
           {activeTab === 'accounts' && <AccountsView />}
 

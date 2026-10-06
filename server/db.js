@@ -4272,6 +4272,524 @@ class Database {
     this.logAudit(currentUser.id, 'ASSIGN_AMC_VISIT', 'amc_visits', visit.id, `Updated assignment: Supervisor=${visit.supervisor_name}, Tech=${visit.technician_name}`);
     return visit;
   }
+
+  // ========================================================
+  // PROJECTS MODULE - REQUIREMENTS 4, 5, 6, 7, 8, 9, 14, 15
+  // ========================================================
+
+  // Generate unique project number: e.g. PRJ-2026-001 or FX-PRJ-2026-001
+  generateProjectNumber(targetYear = null) {
+    const db = this.read();
+    const projects = db.projects || [];
+    const jobs = (db.jobs || []).filter(j => j.job_type === 'Project');
+    const year = targetYear || new Date().getFullYear();
+    const regex = new RegExp(`^(?:FX-)?PRJ-${year}-(\\d+)$`, 'i');
+    let maxSeq = 0;
+
+    projects.forEach(p => {
+      const numStr = p.project_number || p.job_number;
+      if (numStr) {
+        const m = String(numStr).trim().match(regex);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+
+    jobs.forEach(j => {
+      const numStr = j.project_number || j.job_number;
+      if (numStr) {
+        const m = String(numStr).trim().match(regex);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+    });
+
+    const nextSeq = String(maxSeq + 1).padStart(3, '0');
+    return `PRJ-${year}-${nextSeq}`;
+  }
+
+  // Get Projects with enriched relations
+  getProjects(filters = {}, user = null) {
+    const db = this.read();
+    let projects = db.projects || [];
+    const customers = db.customers || [];
+    const sites = db.sites || [];
+    const users = db.users || [];
+    const jobs = db.jobs || [];
+    const invoices = db.invoices || [];
+    const quotations = db.quotations || [];
+    const reports = db.reports || [];
+
+    // Filter by customer if requested
+    if (filters.customer_id) {
+      projects = projects.filter(p => p.customer_id === filters.customer_id);
+    }
+    if (filters.site_id) {
+      projects = projects.filter(p => p.site_id === filters.site_id);
+    }
+    if (filters.status && filters.status !== 'All') {
+      projects = projects.filter(p => (p.status || '').toLowerCase() === filters.status.toLowerCase());
+    }
+
+    return projects.map(p => {
+      const cust = customers.find(c => c.id === p.customer_id);
+      const site = sites.find(s => s.id === p.site_id);
+      const pm = users.find(u => u.id === p.project_manager_id);
+      const eng = users.find(u => u.id === p.engineer_id);
+      const sup = users.find(u => u.id === p.supervisor_id);
+      const tech = users.find(u => u.id === p.technician_id);
+
+      const pJobs = jobs.filter(j => j.project_id === p.id || j.project_number === p.project_number);
+      const pInvoices = invoices.filter(i => i.project_id === p.id || i.project_number === p.project_number || (i.customer_id === p.customer_id && i.site_id === p.site_id && (i.job_type === 'Project' || i.type === 'Project')));
+      const pQuotations = quotations.filter(q => q.project_id === p.id || q.project_number === p.project_number || (q.customer_id === p.customer_id && q.site_id === p.site_id && (q.job_type === 'Project' || q.type === 'Project')));
+      const pReports = reports.filter(r => r.project_id === p.id || r.project_number === p.project_number || (r.job_type === 'Project' && r.customer_id === p.customer_id && r.site_id === p.site_id));
+
+      const defects = Array.isArray(p.defects) ? p.defects : [];
+      const photos = Array.isArray(p.photos) ? p.photos : [];
+      const materials = Array.isArray(p.materials) ? p.materials : [];
+
+      const totalVal = Number(p.total_value !== undefined ? p.total_value : ((Number(p.project_value || 0) * (1 + (Number(p.vat_percent || 10) / 100)))));
+      const invoicedVal = pInvoices.reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0);
+      const paidVal = pInvoices.reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
+      const outstandingVal = Math.max(0, invoicedVal - paidVal);
+
+      return {
+        ...p,
+        customer_name: cust ? cust.name : (p.customer_name || 'Customer'),
+        customer_phone: cust ? (cust.contact_mobile || cust.phone) : '',
+        site_name: site ? site.site_name : (p.site_name || 'Premises'),
+        site_address: site ? site.site_address : '',
+        project_manager_name: pm ? pm.name : (p.project_manager_name || 'Projects Manager'),
+        engineer_name: eng ? eng.name : (p.engineer_name || 'Lead Engineer'),
+        supervisor_name: sup ? sup.name : (p.supervisor_name || 'Field Supervisor'),
+        technician_name: tech ? tech.name : (p.technician_name || 'Lead Technician'),
+        jobs: pJobs,
+        defects,
+        photos,
+        materials,
+        invoices: pInvoices,
+        quotations: pQuotations,
+        reports: pReports,
+        invoiced_amount: Math.round(invoicedVal * 1000) / 1000,
+        paid_amount: Math.round(paidVal * 1000) / 1000,
+        outstanding_amount: Math.round(outstandingVal * 1000) / 1000,
+        total_value: Math.round(totalVal * 1000) / 1000
+      };
+    });
+  }
+
+  // Get single project by id
+  getProjectById(id, user = null) {
+    const list = this.getProjects({}, user);
+    return list.find(p => p.id === id || p.project_number === id) || null;
+  }
+
+  // Create Project
+  createProject(projectData, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+
+    const projectNumber = projectData.project_number || this.generateProjectNumber();
+    const id = `prj-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const nowIso = new Date().toISOString();
+
+    const projectValue = Number(projectData.project_value || projectData.amount || 0);
+    const vatPercent = Number(projectData.vat_percent !== undefined ? projectData.vat_percent : 10);
+    const vatAmount = Math.round(((projectValue * vatPercent) / 100) * 1000) / 1000;
+    const totalValue = Math.round((projectValue + vatAmount) * 1000) / 1000;
+
+    const newProject = {
+      id,
+      project_number: projectNumber,
+      job_number: projectNumber,
+      customer_id: projectData.customer_id,
+      customer_name: projectData.customer_name || '',
+      site_id: projectData.site_id,
+      site_name: projectData.site_name || '',
+      project_name: projectData.project_name || projectData.title || `Fire Safety Project ${projectNumber}`,
+      project_type: projectData.project_type || 'Fire Protection Installation',
+      start_date: projectData.start_date || new Date().toISOString().slice(0, 10),
+      expected_completion_date: projectData.expected_completion_date || projectData.due_date || '',
+      actual_completion_date: projectData.actual_completion_date || null,
+      project_value: projectValue,
+      vat_percent: vatPercent,
+      vat_amount: vatAmount,
+      total_value: totalValue,
+      project_manager_id: projectData.project_manager_id || user?.id || null,
+      project_manager_name: projectData.project_manager_name || user?.name || 'Projects Manager',
+      engineer_id: projectData.engineer_id || null,
+      engineer_name: projectData.engineer_name || '',
+      supervisor_id: projectData.supervisor_id || null,
+      supervisor_name: projectData.supervisor_name || '',
+      technician_id: projectData.technician_id || null,
+      technician_name: projectData.technician_name || '',
+      status: projectData.status || 'Draft',
+      description: projectData.description || '',
+      notes: projectData.notes || '',
+      progress_percent: Number(projectData.progress_percent || 0),
+      defects: [],
+      photos: [],
+      materials: [],
+      created_by_id: user?.id || 'sys',
+      created_by_name: user?.name || 'User',
+      created_at: nowIso,
+      updated_at: nowIso
+    };
+
+    db.projects.push(newProject);
+
+    // Also mirror to db.jobs with job_type: 'Project' for cross-module integration
+    if (!db.jobs) db.jobs = [];
+    db.jobs.push({
+      id: `job-${id}`,
+      project_id: id,
+      project_number: projectNumber,
+      job_number: projectNumber,
+      job_type: 'Project',
+      customer_id: newProject.customer_id,
+      customer_name: newProject.customer_name,
+      site_id: newProject.site_id,
+      site_name: newProject.site_name,
+      title: newProject.project_name,
+      description: newProject.description,
+      status: newProject.status === 'Completed' ? 'Completed' : (newProject.status === 'In Progress' ? 'In Progress' : 'Scheduled'),
+      start_date: newProject.start_date,
+      expected_start_date: newProject.start_date,
+      due_date: newProject.expected_completion_date,
+      expected_completion_date: newProject.expected_completion_date,
+      actual_completion_date: newProject.actual_completion_date,
+      amount: newProject.project_value,
+      vat_percent: newProject.vat_percent,
+      total_including_vat: newProject.total_value,
+      supervisor_id: newProject.supervisor_id,
+      supervisor_name: newProject.supervisor_name,
+      technician_id: newProject.technician_id,
+      technician_name: newProject.technician_name,
+      created_by: user?.id,
+      created_at: nowIso
+    });
+
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'CREATE_PROJECT', 'projects', id, `Created Project ${projectNumber}: ${newProject.project_name}`);
+    return this.getProjectById(id, user);
+  }
+
+  // Update Project
+  updateProject(id, updates, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const idx = db.projects.findIndex(p => p.id === id || p.project_number === id);
+    if (idx === -1) return null;
+
+    const current = db.projects[idx];
+    const nowIso = new Date().toISOString();
+
+    const projectValue = updates.project_value !== undefined ? Number(updates.project_value) : current.project_value;
+    const vatPercent = updates.vat_percent !== undefined ? Number(updates.vat_percent) : current.vat_percent;
+    const vatAmount = Math.round(((projectValue * vatPercent) / 100) * 1000) / 1000;
+    const totalValue = Math.round((projectValue + vatAmount) * 1000) / 1000;
+
+    const updated = {
+      ...current,
+      ...updates,
+      id: current.id,
+      project_number: current.project_number, // Immutable
+      project_value: projectValue,
+      vat_percent: vatPercent,
+      vat_amount: vatAmount,
+      total_value: totalValue,
+      updated_at: nowIso
+    };
+
+    if (updates.status === 'Completed' && !updated.actual_completion_date) {
+      updated.actual_completion_date = new Date().toISOString().slice(0, 10);
+    }
+
+    db.projects[idx] = updated;
+
+    // Sync to linked job in db.jobs if present
+    if (db.jobs) {
+      const jIdx = db.jobs.findIndex(j => j.project_id === current.id || j.job_number === current.project_number);
+      if (jIdx !== -1) {
+        db.jobs[jIdx] = {
+          ...db.jobs[jIdx],
+          status: updated.status === 'Completed' ? 'Completed' : (updated.status === 'In Progress' ? 'In Progress' : (updated.status === 'On Hold' ? 'On Hold' : 'Scheduled')),
+          description: updated.description,
+          due_date: updated.expected_completion_date,
+          expected_completion_date: updated.expected_completion_date,
+          actual_completion_date: updated.actual_completion_date,
+          supervisor_id: updated.supervisor_id,
+          supervisor_name: updated.supervisor_name,
+          technician_id: updated.technician_id,
+          technician_name: updated.technician_name,
+          updated_at: nowIso
+        };
+      }
+    }
+
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'UPDATE_PROJECT', 'projects', current.id, `Updated Project ${current.project_number} (Status: ${updated.status})`);
+    return this.getProjectById(current.id, user);
+  }
+
+  // Add Project Job
+  addProjectJob(projectId, jobData, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const project = db.projects.find(p => p.id === projectId || p.project_number === projectId);
+    if (!project) return null;
+
+    if (!db.jobs) db.jobs = [];
+    const subJobNumber = this.generateJobNumber('Project');
+    const newJob = {
+      id: `job-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      project_id: project.id,
+      project_number: project.project_number,
+      job_number: subJobNumber,
+      job_type: jobData.job_type || 'Project',
+      customer_id: project.customer_id,
+      customer_name: project.customer_name,
+      site_id: project.site_id,
+      site_name: project.site_name,
+      title: jobData.title || `${project.project_name} - Sub-task`,
+      description: jobData.description || '',
+      status: jobData.status || 'Scheduled',
+      date: jobData.start_date || new Date().toISOString().slice(0, 10),
+      start_date: jobData.start_date || new Date().toISOString().slice(0, 10),
+      expected_start_date: jobData.start_date || new Date().toISOString().slice(0, 10),
+      due_date: jobData.expected_completion_date || project.expected_completion_date,
+      expected_completion_date: jobData.expected_completion_date || project.expected_completion_date,
+      engineer_id: jobData.engineer_id || project.engineer_id,
+      engineer_name: jobData.engineer_name || project.engineer_name,
+      supervisor_id: jobData.supervisor_id || project.supervisor_id,
+      supervisor_name: jobData.supervisor_name || project.supervisor_name,
+      technician_id: jobData.technician_id || project.technician_id,
+      technician_name: jobData.technician_name || project.technician_name,
+      created_by: user?.id,
+      created_at: new Date().toISOString()
+    };
+
+    db.jobs.push(newJob);
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'CREATE_PROJECT_JOB', 'jobs', newJob.id, `Created project job ${newJob.job_number} for project ${project.project_number}`);
+    return newJob;
+  }
+
+  // Add Project Photo
+  addProjectPhoto(projectId, photoData, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const project = db.projects.find(p => p.id === projectId || p.project_number === projectId);
+    if (!project) return null;
+
+    if (!Array.isArray(project.photos)) project.photos = [];
+    const newPhoto = {
+      id: `pho-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      url: photoData.url,
+      caption: photoData.caption || photoData.description || 'Project Site Photo',
+      description: photoData.description || photoData.caption || '',
+      location: photoData.location || 'Site',
+      project_number: project.project_number,
+      uploaded_by: user?.name || photoData.uploaded_by || 'Staff',
+      uploaded_by_id: user?.id || null,
+      uploaded_at: new Date().toISOString(),
+      date: photoData.date || new Date().toISOString().slice(0, 10)
+    };
+
+    project.photos.push(newPhoto);
+    project.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'ADD_PROJECT_PHOTO', 'projects', project.id, `Uploaded photo for project ${project.project_number}`);
+    return newPhoto;
+  }
+
+  // Add Project Defect
+  addProjectDefect(projectId, defectData, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const project = db.projects.find(p => p.id === projectId || p.project_number === projectId);
+    if (!project) return null;
+
+    if (!Array.isArray(project.defects)) project.defects = [];
+    const defectSeq = String(project.defects.length + 1).padStart(3, '0');
+    const newDefect = {
+      id: `def-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      defect_number: `DFT-${project.project_number}-${defectSeq}`,
+      project_id: project.id,
+      project_number: project.project_number,
+      customer_id: project.customer_id,
+      customer_name: project.customer_name,
+      site_id: project.site_id,
+      site_name: project.site_name,
+      location: defectData.location || 'Site',
+      description: defectData.description || 'Defect item logged during inspection',
+      photo: defectData.photo || null,
+      priority: defectData.priority || 'Medium',
+      assigned_to_id: defectData.assigned_to_id || project.technician_id,
+      assigned_to_name: defectData.assigned_to_name || project.technician_name || 'Assigned Technician',
+      status: defectData.status || 'Open',
+      recommendation: defectData.recommendation || '',
+      resolution: defectData.resolution || '',
+      date_created: new Date().toISOString().slice(0, 10),
+      date_closed: null,
+      created_by: user?.name || 'Staff',
+      created_at: new Date().toISOString()
+    };
+
+    project.defects.push(newDefect);
+    project.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'ADD_PROJECT_DEFECT', 'projects', project.id, `Logged defect ${newDefect.defect_number} on project ${project.project_number}`);
+    return newDefect;
+  }
+
+  // Update Project Defect
+  updateProjectDefect(projectId, defectId, updates, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const project = db.projects.find(p => p.id === projectId || p.project_number === projectId);
+    if (!project || !Array.isArray(project.defects)) return null;
+
+    const dIdx = project.defects.findIndex(d => d.id === defectId || d.defect_number === defectId);
+    if (dIdx === -1) return null;
+
+    const current = project.defects[dIdx];
+    const isClosing = updates.status === 'Closed' || updates.status === 'Resolved';
+    const updated = {
+      ...current,
+      ...updates,
+      id: current.id,
+      defect_number: current.defect_number,
+      date_closed: isClosing ? (updates.date_closed || new Date().toISOString().slice(0, 10)) : current.date_closed,
+      updated_at: new Date().toISOString()
+    };
+
+    project.defects[dIdx] = updated;
+    project.updated_at = new Date().toISOString();
+    this.write(db);
+    this.logAudit(user?.id || 'sys', 'UPDATE_PROJECT_DEFECT', 'projects', project.id, `Updated defect ${current.defect_number} status to ${updated.status}`);
+    return updated;
+  }
+
+  // Add Project Material
+  addProjectMaterial(projectId, materialData, user = null) {
+    const db = this.read();
+    if (!db.projects) db.projects = [];
+    const project = db.projects.find(p => p.id === projectId || p.project_number === projectId);
+    if (!project) return null;
+
+    if (!Array.isArray(project.materials)) project.materials = [];
+    const newMaterial = {
+      id: `pmat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      material_id: materialData.material_id || null,
+      name: materialData.name || 'Fire Protection Material',
+      quantity: Number(materialData.quantity || 1),
+      unit: materialData.unit || 'pcs',
+      part_number: materialData.part_number || '',
+      date_installed: materialData.date_installed || new Date().toISOString().slice(0, 10),
+      notes: materialData.notes || ''
+    };
+
+    project.materials.push(newMaterial);
+    project.updated_at = new Date().toISOString();
+    this.write(db);
+    return newMaterial;
+  }
+
+  // Calculate Projects Dashboard Stats (Requirements 5 & 15)
+  getProjectsDashboardStats() {
+    const db = this.read();
+    const projects = db.projects || [];
+    const jobs = db.jobs || [];
+    const invoices = db.invoices || [];
+    const quotations = db.quotations || [];
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const today = new Date(todayStr);
+
+    let totalProjects = projects.length;
+    let activeProjects = 0;
+    let projectsStartingSoon = 0;
+    let projectsDueSoon = 0;
+    let completedProjects = 0;
+    let delayedProjects = 0;
+    let openProjectDefects = 0;
+
+    projects.forEach(p => {
+      const status = p.status || 'Draft';
+      if (['In Progress', 'Scheduled', 'Approved'].includes(status)) {
+        activeProjects++;
+      }
+      if (status === 'Completed') {
+        completedProjects++;
+      }
+
+      // Starting soon: start_date in next 14 days
+      if (p.start_date) {
+        const sDate = new Date(p.start_date);
+        const diffDays = Math.ceil((sDate - today) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 14 && status !== 'Completed' && status !== 'Cancelled') {
+          projectsStartingSoon++;
+        }
+      }
+
+      // Due soon: expected completion in next 14 days
+      if (p.expected_completion_date) {
+        const dDate = new Date(p.expected_completion_date);
+        const diffDays = Math.ceil((dDate - today) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 14 && status !== 'Completed' && status !== 'Cancelled') {
+          projectsDueSoon++;
+        }
+        // Delayed: due date passed and not completed/cancelled
+        if (diffDays < 0 && !['Completed', 'Cancelled'].includes(status)) {
+          delayedProjects++;
+        }
+      }
+
+      // Count open defects
+      if (Array.isArray(p.defects)) {
+        openProjectDefects += p.defects.filter(d => d.status === 'Open' || d.status === 'In Progress').length;
+      }
+    });
+
+    // Project jobs
+    const projectJobs = jobs.filter(j => j.job_type === 'Project' || j.project_id);
+    const todayProjectJobs = projectJobs.filter(j => (j.date === todayStr || j.start_date === todayStr || j.expected_start_date === todayStr)).length;
+    const pendingProjectJobs = projectJobs.filter(j => !['Completed', 'Cancelled'].includes(j.status)).length;
+
+    // Project quotations
+    const pQuotations = quotations.filter(q => q.job_type === 'Project' || q.type === 'Project' || q.project_id);
+    const projectQuotationsCount = pQuotations.length;
+    const projectQuotationsValue = Math.round(pQuotations.reduce((sum, q) => sum + (Number(q.total_amount || q.amount) || 0), 0) * 1000) / 1000;
+
+    // Project invoices
+    const pInvoices = invoices.filter(i => i.job_type === 'Project' || i.type === 'Project' || i.project_id);
+    const projectInvoicesCount = pInvoices.length;
+    const projectInvoicesValue = Math.round(pInvoices.reduce((sum, i) => sum + (Number(i.total_amount) || 0), 0) * 1000) / 1000;
+    const projectInvoicesPaid = Math.round(pInvoices.reduce((sum, i) => sum + (Number(i.amount_paid) || 0), 0) * 1000) / 1000;
+    const outstandingProjectPayments = Math.max(0, Math.round((projectInvoicesValue - projectInvoicesPaid) * 1000) / 1000);
+
+    return {
+      totalProjects,
+      activeProjects,
+      projectsStartingSoon,
+      projectsDueSoon,
+      completedProjects,
+      delayedProjects,
+      todayProjectJobs,
+      pendingProjectJobs,
+      openProjectDefects,
+      projectQuotations: projectQuotationsCount,
+      projectQuotationsValue,
+      projectInvoices: projectInvoicesCount,
+      projectInvoicesValue,
+      outstandingProjectPayments
+    };
+  }
 }
 
 module.exports = new Database();

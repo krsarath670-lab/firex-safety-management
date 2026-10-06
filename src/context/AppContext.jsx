@@ -24,6 +24,7 @@ export function AppProvider({ children }) {
   });
   const [toast, setToast] = useState(null);
   const [activeModal, setActiveModal] = useState(null); // { type, data }
+  const [projectsFilter, setProjectsFilter] = useState('All'); // 'All' | 'Active' | 'Starting Soon' | 'Due Soon' | 'Completed' | 'Delayed' | 'Defects'
 
   // Show temporary toast message
   const showToast = (message, type = 'success') => {
@@ -330,7 +331,9 @@ export function AppProvider({ children }) {
         login,
         logout,
         isLoginModalOpen,
-        setIsLoginModalOpen
+        setIsLoginModalOpen,
+        projectsFilter,
+        setProjectsFilter
       }}
     >
       {children}

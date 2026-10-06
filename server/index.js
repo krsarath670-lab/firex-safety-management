@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
-const { authMiddleware, requirePermission, requireRole, ROLE_PERMISSIONS, sanitizeJobForRole, sanitizeContractForRole } = require('./auth');
+const { authMiddleware, requirePermission, requireRole, ROLE_PERMISSIONS, normalizeRole, sanitizeJobForRole, sanitizeContractForRole } = require('./auth');
 const ai = require('./ai');
 
 const app = express();
@@ -151,8 +151,14 @@ app.post('/api/auth/login', (req, res) => {
       (u.phone && u.phone.replace(/\s+/g, '') === idf.replace(/\s+/g, '')) ||
       (u.name && u.name.toLowerCase() === idf)
     );
+    // If not found by direct username/email/name, match by role or role alias
+    if (!user) {
+      const normInput = normalizeRole(idf);
+      user = users.find(u => normalizeRole(u.role).toLowerCase() === normInput.toLowerCase());
+    }
   } else if (role) {
-    user = users.find(u => u.role && u.role.toLowerCase() === role.toLowerCase());
+    const norm = normalizeRole(role);
+    user = users.find(u => normalizeRole(u.role).toLowerCase() === norm.toLowerCase());
   }
 
   if (!user) {
@@ -168,8 +174,10 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ error: 'Incorrect Password', message: 'Invalid password or PIN entered. Please try again.' });
   }
 
+  const userRole = normalizeRole(user.role);
+
   // Audit login
-  db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully`);
+  db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully (${userRole})`);
 
   res.json({
     message: `Welcome back, ${user.name}!`,
@@ -177,13 +185,13 @@ app.post('/api/auth/login', (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: userRole,
       phone: user.phone,
       designation: user.designation,
       avatar: user.avatar,
       pin: user.pin
     },
-    permissions: ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.Technician,
+    permissions: ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.Technician,
     token: `token-${user.id}-${Date.now()}`
   });
 });
@@ -563,7 +571,9 @@ app.get('/api/dashboard/stats', (req, res) => {
     // AMC Service Cards & Radar (Requirement 9)
     amc_service_cards: db.getAmcDashboardCards(null),
     // Emergency Call-Outs (Module Stats)
-    emergencyStats: db.getEmergencyDashboardStats()
+    emergencyStats: db.getEmergencyDashboardStats(),
+    // Projects Manager & Operations Dashboard Stats (Requirements 5 & 15)
+    projectsStats: db.getProjectsDashboardStats()
   });
 });
 
@@ -2068,6 +2078,81 @@ app.delete('/api/jobs/:id', (req, res) => {
   db.delete('jobs', req.params.id);
   db.logAudit(req.user.id, 'DELETE_JOB', 'jobs', req.params.id, `Deleted job ${existing.job_number} (${existing.job_type})`);
   res.json({ message: 'Job deleted successfully' });
+});
+
+// ========================================================
+// PROJECTS MODULE API - REQUIREMENTS 2, 4, 5, 6, 7, 8, 9, 14, 15
+// ========================================================
+
+app.get('/api/projects', (req, res) => {
+  const projects = db.getProjects(req.query, req.user);
+  res.json(projects);
+});
+
+app.get('/api/projects/:id', (req, res) => {
+  const project = db.getProjectById(req.params.id, req.user);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+  res.json(project);
+});
+
+app.post('/api/projects', (req, res) => {
+  const userRole = normalizeRole(req.user.role);
+  const allowed = ['GM', 'Engineer', 'Supervisor', 'Projects Manager', 'Sales'];
+  if (!allowed.includes(userRole)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'You are not authorized to create projects.' });
+  }
+  const { customer_id, site_id, project_name } = req.body;
+  if (!customer_id || !site_id) {
+    return res.status(400).json({ error: 'Missing Information', message: 'Customer and Building/Site must be selected.' });
+  }
+  const project = db.createProject(req.body, req.user);
+  res.json(project);
+});
+
+app.put('/api/projects/:id', (req, res) => {
+  const userRole = normalizeRole(req.user.role);
+  const allowed = ['GM', 'Engineer', 'Supervisor', 'Projects Manager'];
+  if (!allowed.includes(userRole)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, GM, Engineer, or Supervisor can update projects.' });
+  }
+  const updated = db.updateProject(req.params.id, req.body, req.user);
+  if (!updated) return res.status(404).json({ error: 'Project not found' });
+  res.json(updated);
+});
+
+app.post('/api/projects/:id/jobs', (req, res) => {
+  const userRole = normalizeRole(req.user.role);
+  const allowed = ['GM', 'Engineer', 'Supervisor', 'Projects Manager'];
+  if (!allowed.includes(userRole)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, GM, Engineer, or Supervisor can create project jobs.' });
+  }
+  const job = db.addProjectJob(req.params.id, req.body, req.user);
+  if (!job) return res.status(404).json({ error: 'Project not found' });
+  res.json(job);
+});
+
+app.post('/api/projects/:id/photos', (req, res) => {
+  const photo = db.addProjectPhoto(req.params.id, req.body, req.user);
+  if (!photo) return res.status(404).json({ error: 'Project not found' });
+  res.json(photo);
+});
+
+app.post('/api/projects/:id/defects', (req, res) => {
+  const defect = db.addProjectDefect(req.params.id, req.body, req.user);
+  if (!defect) return res.status(404).json({ error: 'Project not found' });
+  res.json(defect);
+});
+
+app.put('/api/projects/:id/defects/:defectId', (req, res) => {
+  const defect = db.updateProjectDefect(req.params.id, req.params.defectId, req.body, req.user);
+  if (!defect) return res.status(404).json({ error: 'Defect not found' });
+  res.json(defect);
+});
+
+app.post('/api/projects/:id/materials', (req, res) => {
+  const material = db.addProjectMaterial(req.params.id, req.body, req.user);
+  if (!material) return res.status(404).json({ error: 'Project not found' });
+  res.json(material);
 });
 
 // --- JOB HOLD & RELEASE (Requirements 15, 16, 17, 18, 31) ---

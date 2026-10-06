@@ -442,3 +442,154 @@ export function exportCustomerStatementToExcel(statement, filename = 'FIREX_Cust
   XLSX.utils.book_append_sheet(wb, ws, `Statement - ${customer.name?.slice(0, 20) || 'Account'}`);
   saveWorkbook(wb, filename);
 }
+
+/**
+ * 19. EXCEL EXPORT - PROJECTS LIST
+ */
+export function exportProjectsListToExcel(projects, filename = 'FIREX_Projects_Master.xlsx') {
+  const rows = (projects || []).map(p => ({
+    'Project #': p.project_number || p.id,
+    'Project Name': p.project_name || 'N/A',
+    'Customer Name': p.customer_name || 'N/A',
+    'Site / Building': p.site_name || 'N/A',
+    'Project Type': p.project_type || 'Installation',
+    'Status': p.status || 'Scheduled',
+    'Start Date': p.start_date || '',
+    'Expected Completion': p.expected_completion_date || '',
+    'Actual Completion': p.actual_completion_date || '',
+    'Project Value (BHD)': Number((Number(p.project_value) || 0).toFixed(3)),
+    'VAT Amount (BHD)': Number((Number(p.vat_amount) || 0).toFixed(3)),
+    'Total Value (BHD)': Number((Number(p.total_value) || 0).toFixed(3)),
+    'Invoiced (BHD)': Number((Number(p.invoiced_amount) || 0).toFixed(3)),
+    'Paid (BHD)': Number((Number(p.paid_amount) || 0).toFixed(3)),
+    'Outstanding (BHD)': Number((Number(p.outstanding_amount) || 0).toFixed(3)),
+    'Project Manager': p.project_manager_name || 'Unassigned',
+    'Assigned Engineer': p.engineer_name || 'Unassigned',
+    'Assigned Supervisor': p.supervisor_name || 'Unassigned',
+    'Assigned Technician': p.technician_name || 'Unassigned',
+    'Open Defects': (p.defects || []).filter(d => d.status === 'Open' || d.status === 'In Progress').length,
+    'Total Jobs': (p.jobs || []).length
+  }));
+
+  const headers = [
+    'Project #',
+    'Project Name',
+    'Customer Name',
+    'Site / Building',
+    'Project Type',
+    'Status',
+    'Start Date',
+    'Expected Completion',
+    'Actual Completion',
+    'Project Value (BHD)',
+    'VAT Amount (BHD)',
+    'Total Value (BHD)',
+    'Invoiced (BHD)',
+    'Paid (BHD)',
+    'Outstanding (BHD)',
+    'Project Manager',
+    'Assigned Engineer',
+    'Assigned Supervisor',
+    'Assigned Technician',
+    'Open Defects',
+    'Total Jobs'
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+  fitColumns(ws, rows, headers);
+  ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Projects Overview');
+  saveWorkbook(wb, filename);
+}
+
+/**
+ * 20. EXCEL EXPORT - INDIVIDUAL PROJECT DETAILS
+ */
+export function exportProjectDetailToExcel(project, filename = null) {
+  if (!project) return;
+  const pNum = project.project_number || 'PRJ';
+  const finalFilename = filename || `FIREX_Project_${pNum.replace(/\s+/g, '_')}.xlsx`;
+
+  // Sheet 1: Project Details
+  const detailsRow = [
+    { Field: 'Project Number', Value: project.project_number },
+    { Field: 'Project Name', Value: project.project_name },
+    { Field: 'Customer Name', Value: project.customer_name },
+    { Field: 'Site / Building', Value: project.site_name },
+    { Field: 'Project Type', Value: project.project_type },
+    { Field: 'Project Status', Value: project.status },
+    { Field: 'Start Date', Value: project.start_date },
+    { Field: 'Expected Completion Date', Value: project.expected_completion_date },
+    { Field: 'Actual Completion Date', Value: project.actual_completion_date || 'N/A' },
+    { Field: 'Project Value (BHD)', Value: Number((Number(project.project_value) || 0).toFixed(3)) },
+    { Field: 'VAT Amount (BHD)', Value: Number((Number(project.vat_amount) || 0).toFixed(3)) },
+    { Field: 'Total Value (BHD)', Value: Number((Number(project.total_value) || 0).toFixed(3)) },
+    { Field: 'Invoiced Amount (BHD)', Value: Number((Number(project.invoiced_amount) || 0).toFixed(3)) },
+    { Field: 'Paid Amount (BHD)', Value: Number((Number(project.paid_amount) || 0).toFixed(3)) },
+    { Field: 'Outstanding Balance (BHD)', Value: Number((Number(project.outstanding_amount) || 0).toFixed(3)) },
+    { Field: 'Project Manager', Value: project.project_manager_name },
+    { Field: 'Assigned Engineer', Value: project.engineer_name },
+    { Field: 'Assigned Supervisor', Value: project.supervisor_name },
+    { Field: 'Assigned Technician', Value: project.technician_name },
+    { Field: 'Description / Scope of Work', Value: project.description || '' },
+    { Field: 'Site Notes', Value: project.notes || '' }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const wsDetails = XLSX.utils.json_to_sheet(detailsRow, { header: ['Field', 'Value'] });
+  fitColumns(wsDetails, detailsRow, ['Field', 'Value']);
+  XLSX.utils.book_append_sheet(wb, wsDetails, 'Project Details');
+
+  // Sheet 2: Project Jobs
+  const jobs = (project.jobs || []).map(j => ({
+    'Job #': j.job_number || j.id,
+    'Title': j.title || j.description || 'Job',
+    'Status': j.status,
+    'Start Date': j.start_date || j.date,
+    'Expected Due Date': j.due_date || j.expected_completion_date,
+    'Technician': j.technician_name || 'N/A',
+    'Supervisor': j.supervisor_name || 'N/A'
+  }));
+  if (jobs.length > 0) {
+    const wsJobs = XLSX.utils.json_to_sheet(jobs);
+    fitColumns(wsJobs, jobs, Object.keys(jobs[0]));
+    XLSX.utils.book_append_sheet(wb, wsJobs, 'Project Jobs');
+  }
+
+  // Sheet 3: Defects
+  const defects = (project.defects || []).map(d => ({
+    'Defect #': d.defect_number || d.id,
+    'Description': d.description,
+    'Severity': d.severity,
+    'Location': d.location,
+    'Status': d.status,
+    'Assigned To': d.assigned_to_name || 'N/A',
+    'Date Logged': d.date_logged,
+    'Date Closed': d.date_closed || 'N/A',
+    'Resolution Notes': d.resolution_notes || ''
+  }));
+  if (defects.length > 0) {
+    const wsDefects = XLSX.utils.json_to_sheet(defects);
+    fitColumns(wsDefects, defects, Object.keys(defects[0]));
+    XLSX.utils.book_append_sheet(wb, wsDefects, 'Site Defects');
+  }
+
+  // Sheet 4: Materials
+  const materials = (project.materials || []).map(m => ({
+    'Item Name': m.name,
+    'Part #': m.part_number || '',
+    'Quantity': m.quantity,
+    'Unit': m.unit,
+    'Date Installed': m.date_installed || '',
+    'Notes': m.notes || ''
+  }));
+  if (materials.length > 0) {
+    const wsMat = XLSX.utils.json_to_sheet(materials);
+    fitColumns(wsMat, materials, Object.keys(materials[0]));
+    XLSX.utils.book_append_sheet(wb, wsMat, 'Materials & Parts');
+  }
+
+  saveWorkbook(wb, finalFilename);
+}

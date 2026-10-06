@@ -733,6 +733,60 @@
   "quotations": [],
   "audit_logs": [
     {
+      "id": "aud-1791269576087",
+      "user_id": "use-1791203919428-75",
+      "action": "ADD_PROJECT_DEFECT",
+      "entity": "projects",
+      "entity_id": "prj-1791269575987-329",
+      "details": "Logged defect DFT-PRJ-2026-001-001 on project PRJ-2026-001",
+      "timestamp": "2026-10-06T06:52:56.087Z"
+    },
+    {
+      "id": "aud-1791269576051",
+      "user_id": "use-1791203919428-75",
+      "action": "CREATE_PROJECT_JOB",
+      "entity": "jobs",
+      "entity_id": "job-1791269576034-840",
+      "details": "Created project job FX-PRJ-2026-001 for project PRJ-2026-001",
+      "timestamp": "2026-10-06T06:52:56.051Z"
+    },
+    {
+      "id": "aud-1791269576003",
+      "user_id": "use-1791203919428-75",
+      "action": "CREATE_PROJECT",
+      "entity": "projects",
+      "entity_id": "prj-1791269575987-329",
+      "details": "Created Project PRJ-2026-001: Test Automatic Project Generation",
+      "timestamp": "2026-10-06T06:52:56.003Z"
+    },
+    {
+      "id": "aud-1791269575874",
+      "user_id": "use-1791203919428-75",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1791203919428-75",
+      "details": "User Chandiramohan logged in successfully (Projects Manager)",
+      "timestamp": "2026-10-06T06:52:55.874Z"
+    },
+    {
+      "id": "aud-1791269528230",
+      "user_id": "use-1791203919428-75",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1791203919428-75",
+      "details": "User Chandiramohan logged in successfully",
+      "timestamp": "2026-10-06T06:52:08.230Z"
+    },
+    {
+      "id": "aud-1791267303515",
+      "user_id": "use-1791203919428-75",
+      "action": "LOGIN",
+      "entity": "users",
+      "entity_id": "use-1791203919428-75",
+      "details": "User Chandiramohan logged in successfully",
+      "timestamp": "2026-10-06T06:15:03.515Z"
+    },
+    {
       "id": "aud-1791211848454",
       "user_id": "use-1791204126179-337",
       "action": "LOGIN",
@@ -954,5 +1008,6 @@
   "job_holds": [],
   "emergency_calls": [],
   "equipment": [],
-  "amc_checklists": []
+  "amc_checklists": [],
+  "projects": []
 }
