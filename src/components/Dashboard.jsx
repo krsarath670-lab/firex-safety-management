@@ -32,13 +32,13 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     }
   };
 
-  const isCEO = currentUser?.role === 'CEO';
+  const isMD = currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO';
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const canPrepareReports = isCEO || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = isMD || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -536,9 +536,9 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   };
 
   // ----------------------------------------------------
-  // DEDICATED CEO EXECUTIVE DASHBOARD VIEW (Role: CEO)
+  // DEDICATED MANAGING DIRECTOR EXECUTIVE DASHBOARD VIEW (Role: Managing Director)
   // ----------------------------------------------------
-  if (isCEO) {
+  if (isMD) {
     const stats = dashboardStats || {};
     const fin = stats.financials || {};
     const emp = stats.employeeSummary || {};
@@ -548,21 +548,21 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
 
     return (
       <div className="space-y-4 pb-28">
-        {/* CEO Executive Welcome Banner */}
+        {/* Managing Director Executive Welcome Banner */}
         <div className="bg-gradient-to-r from-navy-950 via-slate-900 to-amber-950 rounded-2xl p-4 sm:p-5 text-white shadow-lg border border-amber-900/40 relative overflow-hidden">
           <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-amber-500/10 to-transparent pointer-events-none" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
               <div className="flex items-center space-x-2">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm">
-                  Executive CEO Mode • Full Access
+                  Executive Managing Director Mode • Full Access
                 </span>
                 <span className="text-xs text-slate-300 font-medium">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
-                Welcome, {currentUser?.name || 'Chief Executive Officer'}
+                Welcome, {currentUser?.name || 'Managing Director'}
               </h1>
               <p className="text-xs text-amber-200/80 mt-0.5 max-w-2xl font-medium">
                 Executive command radar: Company-wide operational overview, real-time finances, field workforce, and system audit log.
@@ -945,7 +945,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                   </div>
                 </div>
                 <div className="text-[11px] text-slate-600 font-medium mt-2">
-                  CEO has full review and approval authorization on all reports &rarr;
+                  Managing Director has full review and approval authorization on all reports &rarr;
                 </div>
               </div>
             </div>

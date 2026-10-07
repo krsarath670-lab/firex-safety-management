@@ -341,13 +341,13 @@ app.post('/api/users/:id/password', (req, res) => {
   const target = db.getById('users', req.params.id);
   if (!target) return res.status(404).json({ error: 'User not found' });
 
-  const isExecutive = ['GM', 'CEO', 'Admin'].includes(req.user.role);
+  const isExecutive = ['GM', 'Managing Director', 'managing_director', 'CEO', 'Admin'].includes(req.user.role);
   const isEngineerOrSupervisor = ['Engineer', 'Supervisor'].includes(req.user.role);
   const isSelf = req.user.id === target.id;
   const isTargetTechOrSales = ['Technician', 'Sales'].includes(target.role);
 
   if (isExecutive) {
-    // Executive (CEO, GM) can set password for anyone
+    // Executive (Managing Director, GM) can set password for anyone
   } else if (isEngineerOrSupervisor && isTargetTechOrSales) {
     // Engineer & Supervisor can set password for Tech and Sales
   } else if (isSelf) {
@@ -386,8 +386,8 @@ app.delete('/api/users/:id', requirePermission('canManageUsers'), (req, res) => 
     return res.status(400).json({ error: 'Cannot delete your own active account.', message: 'You cannot delete your own active account.' });
   }
 
-  if (existing.role === 'GM' || existing.role === 'CEO') {
-    const roleCount = (db.get('users') || []).filter(u => u.role === existing.role).length;
+  if (['GM', 'Managing Director', 'managing_director', 'CEO'].includes(existing.role)) {
+    const roleCount = (db.get('users') || []).filter(u => u.role === existing.role || (['Managing Director', 'managing_director', 'CEO'].includes(u.role) && ['Managing Director', 'managing_director', 'CEO'].includes(existing.role))).length;
     if (roleCount <= 1) {
       return res.status(400).json({ error: `Last ${existing.role}`, message: `The last ${existing.role} account cannot be deleted.` });
     }
@@ -580,9 +580,9 @@ app.get('/api/dashboard/stats', (req, res) => {
   });
 });
 
-// --- SYSTEM AUDIT TRAIL LOGS (Accessible to CEO, GM, Admin) ---
+// --- SYSTEM AUDIT TRAIL LOGS (Accessible to Managing Director, GM, Admin) ---
 app.get('/api/audit-logs', (req, res) => {
-  if (!['CEO', 'GM', 'Admin'].includes(req.user.role) && !req.permissions?.canViewAuditLogs) {
+  if (!['Managing Director', 'managing_director', 'CEO', 'GM', 'Admin'].includes(req.user.role) && !req.permissions?.canViewAuditLogs) {
     return res.status(403).json({ error: 'Access Denied', message: 'Only Executive management can access system audit logs.' });
   }
   const logs = db.getAuditLogs();
@@ -917,11 +917,11 @@ app.delete('/api/customers/:id', (req, res) => {
   const existing = db.getById('customers', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Customer not found' });
 
-  // Access restricted strictly to GM, CEO, Engineer, and Supervisor
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted strictly to GM, Managing Director, Engineer, and Supervisor
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, CEO, Engineer, and Supervisor can delete customers.'
+      message: 'Access restricted: Only GM, Managing Director, Engineer, and Supervisor can delete customers.'
     });
   }
 
@@ -1373,11 +1373,11 @@ const putAmcContractHandler = (req, res) => {
   const existing = db.getById('amc_contracts', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Contract not found' });
 
-  // Access restricted strictly to GM, CEO, Engineer, and Supervisor
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted strictly to GM, Managing Director, Engineer, and Supervisor
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, CEO, Engineer, and Supervisor can edit AMC contracts.'
+      message: 'Access restricted: Only GM, Managing Director, Engineer, and Supervisor can edit AMC contracts.'
     });
   }
 
@@ -1526,11 +1526,11 @@ const deleteAmcContractHandler = (req, res) => {
   const existing = db.getById('amc_contracts', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Contract not found' });
 
-  // Access restricted strictly to GM, CEO, Engineer, and Supervisor
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted strictly to GM, Managing Director, Engineer, and Supervisor
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, CEO, Engineer, and Supervisor can delete AMC contracts.'
+      message: 'Access restricted: Only GM, Managing Director, Engineer, and Supervisor can delete AMC contracts.'
     });
   }
 
@@ -1744,8 +1744,8 @@ app.post('/api/amc-visits/:id/checklist', (req, res) => {
 });
 
 app.post('/api/amc-visits/:id/review', (req, res) => {
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, CEO, Engineer, and Supervisor can review AMC checklists.' });
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, Managing Director, Engineer, and Supervisor can review AMC checklists.' });
   }
   const result = db.reviewAmcVisit(req.params.id, req.body, req.user);
   if (!result) return res.status(404).json({ error: 'Visit not found' });
@@ -1753,8 +1753,8 @@ app.post('/api/amc-visits/:id/review', (req, res) => {
 });
 
 app.put('/api/amc-visits/:id/assignment', (req, res) => {
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, CEO, Engineer, and Supervisor can reassign visits.' });
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only GM, Managing Director, Engineer, and Supervisor can reassign visits.' });
   }
   const result = db.updateAmcVisitAssignment(req.params.id, req.body, req.user);
   if (!result) return res.status(404).json({ error: 'Visit not found' });
@@ -2041,11 +2041,11 @@ app.put('/api/jobs/:id', (req, res) => {
   const existing = db.getById('jobs', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Job not found' });
 
-  // Access restricted to GM, CEO, Engineer, Supervisor, and Projects Manager
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+  // Access restricted to GM, Managing Director, Engineer, Supervisor, and Projects Manager
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, CEO, Engineer, Supervisor, and Projects Manager can edit jobs, fit-outs, and projects.'
+      message: 'Access restricted: Only GM, Managing Director, Engineer, Supervisor, and Projects Manager can edit jobs, fit-outs, and projects.'
     });
   }
 
@@ -2079,11 +2079,11 @@ app.delete('/api/jobs/:id', (req, res) => {
   const existing = db.getById('jobs', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Job not found' });
 
-  // Access restricted to GM, CEO, Engineer, Supervisor, and Projects Manager
-  if (!['GM', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+  // Access restricted to GM, Managing Director, Engineer, Supervisor, and Projects Manager
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, CEO, Engineer, Supervisor, and Projects Manager can delete jobs, fit-outs, and projects.'
+      message: 'Access restricted: Only GM, Managing Director, Engineer, Supervisor, and Projects Manager can delete jobs, fit-outs, and projects.'
     });
   }
 
@@ -2178,17 +2178,17 @@ app.post('/api/jobs/:id/hold', (req, res) => {
   }
 
   // RBAC for holds:
-  // Payment Hold: GM, CEO and Accounts only
+  // Payment Hold: GM, Managing Director and Accounts only
   if (hold_type === 'Payment Hold') {
-    if (!req.permissions.canHoldJobsFinancial && !['GM', 'CEO', 'Accounts'].includes(req.user.role)) {
+    if (!req.permissions.canHoldJobsFinancial && !['GM', 'Managing Director', 'managing_director', 'CEO', 'Accounts'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Access Denied',
-        message: 'Only Accounts, CEO, and GM can place a job on Payment Hold.'
+        message: 'Only Accounts, Managing Director, and GM can place a job on Payment Hold.'
       });
     }
   } else {
-    // Operational Hold: GM, CEO, Engineer, Supervisor, Projects Manager
-    if (!['GM', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+    // Operational Hold: GM, Managing Director, Engineer, Supervisor, Projects Manager
+    if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
       if (req.user.role === 'Sales') {
         // Sales can request hold
         const updated = db.update('jobs', req.params.id, {
@@ -2232,17 +2232,17 @@ app.post('/api/jobs/:id/release-hold', (req, res) => {
   }
 
   // RBAC for releases:
-  // If current hold is Payment Hold: GM, CEO and Accounts only
+  // If current hold is Payment Hold: GM, Managing Director and Accounts only
   if (existing.hold_type === 'Payment Hold') {
-    if (!req.permissions.canHoldJobsFinancial && !['GM', 'CEO', 'Accounts'].includes(req.user.role)) {
+    if (!req.permissions.canHoldJobsFinancial && !['GM', 'Managing Director', 'managing_director', 'CEO', 'Accounts'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Access Denied',
-        message: 'Only Accounts, CEO, and GM can release a Payment Hold.'
+        message: 'Only Accounts, Managing Director, and GM can release a Payment Hold.'
       });
     }
   } else {
-    // Operational hold release: GM, CEO, Engineer, Supervisor, Projects Manager
-    if (!['GM', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
+    // Operational hold release: GM, Managing Director, Engineer, Supervisor, Projects Manager
+    if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Access Denied',
         message: 'Your role is not authorized to release this hold.'
@@ -2305,13 +2305,13 @@ app.post('/api/amc-contracts/:id/quarters/:quarter/report', (req, res) => {
   let report_status = 'Submitted';
 
   if (action === 'approve') {
-    if (!['GM', 'CEO', 'Engineer'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access Denied', message: 'Only GM, CEO, or Engineer can approve quarter reports.' });
+    if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only GM, Managing Director, or Engineer can approve quarter reports.' });
     }
     status = 'Completed';
     report_status = 'Approved';
   } else if (action === 'review') {
-    if (!['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+    if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Access Denied', message: 'Supervisor review required.' });
     }
     status = 'Report Reviewed';
@@ -2354,8 +2354,8 @@ app.get('/api/invoices/:id', (req, res) => {
 });
 
 app.post('/api/invoices', (req, res) => {
-  if (!['GM', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, CEO, and GM can create invoices.' });
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, Managing Director, and GM can create invoices.' });
   }
   const { customer_id, site_id, amount_before_vat } = req.body;
   if (!customer_id || !site_id || amount_before_vat === undefined) {
@@ -2366,8 +2366,8 @@ app.post('/api/invoices', (req, res) => {
 });
 
 app.put('/api/invoices/:id', (req, res) => {
-  if (!['GM', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, CEO, and GM can update invoices.' });
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManageInvoices) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, Managing Director, and GM can update invoices.' });
   }
   const existing = db.getById('invoices', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Invoice not found' });
@@ -2377,12 +2377,12 @@ app.put('/api/invoices/:id', (req, res) => {
 });
 
 app.delete('/api/invoices/:id', (req, res) => {
-  // STRICT REQUIREMENT: ONLY ACCOUNTS & ADMIN/GM/CEO USERS CAN DELETE INVOICES.
+  // STRICT REQUIREMENT: ONLY ACCOUNTS & ADMIN/GM/MANAGING DIRECTOR USERS CAN DELETE INVOICES.
   // Supervisor, Technician, Engineer, Sales, Projects Manager cannot delete invoices.
-  if (!['Accounts', 'GM', 'CEO', 'Admin'].includes(req.user.role)) {
+  if (!['Accounts', 'GM', 'Managing Director', 'managing_director', 'CEO', 'Admin'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: ONLY authorized Accounts or Admin/CEO users are permitted to delete invoices.'
+      message: 'Access restricted: ONLY authorized Accounts or Admin/Managing Director users are permitted to delete invoices.'
     });
   }
 
@@ -2404,8 +2404,8 @@ app.delete('/api/invoices/:id', (req, res) => {
 });
 
 app.post('/api/invoices/:id/payments', (req, res) => {
-  if (!['GM', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManagePayments) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, CEO, and GM can record payments.' });
+  if (!['GM', 'Managing Director', 'managing_director', 'CEO', 'Accounts'].includes(req.user.role) && !req.permissions.canManagePayments) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Accounts, Managing Director, and GM can record payments.' });
   }
   const { amount } = req.body;
   if (!amount || Number(amount) <= 0) {
@@ -2445,7 +2445,7 @@ app.get('/api/sales/monthly-report', (req, res) => {
 
   // If Sales user, strictly force sales_person_id to req.user.id
   let targetSalesId = req.user.id;
-  if (['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role) && req.query.sales_person_id) {
+  if (['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role) && req.query.sales_person_id) {
     targetSalesId = req.query.sales_person_id;
   }
 
@@ -2456,7 +2456,7 @@ app.get('/api/sales/monthly-report', (req, res) => {
 // Dedicated Sales Dashboard Stats Endpoint
 app.get('/api/sales/dashboard-stats', (req, res) => {
   let targetSalesId = req.user.id;
-  if (['GM', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role) && req.query.sales_person_id) {
+  if (['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(req.user.role) && req.query.sales_person_id) {
     targetSalesId = req.query.sales_person_id;
   }
   const salesStats = db.getSalesDashboardStats(targetSalesId);
@@ -2772,8 +2772,8 @@ app.get('/api/reports/:id', (req, res) => {
 
 app.post('/api/reports', (req, res) => {
   // STRICT PERMISSION CHECK (Requirement 1 & 14):
-  // Only Projects Manager, Engineer, Supervisor, Technician, and CEO can prepare reports
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'CEO'];
+  // Only Projects Manager, Engineer, Supervisor, Technician, and Managing Director can prepare reports
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director', 'managing_director', 'CEO'];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({
       error: 'Permission Denied',
@@ -2986,8 +2986,8 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if (updates.status === 'Reviewed' && existing.status !== 'Reviewed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'CEO'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or CEO can review reports.' });
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director', 'managing_director', 'CEO'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or Managing Director can review reports.' });
     }
     updates.reviewed_by_user_id = authUser.id;
     updates.reviewed_by_name = authUser.name;
@@ -2999,8 +2999,8 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if ((updates.status === 'Completed' || updates.status === 'Approved') && existing.status !== 'Completed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'CEO'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or CEO can complete reports.' });
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director', 'managing_director', 'CEO'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or Managing Director can complete reports.' });
     }
     // Standardize to Completed
     updates.status = 'Completed';
@@ -3153,14 +3153,14 @@ app.get('/api/emergency-calls/:id', (req, res) => {
   }
 });
 
-// Create new Emergency Call (GM, CEO, Engineer, Supervisor, Projects Manager)
+// Create new Emergency Call (GM, Managing Director, Engineer, Supervisor, Projects Manager)
 app.post('/api/emergency-calls', (req, res) => {
   try {
-    const allowedRoles = ['GM', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'];
+    const allowedRoles = ['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor', 'Projects Manager'];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only General Managers, CEOs, Engineers, Supervisors, and Projects Managers can log new Emergency Call-Outs.'
+        message: 'Only General Managers, Managing Directors, Engineers, Supervisors, and Projects Managers can log new Emergency Call-Outs.'
       });
     }
 
@@ -3202,7 +3202,7 @@ app.put('/api/emergency-calls/:id', (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
 
     const isGM = req.user.role === 'GM';
-    const isCEO = req.user.role === 'CEO';
+    const isMD = ['Managing Director', 'managing_director', 'CEO'].includes(req.user.role);
     const isEngineer = req.user.role === 'Engineer';
     const isSupervisor = req.user.role === 'Supervisor';
     const isTech = req.user.role === 'Technician';
@@ -3210,9 +3210,9 @@ app.put('/api/emergency-calls/:id', (req, res) => {
     const isAccounts = req.user.role === 'Accounts';
     const isPM = req.user.role === 'Projects Manager';
 
-    // If call is already Approved or Closed, only GM or CEO can modify
+    // If call is already Approved or Closed, only GM or Managing Director can modify
     if (['Approved', 'Closed'].includes(existing.report_status) || ['Approved', 'Closed'].includes(existing.status)) {
-      if (!isGM && !isCEO) {
+      if (!isGM && !isMD) {
         return res.status(403).json({
           error: 'Report Locked',
           message: 'This Emergency Call-Out report has been Approved / Closed and is strictly read-only. Only Executive Management can make revisions.'
@@ -3308,12 +3308,12 @@ app.post('/api/emergency-calls/:id/submit', (req, res) => {
   }
 });
 
-// Review report (Supervisor, Engineer, Projects Manager, CEO)
+// Review report (Supervisor, Engineer, Projects Manager, Managing Director)
 app.post('/api/emergency-calls/:id/review', (req, res) => {
   try {
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'CEO'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director', 'managing_director', 'CEO'];
     if (!allowed.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, Projects Managers, and CEO can review reports.' });
+      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, Projects Managers, and Managing Director can review reports.' });
     }
 
     const existing = db.getEmergencyCallById(req.params.id);
@@ -3331,14 +3331,14 @@ app.post('/api/emergency-calls/:id/review', (req, res) => {
   }
 });
 
-// Complete report (Supervisor, Engineer, Projects Manager, CEO) - NO GM approval step
+// Complete report (Supervisor, Engineer, Projects Manager, Managing Director) - NO GM approval step
 app.post('/api/emergency-calls/:id/complete', (req, res) => {
   try {
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'CEO'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director', 'managing_director', 'CEO'];
     if (!allowed.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Projects Managers, Engineers, Supervisors, and CEO can complete emergency reports.'
+        message: 'Only Projects Managers, Engineers, Supervisors, and Managing Director can complete emergency reports.'
       });
     }
 
@@ -3365,11 +3365,11 @@ app.post('/api/emergency-calls/:id/approve', (req, res) => {
         message: 'GM does not approve reports. Reports are completed by Projects Manager, Engineer, or Supervisor.'
       });
     }
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'CEO'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director', 'managing_director', 'CEO'];
     if (!allowed.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Projects Managers, Engineers, Supervisors, and CEO can complete emergency reports.'
+        message: 'Only Projects Managers, Engineers, Supervisors, and Managing Director can complete emergency reports.'
       });
     }
 
@@ -3387,13 +3387,13 @@ app.post('/api/emergency-calls/:id/approve', (req, res) => {
   }
 });
 
-// Close Emergency Call (GM, CEO)
+// Close Emergency Call (GM, Managing Director)
 app.post('/api/emergency-calls/:id/close', (req, res) => {
   try {
-    if (!['GM', 'CEO'].includes(req.user.role)) {
+    if (!['GM', 'Managing Director', 'managing_director', 'CEO'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Executive Management (GM or CEO) can officially close an Emergency Call-Out.'
+        message: 'Only Executive Management (GM or Managing Director) can officially close an Emergency Call-Out.'
       });
     }
 

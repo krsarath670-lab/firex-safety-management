@@ -23,10 +23,10 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const [previewingVisit, setPreviewingVisit] = useState(null);
 
   const role = currentUser?.role || 'Technician';
-  const isCEO = role === 'CEO';
-  const canPrepareReports = isCEO || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
-  const canReviewReports = isCEO || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
-  const canCompleteReports = isCEO || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
+  const isMD = ['Managing Director', 'managing_director', 'CEO'].includes(role);
+  const canPrepareReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
+  const canReviewReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
+  const canCompleteReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const isTechnician = role === 'Technician';
   const isSales = role === 'Sales';
   const isAccounts = role === 'Accounts';
@@ -416,8 +416,8 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                     </button>
                   )}
 
-                  {/* Delete Report: PM and CEO only for Draft reports */}
-                  {(role === 'Projects Manager' || isCEO) && isDraft && (
+                  {/* Delete Report: PM and Managing Director only for Draft reports */}
+                  {(role === 'Projects Manager' || isMD) && isDraft && (
                     <button
                       onClick={() => handleDeleteReport(r.id)}
                       className="p-1.5 rounded-lg border border-slate-200 text-red-500 hover:bg-red-50"

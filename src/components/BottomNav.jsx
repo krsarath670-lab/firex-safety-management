@@ -10,7 +10,7 @@ export default function BottomNav() {
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const isCEO = currentUser?.role === 'CEO';
+  const isMD = currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO';
 
   const emergencyBadge = (dashboardStats?.emergencyStats?.active > 0) 
     ? dashboardStats.emergencyStats.active 
@@ -53,8 +53,8 @@ export default function BottomNav() {
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
       { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.operationalHoldsCount > 0 ? dashboardStats.operationalHoldsCount : null }
     ];
-  } else if (isGM || isCEO) {
-    // GM & CEO: Full executive overview with direct Accounts link and Emergency Call-Out
+  } else if (isGM || isMD) {
+    // GM & Managing Director: Full executive overview with direct Accounts link and Emergency Call-Out
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
       { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },

@@ -20,7 +20,7 @@ export default function AuditLogView() {
     try {
       const res = await fetch('/api/audit-logs', {
         headers: {
-          'x-user-role': currentUser?.role || 'CEO',
+          'x-user-role': currentUser?.role || 'Managing Director',
           'x-user-id': currentUser?.id || 'usr-ceo-1'
         }
       });

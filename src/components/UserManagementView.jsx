@@ -43,8 +43,8 @@ export default function UserManagementView() {
 
   // Access control
   const isGM = currentUser?.role === 'GM';
-  const isCEO = currentUser?.role === 'CEO';
-  const isExecutive = isGM || isCEO;
+  const isMD = currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO';
+  const isExecutive = isGM || isMD;
   const isEngineer = currentUser?.role === 'Engineer';
   const isSupervisor = currentUser?.role === 'Supervisor';
   const canManageStaff = isExecutive || isEngineer || isSupervisor;
@@ -58,7 +58,17 @@ export default function UserManagementView() {
       });
       if (res.ok) {
         const data = await res.json();
-        setUsers(data);
+        const mapped = Array.isArray(data) ? data.map(u => {
+          if (u.role === 'CEO' || u.role === 'ceo' || u.role === 'managing_director') {
+            return {
+              ...u,
+              role: 'Managing Director',
+              designation: u.designation === 'Chief Executive Officer' ? 'Managing Director' : (u.designation || 'Managing Director')
+            };
+          }
+          return u;
+        }) : [];
+        setUsers(mapped);
       } else {
         const err = await res.json();
         showToast(err.message || 'Failed loading users', 'error');
@@ -323,7 +333,7 @@ export default function UserManagementView() {
   // Filter calculations
   const totalTechnicians = users.filter(u => u.role === 'Technician').length;
   const totalSales = users.filter(u => u.role === 'Sales').length;
-  const totalManagement = users.filter(u => ['CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
+  const totalManagement = users.filter(u => ['Managing Director', 'managing_director', 'CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
   const totalAccounts = users.filter(u => u.role === 'Accounts').length;
   const totalProjects = users.filter(u => u.role === 'Projects Manager').length;
 
@@ -333,7 +343,7 @@ export default function UserManagementView() {
     if (activeFilter === 'Sales' && u.role !== 'Sales') return false;
     if (activeFilter === 'Accounts' && u.role !== 'Accounts') return false;
     if (activeFilter === 'Projects' && u.role !== 'Projects Manager') return false;
-    if (activeFilter === 'Management' && !['CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
+    if (activeFilter === 'Management' && !['Managing Director', 'managing_director', 'CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -537,7 +547,7 @@ export default function UserManagementView() {
                   <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-start space-x-3 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm ${
-                        u.role === 'CEO' ? 'bg-amber-600 text-white ring-2 ring-amber-400' :
+                        ['Managing Director', 'managing_director', 'CEO'].includes(u.role) ? 'bg-amber-600 text-white ring-2 ring-amber-400' :
                         u.role === 'GM' ? 'bg-purple-900 text-white' :
                         u.role === 'Engineer' ? 'bg-indigo-700 text-white' :
                         u.role === 'Supervisor' ? 'bg-blue-600 text-white' :
@@ -568,7 +578,7 @@ export default function UserManagementView() {
                     {/* Role & Status Badge */}
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider ${
-                        u.role === 'CEO' ? 'bg-amber-50 text-amber-900 border-amber-300 font-extrabold shadow-sm' :
+                        ['Managing Director', 'managing_director', 'CEO'].includes(u.role) ? 'bg-amber-50 text-amber-900 border-amber-300 font-extrabold shadow-sm' :
                         u.role === 'GM' ? 'bg-purple-50 text-purple-800 border-purple-200' :
                         u.role === 'Engineer' ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
                         u.role === 'Supervisor' ? 'bg-blue-50 text-blue-800 border-blue-200' :
@@ -739,7 +749,7 @@ export default function UserManagementView() {
                     else if (newRole === 'Accounts') defaultDesig = 'Senior Accountant & Billing Officer';
                     else if (newRole === 'Projects Manager') defaultDesig = 'Projects & Fit-out Operations Manager';
                     else if (newRole === 'GM') defaultDesig = 'General Manager';
-                    else if (newRole === 'CEO') defaultDesig = 'Chief Executive Officer';
+                    else if (newRole === 'Managing Director' || newRole === 'CEO') defaultDesig = 'Managing Director';
 
                     setFormData(p => ({
                       ...p,
@@ -758,7 +768,7 @@ export default function UserManagementView() {
                       <option value="Accounts">Accounts — (Finance, Invoices, Payments, Customer Ledgers &amp; Holds)</option>
                       <option value="Projects Manager">Projects Manager — (Projects, Fit-out, Installation, T&amp;C, Milestones &amp; Ops Holds)</option>
                       <option value="GM">Administrator / GM — (Executive management &amp; system-wide access)</option>
-                      <option value="CEO">CEO — (Chief Executive Officer, full executive company-wide access)</option>
+                      <option value="Managing Director">Managing Director — (Managing Director, full executive company-wide access)</option>
                     </>
                   )}
                 </select>

@@ -39,16 +39,16 @@ const initialSeed = {
       id: "usr-ceo-1",
       name: "Eng. Mohamed Hweidi",
       username: "ceo",
-      employee_id: "FX-CEO-01",
+      employee_id: "FX-MD-01",
       department: "Executive Board",
       email: "ceo@firexbahrain.com",
-      role: "CEO",
+      role: "Managing Director",
       phone: "+973 3944 1122",
-      designation: "Chief Executive Officer",
+      designation: "Managing Director",
       status: "Active",
       pin: "1234",
       password: "1234",
-      notes: "Chief Executive Officer - Full system access",
+      notes: "Managing Director - Full system access",
       avatar: "MH"
     },
     {
@@ -797,22 +797,39 @@ class Database {
         modified = true;
       }
 
-      const ceoUser = (data.users || []).find(u => u.role === 'CEO' || u.id === 'usr-ceo-1' || u.username === 'ceo');
-      if (!ceoUser) {
+      // Automatically migrate any existing CEO users to Managing Director
+      (data.users || []).forEach(u => {
+        if (u.role === 'CEO' || u.role === 'ceo' || u.role === 'managing_director') {
+          u.role = 'Managing Director';
+          if (u.designation === 'Chief Executive Officer' || !u.designation) {
+            u.designation = 'Managing Director';
+          }
+          if (u.notes && u.notes.includes('Chief Executive Officer')) {
+            u.notes = u.notes.replace('Chief Executive Officer', 'Managing Director');
+          }
+          if (u.employee_id === 'FX-CEO-01') {
+            u.employee_id = 'FX-MD-01';
+          }
+          modified = true;
+        }
+      });
+
+      const mdUser = (data.users || []).find(u => u.role === 'Managing Director' || u.id === 'usr-ceo-1' || u.username === 'ceo');
+      if (!mdUser) {
         data.users.unshift({
           id: "usr-ceo-1",
           name: "Eng. Mohamed Hweidi",
           username: "ceo",
-          employee_id: "FX-CEO-01",
+          employee_id: "FX-MD-01",
           department: "Executive Board",
           email: "ceo@firexbahrain.com",
-          role: "CEO",
+          role: "Managing Director",
           phone: "+973 3944 1122",
-          designation: "Chief Executive Officer",
+          designation: "Managing Director",
           status: "Active",
           pin: "1234",
           password: "1234",
-          notes: "Chief Executive Officer - Full system access",
+          notes: "Managing Director - Full system access",
           avatar: "MH",
           created_at: new Date().toISOString()
         });
@@ -4856,7 +4873,8 @@ class Database {
       total: users.length,
       active: users.filter(u => u.status !== 'Inactive').length,
       inactive: users.filter(u => u.status === 'Inactive').length,
-      ceo: users.filter(u => u.role === 'CEO').length,
+      managingDirector: users.filter(u => ['Managing Director', 'managing_director', 'CEO', 'ceo'].includes(u.role)).length,
+      ceo: users.filter(u => ['Managing Director', 'managing_director', 'CEO', 'ceo'].includes(u.role)).length,
       gm: users.filter(u => u.role === 'GM').length,
       engineers: users.filter(u => u.role === 'Engineer').length,
       supervisors: users.filter(u => u.role === 'Supervisor').length,

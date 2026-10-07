@@ -151,7 +151,7 @@ export default function LoginModal({ isOpen, onClose }) {
               <div className="mt-2 flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200/80">
                 <div className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-black text-white ${
-                    selectedUser.role === 'CEO' ? 'bg-amber-600' :
+                    ['Managing Director', 'managing_director', 'CEO'].includes(selectedUser.role) ? 'bg-amber-600' :
                     selectedUser.role === 'Sales' ? 'bg-amber-600' :
                     selectedUser.role === 'GM' ? 'bg-purple-600' :
                     selectedUser.role === 'Engineer' ? 'bg-indigo-600' :
@@ -167,7 +167,7 @@ export default function LoginModal({ isOpen, onClose }) {
                   </div>
                 </div>
                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                  selectedUser.role === 'CEO' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                  ['Managing Director', 'managing_director', 'CEO'].includes(selectedUser.role) ? 'bg-amber-100 text-amber-900 border border-amber-300' :
                   selectedUser.role === 'Sales' ? 'bg-amber-100 text-amber-800' :
                   selectedUser.role === 'GM' ? 'bg-purple-100 text-purple-800' :
                   selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' :

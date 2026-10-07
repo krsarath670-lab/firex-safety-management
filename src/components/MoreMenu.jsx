@@ -14,9 +14,9 @@ export default function MoreMenu({ onSelectView }) {
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const isCEO = currentUser?.role === 'CEO';
-  const isManagement = ['GM', 'CEO', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
-  const canAccessFinance = isGM || isCEO || isAccounts || currentUser?.role === 'Engineer';
+  const isMD = ['Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role);
+  const isManagement = ['GM', 'Managing Director', 'managing_director', 'CEO', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
+  const canAccessFinance = isGM || isMD || isAccounts || currentUser?.role === 'Engineer';
 
   const menuSections = [
     {
@@ -140,9 +140,9 @@ export default function MoreMenu({ onSelectView }) {
           description: 'Security & activity audit trail of all transactions and changes',
           icon: ShieldAlert,
           iconColor: 'text-amber-700 bg-amber-50',
-          badge: (isCEO || isGM) ? 'Executive' : null,
+          badge: (isMD || isGM) ? 'Executive' : null,
           badgeColor: 'bg-amber-100 text-amber-800 font-bold',
-          hide: !(isCEO || isGM)
+          hide: !(isMD || isGM)
         },
         {
           id: 'settings',

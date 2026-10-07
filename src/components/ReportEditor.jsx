@@ -199,7 +199,7 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     });
   };
 
-  const canPrepare = currentUser?.role === 'CEO' || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepare = ['Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role) || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // If user is not authorized to prepare reports and this is a new report draft, block access
   if (!canPrepare && !initialData?.id) {
@@ -779,8 +779,8 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
       {showSignatureModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <SignaturePad
-            title={signatureTarget === 'customer' ? "Customer Sign-off" : "Supervisor / Engineer / CEO Sign-off"}
-            initialName={signatureTarget === 'customer' ? formData.customer_rep_name : (['Supervisor', 'Engineer', 'Projects Manager', 'CEO'].includes(currentUser?.role) ? currentUser.name : (formData.supervisor_name || 'David Thomas'))}
+            title={signatureTarget === 'customer' ? "Customer Sign-off" : "Supervisor / Engineer / Managing Director Sign-off"}
+            initialName={signatureTarget === 'customer' ? formData.customer_rep_name : (['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role) ? currentUser.name : (formData.supervisor_name || 'David Thomas'))}
             initialDesignation={signatureTarget === 'customer' ? formData.customer_rep_designation : (currentUser?.role || 'Senior Field Supervisor')}
             onSave={({ signatureDataUrl, repName, designation }) => {
               if (signatureTarget === 'customer') {
