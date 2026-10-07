@@ -71,7 +71,9 @@ const ROLE_PERMISSIONS = {
     canCloseEmergency: true,
     canDistributeEmergency: true,
     canViewAuditLogs: true,
-    canManageRoles: true
+    canManageRoles: true,
+    canViewAttendance: false,
+    canManageAttendance: false
   },
   GM: {
     canViewDashboard: 'full',
@@ -123,7 +125,9 @@ const ROLE_PERMISSIONS = {
     canReviewEmergency: true,
     canApproveEmergency: true,
     canCloseEmergency: true,
-    canDistributeEmergency: true
+    canDistributeEmergency: true,
+    canViewAttendance: true,
+    canManageAttendance: true
   },
   Engineer: {
     canViewDashboard: 'full',
@@ -540,7 +544,7 @@ function authMiddleware(req, res, next) {
     const roleCapitalized = normalizeRole(userRole);
     currentUser = {
       id: userId || `usr-${roleCapitalized.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-1`,
-      name: (roleCapitalized === 'Managing Director (MD)' || roleCapitalized === 'Managing Director') ? 'Eng. Mohamed Hweidi (Managing Director)' :
+      name: (roleCapitalized === 'Managing Director (MD)' || roleCapitalized === 'Managing Director') ? 'Wissam Jamal Hussein' :
             roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
             roleCapitalized === 'Accounts' ? 'Zahra Hasan' :
             roleCapitalized === 'Engineer' ? 'John Smith' :

@@ -576,7 +576,7 @@ app.get('/api/dashboard/stats', (req, res) => {
     projectsStats: db.getProjectsDashboardStats(),
     // Employee Summary & Attendance Summary (Requirement 3 & 10)
     employeeSummary: db.getEmployeeSummary(),
-    attendanceSummary: db.getAttendanceSummary()
+    attendanceSummary: (req.permissions?.canViewAttendance === false || ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(req.user?.role)) ? null : db.getAttendanceSummary()
   });
 });
 

@@ -37,7 +37,7 @@ const initialSeed = {
   users: [
     {
       id: "usr-md-1",
-      name: "Eng. Mohamed Hweidi",
+      name: "Wissam Jamal Hussein",
       username: "md",
       employee_id: "FX-MD-01",
       department: "Executive Board",
@@ -49,7 +49,7 @@ const initialSeed = {
       pin: "1234",
       password: "1234",
       notes: "Managing Director (MD) - Full system access",
-      avatar: "MH"
+      avatar: "WJ"
     },
     {
       id: "usr-gm",
@@ -823,7 +823,7 @@ class Database {
       if (!mdUser) {
         data.users.unshift({
           id: "usr-md-1",
-          name: "Eng. Mohamed Hweidi",
+          name: "Wissam Jamal Hussein",
           username: "md",
           employee_id: "FX-MD-01",
           department: "Executive Board",
@@ -835,10 +835,16 @@ class Database {
           pin: "1234",
           password: "1234",
           notes: "Managing Director (MD) - Full system access",
-          avatar: "MH",
+          avatar: "WJ",
           created_at: new Date().toISOString()
         });
         modified = true;
+      } else {
+        if (mdUser.name !== 'Wissam Jamal Hussein' || mdUser.avatar !== 'WJ') {
+          mdUser.name = 'Wissam Jamal Hussein';
+          mdUser.avatar = 'WJ';
+          modified = true;
+        }
       }
 
       if (data.reports && Array.isArray(data.reports)) {
@@ -859,6 +865,24 @@ class Database {
             r.work_description = r.work_description.replace(new RegExp(legacyKey.toUpperCase(), 'g'), 'Managing Director (MD)');
             modified = true;
           }
+          if (r.created_by_user_id === 'usr-md-1' || r.prepared_by_user_id === 'usr-md-1') {
+            if (r.prepared_by_name === 'Eng. Mohamed Hweidi' || r.prepared_by_name === 'Mohamed Huwaidi') {
+              r.prepared_by_name = 'Wissam Jamal Hussein';
+              modified = true;
+            }
+            if (r.reviewed_by_name === 'Eng. Mohamed Hweidi' || r.reviewed_by_name === 'Mohamed Huwaidi') {
+              r.reviewed_by_name = 'Wissam Jamal Hussein';
+              modified = true;
+            }
+            if (r.completed_by_name === 'Eng. Mohamed Hweidi' || r.completed_by_name === 'Mohamed Huwaidi') {
+              r.completed_by_name = 'Wissam Jamal Hussein';
+              modified = true;
+            }
+            if (r.last_modified_by_name === 'Eng. Mohamed Hweidi' || r.last_modified_by_name === 'Mohamed Huwaidi') {
+              r.last_modified_by_name = 'Wissam Jamal Hussein';
+              modified = true;
+            }
+          }
         });
       }
       if (data.audit_logs && Array.isArray(data.audit_logs)) {
@@ -868,6 +892,12 @@ class Database {
           if (a.details && a.details.includes(legacyKey.toUpperCase())) {
             a.details = a.details.replace(new RegExp('\\b' + legacyKey.toUpperCase() + '\\b', 'g'), 'Managing Director (MD)');
             modified = true;
+          }
+          if (a.user_id === 'usr-md-1' && a.details) {
+            if (a.details.includes('Eng. Mohamed Hweidi') || a.details.includes('Mohamed Huwaidi')) {
+              a.details = a.details.replace(/Eng\. Mohamed Hweidi/g, 'Wissam Jamal Hussein').replace(/Mohamed Huwaidi/g, 'Wissam Jamal Hussein');
+              modified = true;
+            }
           }
         });
       }

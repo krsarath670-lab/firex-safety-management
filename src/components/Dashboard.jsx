@@ -542,7 +542,6 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     const stats = dashboardStats || {};
     const fin = stats.financials || {};
     const emp = stats.employeeSummary || {};
-    const att = stats.attendanceSummary || {};
     const prj = stats.projectsStats || {};
     const expiringAMC = (stats.expiring30Days || 0) + (stats.expiring60Days || 0) + (stats.expiring90Days || 0);
 
@@ -882,16 +881,16 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             </div>
           </div>
 
-          {/* Group 4: Workforce & Compliance (Cards 18 to 20) */}
+          {/* Group 4: Workforce & Compliance (Cards 18 and 19) */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-purple-600" />
-                <span>Workforce, Attendance &amp; Report Approvals</span>
+                <span>Workforce &amp; Report Approvals</span>
               </h2>
               <span className="text-[10px] font-bold text-slate-400 uppercase">Human Resources &amp; QA</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {/* 18. Employee Summary */}
               <div 
                 onClick={() => setActiveTab('users')}
@@ -908,25 +907,6 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 </div>
                 <div className="text-[11px] text-slate-600 font-medium mt-2">
                   <span className="text-emerald-700 font-bold">{emp.active || 0} Active</span> • {emp.engineers || 0} Eng • {emp.supervisors || 0} Sup • {emp.technicians || 0} Tech • {emp.sales || 0} Sales • {emp.accounts || 0} Acct
-                </div>
-              </div>
-
-              {/* 19. Attendance Summary */}
-              <div 
-                onClick={() => setActiveTab('users')}
-                className="p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 cursor-pointer transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase text-slate-500">Attendance Summary</span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">Today</span>
-                  </div>
-                  <div className="text-2xl font-black text-emerald-700 mt-1">
-                    {att.onDuty || 0} On Duty
-                  </div>
-                </div>
-                <div className="text-[11px] text-slate-600 font-medium mt-2">
-                  {att.available || 0} Available for dispatch • {att.totalStaff || 0} Total rostered staff
                 </div>
               </div>
 
