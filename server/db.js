@@ -36,6 +36,22 @@ const initialSeed = {
   },
   users: [
     {
+      id: "usr-ceo-1",
+      name: "Eng. Mohamed Hweidi",
+      username: "ceo",
+      employee_id: "FX-CEO-01",
+      department: "Executive Board",
+      email: "ceo@firexbahrain.com",
+      role: "CEO",
+      phone: "+973 3944 1122",
+      designation: "Chief Executive Officer",
+      status: "Active",
+      pin: "1234",
+      password: "1234",
+      notes: "Chief Executive Officer - Full system access",
+      avatar: "MH"
+    },
+    {
       id: "usr-gm",
       name: "Eng. Mohamed Hweidi",
       email: "eng..mohamed.hweidi@firexbahrain.com",
@@ -778,6 +794,28 @@ class Database {
       if (gmUser && gmUser.name !== 'Eng. Mohamed Hweidi') {
         gmUser.name = 'Eng. Mohamed Hweidi';
         gmUser.email = 'eng..mohamed.hweidi@firexbahrain.com';
+        modified = true;
+      }
+
+      const ceoUser = (data.users || []).find(u => u.role === 'CEO' || u.id === 'usr-ceo-1' || u.username === 'ceo');
+      if (!ceoUser) {
+        data.users.unshift({
+          id: "usr-ceo-1",
+          name: "Eng. Mohamed Hweidi",
+          username: "ceo",
+          employee_id: "FX-CEO-01",
+          department: "Executive Board",
+          email: "ceo@firexbahrain.com",
+          role: "CEO",
+          phone: "+973 3944 1122",
+          designation: "Chief Executive Officer",
+          status: "Active",
+          pin: "1234",
+          password: "1234",
+          notes: "Chief Executive Officer - Full system access",
+          avatar: "MH",
+          created_at: new Date().toISOString()
+        });
         modified = true;
       }
     }
