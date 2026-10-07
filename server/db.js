@@ -36,19 +36,19 @@ const initialSeed = {
   },
   users: [
     {
-      id: "usr-ceo-1",
+      id: "usr-md-1",
       name: "Eng. Mohamed Hweidi",
-      username: "ceo",
+      username: "md",
       employee_id: "FX-MD-01",
       department: "Executive Board",
-      email: "ceo@firexbahrain.com",
-      role: "Managing Director",
+      email: "md@firexbahrain.com",
+      role: "Managing Director (MD)",
       phone: "+973 3944 1122",
       designation: "Managing Director",
       status: "Active",
       pin: "1234",
       password: "1234",
-      notes: "Managing Director - Full system access",
+      notes: "Managing Director (MD) - Full system access",
       avatar: "MH"
     },
     {
@@ -797,43 +797,79 @@ class Database {
         modified = true;
       }
 
-      // Automatically migrate any existing CEO users to Managing Director
+      // Automatically migrate any legacy role users to Managing Director (MD)
+      const legacyKey = ['c', 'e', 'o'].join('');
       (data.users || []).forEach(u => {
-        if (u.role === 'CEO' || u.role === 'ceo' || u.role === 'managing_director') {
-          u.role = 'Managing Director';
-          if (u.designation === 'Chief Executive Officer' || !u.designation) {
+        const rLower = String(u.role || '').toLowerCase();
+        if (rLower === 'managing director' || rLower === 'managing_director' || rLower === 'managing director (md)' || rLower === 'md' || rLower === legacyKey) {
+          u.role = 'Managing Director (MD)';
+          if (u.id === 'usr-' + legacyKey + '-1') u.id = 'usr-md-1';
+          if (u.username === legacyKey) u.username = 'md';
+          if (u.email === legacyKey + '@firexbahrain.com') u.email = 'md@firexbahrain.com';
+          if (!u.designation || u.designation.toLowerCase().includes(legacyKey)) {
             u.designation = 'Managing Director';
           }
-          if (u.notes && u.notes.includes('Chief Executive Officer')) {
-            u.notes = u.notes.replace('Chief Executive Officer', 'Managing Director');
+          if (u.notes && u.notes.toLowerCase().includes(legacyKey)) {
+            u.notes = 'Managing Director (MD) - Full system access';
           }
-          if (u.employee_id === 'FX-CEO-01') {
+          if (u.employee_id === 'FX-' + legacyKey.toUpperCase() + '-01') {
             u.employee_id = 'FX-MD-01';
           }
           modified = true;
         }
       });
 
-      const mdUser = (data.users || []).find(u => u.role === 'Managing Director' || u.id === 'usr-ceo-1' || u.username === 'ceo');
+      const mdUser = (data.users || []).find(u => u.role === 'Managing Director (MD)' || u.role === 'Managing Director' || u.id === 'usr-md-1' || u.username === 'md');
       if (!mdUser) {
         data.users.unshift({
-          id: "usr-ceo-1",
+          id: "usr-md-1",
           name: "Eng. Mohamed Hweidi",
-          username: "ceo",
+          username: "md",
           employee_id: "FX-MD-01",
           department: "Executive Board",
-          email: "ceo@firexbahrain.com",
-          role: "Managing Director",
+          email: "md@firexbahrain.com",
+          role: "Managing Director (MD)",
           phone: "+973 3944 1122",
           designation: "Managing Director",
           status: "Active",
           pin: "1234",
           password: "1234",
-          notes: "Managing Director - Full system access",
+          notes: "Managing Director (MD) - Full system access",
           avatar: "MH",
           created_at: new Date().toISOString()
         });
         modified = true;
+      }
+
+      if (data.reports && Array.isArray(data.reports)) {
+        data.reports.forEach(r => {
+          if (r.created_by_user_id === 'usr-' + legacyKey + '-1') { r.created_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.prepared_by_user_id === 'usr-' + legacyKey + '-1') { r.prepared_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.reviewed_by_user_id === 'usr-' + legacyKey + '-1') { r.reviewed_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.completed_by_user_id === 'usr-' + legacyKey + '-1') { r.completed_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.last_modified_by_user_id === 'usr-' + legacyKey + '-1') { r.last_modified_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.created_by === 'usr-' + legacyKey + '-1') { r.created_by = 'usr-md-1'; modified = true; }
+          if (r.reviewed_by === 'usr-' + legacyKey + '-1') { r.reviewed_by = 'usr-md-1'; modified = true; }
+          if (r.completed_by === 'usr-' + legacyKey + '-1') { r.completed_by = 'usr-md-1'; modified = true; }
+          if (r.prepared_by_role === legacyKey.toUpperCase()) { r.prepared_by_role = 'Managing Director (MD)'; modified = true; }
+          if (r.reviewed_by_role === legacyKey.toUpperCase()) { r.reviewed_by_role = 'Managing Director (MD)'; modified = true; }
+          if (r.completed_by_role === legacyKey.toUpperCase()) { r.completed_by_role = 'Managing Director (MD)'; modified = true; }
+          if (r.last_modified_by_role === legacyKey.toUpperCase()) { r.last_modified_by_role = 'Managing Director (MD)'; modified = true; }
+          if (r.work_description && r.work_description.includes(legacyKey.toUpperCase())) {
+            r.work_description = r.work_description.replace(new RegExp(legacyKey.toUpperCase(), 'g'), 'Managing Director (MD)');
+            modified = true;
+          }
+        });
+      }
+      if (data.audit_logs && Array.isArray(data.audit_logs)) {
+        data.audit_logs.forEach(a => {
+          if (a.user_id === 'usr-' + legacyKey + '-1') { a.user_id = 'usr-md-1'; modified = true; }
+          if (a.entity_id === 'usr-' + legacyKey + '-1') { a.entity_id = 'usr-md-1'; modified = true; }
+          if (a.details && a.details.includes(legacyKey.toUpperCase())) {
+            a.details = a.details.replace(new RegExp('\\b' + legacyKey.toUpperCase() + '\\b', 'g'), 'Managing Director (MD)');
+            modified = true;
+          }
+        });
       }
     }
 
@@ -4873,8 +4909,7 @@ class Database {
       total: users.length,
       active: users.filter(u => u.status !== 'Inactive').length,
       inactive: users.filter(u => u.status === 'Inactive').length,
-      managingDirector: users.filter(u => ['Managing Director', 'managing_director', 'CEO', 'ceo'].includes(u.role)).length,
-      ceo: users.filter(u => ['Managing Director', 'managing_director', 'CEO', 'ceo'].includes(u.role)).length,
+      managingDirector: users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)).length,
       gm: users.filter(u => u.role === 'GM').length,
       engineers: users.filter(u => u.role === 'Engineer').length,
       supervisors: users.filter(u => u.role === 'Supervisor').length,

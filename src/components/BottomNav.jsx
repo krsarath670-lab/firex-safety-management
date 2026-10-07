@@ -10,7 +10,7 @@ export default function BottomNav() {
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const isMD = currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO';
+  const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
 
   const emergencyBadge = (dashboardStats?.emergencyStats?.active > 0) 
     ? dashboardStats.emergencyStats.active 

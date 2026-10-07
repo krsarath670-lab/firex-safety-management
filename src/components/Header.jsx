@@ -248,7 +248,7 @@ export default function Header() {
               className="flex items-center space-x-1.5 bg-navy-800 hover:bg-navy-700 border border-navy-700 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white transition-all shadow-sm"
             >
               <div className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] text-white ${
-                (['Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role)) ? 'bg-amber-600' : currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : currentUser?.role === 'Accounts' ? 'bg-teal-600' : currentUser?.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
+                (['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role)) ? 'bg-amber-600' : currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : currentUser?.role === 'Accounts' ? 'bg-teal-600' : currentUser?.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
               }`}>
                 {currentUser?.avatar || currentUser?.role?.[0] || 'U'}
               </div>
@@ -257,7 +257,7 @@ export default function Header() {
                   {currentUser?.name?.split(' ')[0]}
                 </span>
                 <span className={`block text-[9px] font-semibold uppercase leading-none ${
-                  (['Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role)) ? 'text-amber-400' : currentUser?.role === 'Sales' ? 'text-amber-400' : currentUser?.role === 'Accounts' ? 'text-teal-400' : currentUser?.role === 'Projects Manager' ? 'text-cyan-400' : 'text-blue-300'
+                  (['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role)) ? 'text-amber-400' : currentUser?.role === 'Sales' ? 'text-amber-400' : currentUser?.role === 'Accounts' ? 'text-teal-400' : currentUser?.role === 'Projects Manager' ? 'text-cyan-400' : 'text-blue-300'
                 }`}>
                   {currentUser?.role}
                 </span>
@@ -274,7 +274,7 @@ export default function Header() {
                       Active Session
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                      (['Managing Director', 'managing_director', 'CEO'].includes(currentUser?.role)) ? 'bg-amber-500/20 text-amber-300' :
+                      (['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role)) ? 'bg-amber-500/20 text-amber-300' :
                       currentUser?.role === 'Sales' ? 'bg-amber-500/20 text-amber-300' :
                       currentUser?.role === 'GM' ? 'bg-purple-500/20 text-purple-300' :
                       currentUser?.role === 'Technician' ? 'bg-emerald-500/20 text-emerald-300' :
@@ -309,8 +309,8 @@ export default function Header() {
                     <ChevronDown className="w-3 h-3 text-slate-400 -rotate-90" />
                   </button>
 
-                  {/* If GM, Engineer, or Supervisor: Quick Link to Staff Passwords */}
-                  {['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
+                  {/* If GM, Managing Director, Engineer, or Supervisor: Quick Link to Staff Passwords */}
+                  {['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
                     <button
                       onClick={() => {
                         setRoleMenuOpen(false);

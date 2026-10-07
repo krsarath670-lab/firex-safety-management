@@ -23,7 +23,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const [previewingVisit, setPreviewingVisit] = useState(null);
 
   const role = currentUser?.role || 'Technician';
-  const isMD = ['Managing Director', 'managing_director', 'CEO'].includes(role);
+  const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(role);
   const canPrepareReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
   const canReviewReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const canCompleteReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);

@@ -32,7 +32,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     }
   };
 
-  const isMD = currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO';
+  const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isAccounts = currentUser?.role === 'Accounts';

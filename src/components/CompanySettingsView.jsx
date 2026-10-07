@@ -32,8 +32,8 @@ export default function CompanySettingsView() {
   const letterheadInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
-  // Allowed to edit: GM, Managing Director or Supervisor
-  const canEdit = currentUser?.role === 'GM' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'CEO' || currentUser?.role === 'Supervisor';
+  // Allowed to edit: GM, Managing Director (MD) or Supervisor
+  const canEdit = currentUser?.role === 'GM' || currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'Supervisor';
 
   useEffect(() => {
     fetch('/api/settings', {

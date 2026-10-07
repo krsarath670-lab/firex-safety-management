@@ -54,7 +54,7 @@ export default function LoginView() {
   }, []);
 
   const handleSelectRole = (role) => {
-    const found = usersList.find(u => u.role === role);
+    const found = usersList.find(u => u.role === role || (role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)));
     if (found) {
       setSelectedUserId(found.id);
       setPassword('');
@@ -394,7 +394,7 @@ export default function LoginView() {
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {[
-                  { role: 'Managing Director', label: 'Managing Dir', color: 'bg-amber-600' },
+                  { role: 'Managing Director (MD)', label: 'Managing Director (MD)', color: 'bg-amber-600' },
                   { role: 'GM', label: 'GM', color: 'bg-purple-600' },
                   { role: 'Engineer', label: 'Engineer', color: 'bg-indigo-600' },
                   { role: 'Supervisor', label: 'Supervisor', color: 'bg-blue-600' },
@@ -403,8 +403,8 @@ export default function LoginView() {
                   { role: 'Accounts', label: 'Accounts', color: 'bg-teal-600' },
                   { role: 'Projects Manager', label: 'Projects Mgr', color: 'bg-cyan-600' }
                 ].map((r) => {
-                  const isSelected = selectedUser?.role === r.role;
-                  const hasUserInRole = usersList.some(u => u.role === r.role);
+                  const isSelected = selectedUser?.role === r.role || (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser?.role));
+                  const hasUserInRole = usersList.some(u => u.role === r.role || (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)));
                   return (
                     <button
                       key={r.role}
@@ -477,7 +477,7 @@ export default function LoginView() {
                 <div className="mt-2 flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-2">
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white ${
-                      ['Managing Director', 'managing_director', 'CEO'].includes(selectedUser.role) ? 'bg-amber-600' :
+                      ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-600' :
                       selectedUser.role === 'Sales' ? 'bg-amber-600' :
                       selectedUser.role === 'GM' ? 'bg-purple-600' :
                       selectedUser.role === 'Engineer' ? 'bg-indigo-600' :
@@ -493,7 +493,7 @@ export default function LoginView() {
                     </div>
                   </div>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    ['Managing Director', 'managing_director', 'CEO'].includes(selectedUser.role) ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                    ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-100 text-amber-900 border border-amber-300' :
                     selectedUser.role === 'Sales' ? 'bg-amber-100 text-amber-800' :
                     selectedUser.role === 'GM' ? 'bg-purple-100 text-purple-800' :
                     selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' :

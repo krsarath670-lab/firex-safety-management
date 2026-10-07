@@ -5,7 +5,7 @@ const db = require('./db');
  * Exactly 5 Roles: GM, Engineer, Supervisor, Technician, Sales
  */
 const ROLE_PERMISSIONS = {
-  'Managing Director': {
+  managing_director: {
     canViewDashboard: 'full',
     canManageCustomers: true,
     canViewCustomers: true,
@@ -426,14 +426,11 @@ const ROLE_PERMISSIONS = {
 };
 
 // Aliases for consistent role mapping (Requirements 1 & 17)
-ROLE_PERMISSIONS['managing_director'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['Managing Director'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['managing director'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['MD'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['md'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['CEO'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['ceo'] = ROLE_PERMISSIONS['Managing Director'];
-ROLE_PERMISSIONS['Ceo'] = ROLE_PERMISSIONS['Managing Director'];
+ROLE_PERMISSIONS['Managing Director (MD)'] = ROLE_PERMISSIONS['managing_director'];
+ROLE_PERMISSIONS['Managing Director'] = ROLE_PERMISSIONS['managing_director'];
+ROLE_PERMISSIONS['managing director'] = ROLE_PERMISSIONS['managing_director'];
+ROLE_PERMISSIONS['MD'] = ROLE_PERMISSIONS['managing_director'];
+ROLE_PERMISSIONS['md'] = ROLE_PERMISSIONS['managing_director'];
 ROLE_PERMISSIONS['projects_manager'] = ROLE_PERMISSIONS['Projects Manager'];
 ROLE_PERMISSIONS['project_manager'] = ROLE_PERMISSIONS['Projects Manager'];
 ROLE_PERMISSIONS['Project Manager'] = ROLE_PERMISSIONS['Projects Manager'];
@@ -444,8 +441,8 @@ ROLE_PERMISSIONS['Admin'] = ROLE_PERMISSIONS['GM'];
 function normalizeRole(role) {
   if (!role) return 'Guest';
   const clean = String(role).trim().toLowerCase().replace(/[\s\-_]+/g, ' ');
-  if (clean === 'managing director' || clean === 'managing_director' || clean === 'md' || clean === 'ceo' || clean === 'chief executive officer') {
-    return 'Managing Director';
+  if (clean === 'managing director (md)' || clean === 'managing director' || clean === 'managing_director' || clean === 'md') {
+    return 'Managing Director (MD)';
   }
   if (clean === 'projects manager' || clean === 'project manager' || clean === 'pm' || clean === 'projects_manager' || clean === 'project_manager') {
     return 'Projects Manager';
@@ -542,8 +539,8 @@ function authMiddleware(req, res, next) {
   if (!currentUser && userRole) {
     const roleCapitalized = normalizeRole(userRole);
     currentUser = {
-      id: userId || `usr-${roleCapitalized.toLowerCase().replace(/\s+/g, '-')}-1`,
-      name: (roleCapitalized === 'Managing Director' || roleCapitalized === 'CEO') ? 'Eng. Mohamed Hweidi (Managing Director)' :
+      id: userId || `usr-${roleCapitalized.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-1`,
+      name: (roleCapitalized === 'Managing Director (MD)' || roleCapitalized === 'Managing Director') ? 'Eng. Mohamed Hweidi (Managing Director)' :
             roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
             roleCapitalized === 'Accounts' ? 'Zahra Hasan' :
             roleCapitalized === 'Engineer' ? 'John Smith' :
@@ -552,7 +549,7 @@ function authMiddleware(req, res, next) {
             roleCapitalized === 'Sales' ? 'Mohammed Alwadhi' :
             'Eng. Mohamed Hweidi',
       role: roleCapitalized,
-      email: `${roleCapitalized.toLowerCase().replace(/\s+/g, '')}@firexbahrain.com`,
+      email: `${roleCapitalized.toLowerCase().replace(/[^a-z0-9]+/g, '')}@firexbahrain.com`,
       designation: roleCapitalized
     };
   }
