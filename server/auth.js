@@ -5,6 +5,74 @@ const db = require('./db');
  * Exactly 5 Roles: GM, Engineer, Supervisor, Technician, Sales
  */
 const ROLE_PERMISSIONS = {
+  CEO: {
+    canViewDashboard: 'full',
+    canManageCustomers: true,
+    canViewCustomers: true,
+    canDeleteCustomers: true,
+    canManageSites: true,
+    canViewSites: true,
+    canManageContracts: true,
+    canCreateAMC: true,
+    canSubmitAMC: true,
+    canApproveAMC: true,
+    canGenerateAMCVisits: true,
+    canAssignTechnician: true,
+    canAssignSupervisor: true,
+    canAssignEngineer: true,
+    canViewFullAMCList: true,
+    canViewOtherSalesAMC: true,
+    canChangeAMCFrequency: true,
+    canEditContractDates: true,
+    canScheduleVisits: true,
+    canCreateBreakdowns: true,
+    canCreateFitOuts: true,
+    canCreateProjects: true,
+    canManageProjects: true,
+    canViewProjects: true,
+    canCreateSupply: true,
+    canCreateQuotations: true,
+    canManageQuotations: true,
+    canViewQuotations: true,
+    canManageFaults: true,
+    canManageDefects: true,
+    canViewDefects: true,
+    canManageMaterials: true,
+    canManageReports: 'full',
+    canPrepareReports: true,
+    canViewReports: true,
+    canDeleteReports: true,
+    canReviewReports: true,
+    canApproveReports: true,
+    canCompleteReports: true,
+    canManageUsers: true,
+    canManageSettings: true,
+    canViewFinancials: true,
+    canViewAllJobs: true,
+    canAccessAccounts: true,
+    canManageInvoices: true,
+    canDeleteInvoices: true,
+    canViewInvoices: true,
+    canManagePayments: true,
+    canViewPayments: true,
+    canViewCustomerStatements: true,
+    canViewFinancialReports: true,
+    canHoldJobsFinancial: true,
+    canHoldJobsOperational: true,
+    canReleaseHold: true,
+    canExportAccountsExcel: true,
+    canViewEmergencyReports: true,
+    canCreateEmergency: true,
+    canEditEmergency: 'all',
+    canAssignEmergency: true,
+    canSubmitEmergency: true,
+    canReviewEmergency: true,
+    canApproveEmergency: true,
+    canCloseEmergency: true,
+    canDistributeEmergency: true,
+    canViewAuditLogs: true,
+    canManageRoles: true
+  },
   GM: {
     canViewDashboard: 'full',
     canManageCustomers: true,
@@ -358,6 +426,8 @@ const ROLE_PERMISSIONS = {
 };
 
 // Aliases for consistent role mapping (Requirements 1 & 17)
+ROLE_PERMISSIONS['ceo'] = ROLE_PERMISSIONS['CEO'];
+ROLE_PERMISSIONS['Ceo'] = ROLE_PERMISSIONS['CEO'];
 ROLE_PERMISSIONS['projects_manager'] = ROLE_PERMISSIONS['Projects Manager'];
 ROLE_PERMISSIONS['project_manager'] = ROLE_PERMISSIONS['Projects Manager'];
 ROLE_PERMISSIONS['Project Manager'] = ROLE_PERMISSIONS['Projects Manager'];
@@ -368,6 +438,9 @@ ROLE_PERMISSIONS['Admin'] = ROLE_PERMISSIONS['GM'];
 function normalizeRole(role) {
   if (!role) return 'Guest';
   const clean = String(role).trim().toLowerCase().replace(/[\s\-_]+/g, ' ');
+  if (clean === 'ceo' || clean === 'chief executive officer') {
+    return 'CEO';
+  }
   if (clean === 'projects manager' || clean === 'project manager' || clean === 'pm' || clean === 'projects_manager' || clean === 'project_manager') {
     return 'Projects Manager';
   }
@@ -455,7 +528,8 @@ function authMiddleware(req, res, next) {
     const roleCapitalized = normalizeRole(userRole);
     currentUser = {
       id: userId || `usr-${roleCapitalized.toLowerCase().replace(/\s+/g, '-')}-1`,
-      name: roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
+      name: roleCapitalized === 'CEO' ? 'Eng. Mohamed Hweidi (CEO)' :
+            roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
             roleCapitalized === 'Accounts' ? 'Zahra Hasan' :
             roleCapitalized === 'Engineer' ? 'John Smith' :
             roleCapitalized === 'Supervisor' ? 'David Thomas' :

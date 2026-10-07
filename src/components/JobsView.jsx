@@ -13,7 +13,7 @@ import QuickAddCustomerModal from './QuickAddCustomerModal';
 
 export default function JobsView({ onStartJob, onStartInspectionForJob, onNewReportForJob, initialJobType = null }) {
   const { currentUser, showToast, allUsers } = useApp();
-  const canPrepareReports = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = currentUser?.role === 'CEO' || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
   const [jobs, setJobs] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);
@@ -47,13 +47,14 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = currentUser?.role === 'Projects Manager';
   const isGM = currentUser?.role === 'GM';
+  const isCEO = currentUser?.role === 'CEO';
   const isEngineer = currentUser?.role === 'Engineer';
-  const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
+  const isManagement = ['GM', 'CEO', 'Engineer', 'Supervisor'].includes(currentUser?.role);
   const canEditDelete = isManagement || isProjectsManager;
-  const canHoldFinancial = isGM || isAccounts;
-  const canHoldOperational = isGM || isProjectsManager || isEngineer;
+  const canHoldFinancial = isGM || isCEO || isAccounts;
+  const canHoldOperational = isGM || isCEO || isProjectsManager || isEngineer;
   const canHoldJobs = canHoldFinancial || canHoldOperational;
-  const canReleaseHold = isGM || isAccounts || isProjectsManager || isEngineer;
+  const canReleaseHold = isGM || isCEO || isAccounts || isProjectsManager || isEngineer;
 
   const salesUsers = (allUsers || []).filter(u => u.role === 'Sales');
   const supervisorUsers = (allUsers || []).filter(u => u.role === 'Supervisor');

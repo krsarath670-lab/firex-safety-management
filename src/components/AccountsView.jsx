@@ -16,7 +16,7 @@ import {
 export default function AccountsView() {
   const { currentUser, showToast, companySettings, allUsers } = useApp();
 
-  const isAccountsUser = ['Accounts', 'GM', 'Admin'].includes(currentUser?.role);
+  const isAccountsUser = ['Accounts', 'GM', 'Admin', 'CEO'].includes(currentUser?.role);
 
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -78,8 +78,9 @@ export default function AccountsView() {
   });
 
   const isGM = currentUser?.role === 'GM';
+  const isCEO = currentUser?.role === 'CEO';
   const isAccounts = currentUser?.role === 'Accounts';
-  const canManage = isGM || isAccounts;
+  const canManage = isGM || isCEO || isAccounts;
 
   // Load Invoices and Summary
   const loadData = async () => {

@@ -593,3 +593,40 @@ export function exportProjectDetailToExcel(project, filename = null) {
 
   saveWorkbook(wb, finalFilename);
 }
+
+/**
+ * 21. EXCEL EXPORT - SYSTEM AUDIT TRAIL LOGS
+ */
+export function exportAuditLogsToExcel(logs, filename = 'FIREX_Audit_Trail_Log.xlsx') {
+  const rows = (logs || []).map(l => ({
+    'Timestamp': l.timestamp || '',
+    'Date': l.formatted_date || (l.timestamp ? new Date(l.timestamp).toLocaleDateString() : ''),
+    'Time': l.formatted_time || (l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : ''),
+    'User Name': l.user_name || l.user_id || 'System',
+    'User Role': l.user_role || 'System',
+    'Action': l.action || '',
+    'Module / Resource': l.resource || l.module || '',
+    'Record ID': l.resource_id || l.record_id || '',
+    'Details / Description': l.details || ''
+  }));
+
+  const headers = [
+    'Timestamp',
+    'Date',
+    'Time',
+    'User Name',
+    'User Role',
+    'Action',
+    'Module / Resource',
+    'Record ID',
+    'Details / Description'
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+  fitColumns(ws, rows, headers);
+  ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Audit Trail');
+  saveWorkbook(wb, filename);
+}

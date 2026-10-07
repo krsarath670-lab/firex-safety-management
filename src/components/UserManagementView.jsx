@@ -43,9 +43,11 @@ export default function UserManagementView() {
 
   // Access control
   const isGM = currentUser?.role === 'GM';
+  const isCEO = currentUser?.role === 'CEO';
+  const isExecutive = isGM || isCEO;
   const isEngineer = currentUser?.role === 'Engineer';
   const isSupervisor = currentUser?.role === 'Supervisor';
-  const canManageStaff = isGM || isEngineer || isSupervisor;
+  const canManageStaff = isExecutive || isEngineer || isSupervisor;
 
   // Load all users from backend
   const loadUsers = async () => {
@@ -100,7 +102,7 @@ export default function UserManagementView() {
   // Open Edit Modal
   const handleOpenEdit = (user) => {
     // Check permissions: Engineer & Supervisor can only edit Technician & Sales
-    if (!isGM && !['Technician', 'Sales'].includes(user.role)) {
+    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
       showToast('Engineers and Supervisors can only edit Technician and Sales staff.', 'error');
       return;
     }
@@ -186,7 +188,7 @@ export default function UserManagementView() {
 
   // Quick toggle active / inactive
   const handleToggleStatus = async (user) => {
-    if (!isGM && !['Technician', 'Sales'].includes(user.role)) {
+    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
       showToast('Restricted: You can only toggle status for Technician and Sales staff.', 'error');
       return;
     }
@@ -241,7 +243,7 @@ export default function UserManagementView() {
 
   // Open Password Modal
   const handleOpenPasswordModal = (user) => {
-    if (!isGM && !['Technician', 'Sales'].includes(user.role)) {
+    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
       showToast('Engineers and Supervisors can only manage passwords for Technicians and Sales staff.', 'error');
       return;
     }
@@ -321,7 +323,7 @@ export default function UserManagementView() {
   // Filter calculations
   const totalTechnicians = users.filter(u => u.role === 'Technician').length;
   const totalSales = users.filter(u => u.role === 'Sales').length;
-  const totalManagement = users.filter(u => ['GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
+  const totalManagement = users.filter(u => ['CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
   const totalAccounts = users.filter(u => u.role === 'Accounts').length;
   const totalProjects = users.filter(u => u.role === 'Projects Manager').length;
 
@@ -331,7 +333,7 @@ export default function UserManagementView() {
     if (activeFilter === 'Sales' && u.role !== 'Sales') return false;
     if (activeFilter === 'Accounts' && u.role !== 'Accounts') return false;
     if (activeFilter === 'Projects' && u.role !== 'Projects Manager') return false;
-    if (activeFilter === 'Management' && !['GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
+    if (activeFilter === 'Management' && !['CEO', 'GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -351,7 +353,7 @@ export default function UserManagementView() {
       <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
         <Shield className="w-10 h-10 text-amber-500 mx-auto" />
         <h3 className="text-base font-bold text-slate-800">Restricted Administration Module</h3>
-        <p className="text-xs text-slate-500">Only General Management and authorized supervisors have permission to manage staff credentials.</p>
+        <p className="text-xs text-slate-500">Only Executive Management and authorized supervisors have permission to manage staff credentials.</p>
       </div>
     );
   }
@@ -371,8 +373,8 @@ export default function UserManagementView() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            {isGM 
-              ? 'Provision and control mobile app access for Accounts, Projects Manager, Technicians, Sales, and Engineers.'
+            {isExecutive 
+              ? 'Provision and control mobile app access for Accounts, Projects Manager, Technicians, Sales, Engineers, and Management.'
               : 'Provision and control mobile app access for Technicians and Sales Personnel.'}
           </p>
         </div>
@@ -383,7 +385,7 @@ export default function UserManagementView() {
           className="h-11 px-4 bg-navy-900 hover:bg-navy-800 active:bg-black text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 border border-navy-800"
         >
           <UserPlus className="w-4 h-4 text-emerald-400" />
-          <span>{isGM ? '+ ADD STAFF MEMBER' : '+ ADD TECHNICIAN / SALES'}</span>
+          <span>{isExecutive ? '+ ADD STAFF MEMBER' : '+ ADD TECHNICIAN / SALES'}</span>
         </button>
       </div>
 
@@ -521,7 +523,7 @@ export default function UserManagementView() {
             const isInactive = u.status === 'Inactive';
             const isTech = u.role === 'Technician';
             const isSalesRole = u.role === 'Sales';
-            const canModifyThisUser = isGM || (['Engineer', 'Supervisor'].includes(currentUser?.role) && ['Technician', 'Sales'].includes(u.role));
+            const canModifyThisUser = isExecutive || (['Engineer', 'Supervisor'].includes(currentUser?.role) && ['Technician', 'Sales'].includes(u.role));
 
             return (
               <div 
@@ -535,6 +537,7 @@ export default function UserManagementView() {
                   <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-start space-x-3 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm ${
+                        u.role === 'CEO' ? 'bg-amber-600 text-white ring-2 ring-amber-400' :
                         u.role === 'GM' ? 'bg-purple-900 text-white' :
                         u.role === 'Engineer' ? 'bg-indigo-700 text-white' :
                         u.role === 'Supervisor' ? 'bg-blue-600 text-white' :
@@ -565,6 +568,7 @@ export default function UserManagementView() {
                     {/* Role & Status Badge */}
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider ${
+                        u.role === 'CEO' ? 'bg-amber-50 text-amber-900 border-amber-300 font-extrabold shadow-sm' :
                         u.role === 'GM' ? 'bg-purple-50 text-purple-800 border-purple-200' :
                         u.role === 'Engineer' ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
                         u.role === 'Supervisor' ? 'bg-blue-50 text-blue-800 border-blue-200' :
@@ -700,8 +704,8 @@ export default function UserManagementView() {
                     {modalMode === 'add' ? 'Add Staff Member (App Access)' : `Edit ${selectedUser?.name}`}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    {isGM 
-                      ? 'General Manager: Full provisioning across all roles.'
+                    {isExecutive 
+                      ? 'Executive Management: Full provisioning across all roles.'
                       : 'Provision mobile app access for Technician or Sales personnel.'
                     }
                   </p>
@@ -735,6 +739,7 @@ export default function UserManagementView() {
                     else if (newRole === 'Accounts') defaultDesig = 'Senior Accountant & Billing Officer';
                     else if (newRole === 'Projects Manager') defaultDesig = 'Projects & Fit-out Operations Manager';
                     else if (newRole === 'GM') defaultDesig = 'General Manager';
+                    else if (newRole === 'CEO') defaultDesig = 'Chief Executive Officer';
 
                     setFormData(p => ({
                       ...p,
@@ -746,17 +751,18 @@ export default function UserManagementView() {
                 >
                   <option value="Technician">Technician — (Mobile on-site execution, checklists, faults, jobs)</option>
                   <option value="Sales">Sales — (Client onboarding, quotation creation, own jobs &amp; AMC)</option>
-                  {isGM && (
+                  {isExecutive && (
                     <>
                       <option value="Supervisor">Supervisor — (Field dispatch, job approvals, full ops)</option>
                       <option value="Engineer">Engineer — (Technical approval, inspections, full ops)</option>
                       <option value="Accounts">Accounts — (Finance, Invoices, Payments, Customer Ledgers &amp; Holds)</option>
                       <option value="Projects Manager">Projects Manager — (Projects, Fit-out, Installation, T&amp;C, Milestones &amp; Ops Holds)</option>
                       <option value="GM">Administrator / GM — (Executive management &amp; system-wide access)</option>
+                      <option value="CEO">CEO — (Chief Executive Officer, full executive company-wide access)</option>
                     </>
                   )}
                 </select>
-                {!isGM && (
+                {!isExecutive && (
                   <p className="text-[10px] text-slate-500 mt-1">
                     Engineers and Supervisors are authorized to provision <strong>Technicians</strong> and <strong>Sales</strong> personnel.
                   </p>

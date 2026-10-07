@@ -168,8 +168,8 @@ export default function ProjectsView({ initialFilter = null }) {
 
   // Auto-fill project managers, engineers, supervisors, technicians
   const usersList = allUsers || [];
-  const projectManagers = usersList.filter(u => ['Projects Manager', 'projects_manager', 'Project Manager', 'GM'].includes(u.role));
-  const engineers = usersList.filter(u => ['Engineer', 'GM'].includes(u.role));
+  const projectManagers = usersList.filter(u => ['Projects Manager', 'projects_manager', 'Project Manager', 'GM', 'CEO'].includes(u.role));
+  const engineers = usersList.filter(u => ['Engineer', 'GM', 'CEO'].includes(u.role));
   const supervisors = usersList.filter(u => ['Supervisor', 'Engineer'].includes(u.role));
   const technicians = usersList.filter(u => ['Technician', 'Supervisor'].includes(u.role));
 

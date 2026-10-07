@@ -32,12 +32,13 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     }
   };
 
+  const isCEO = currentUser?.role === 'CEO';
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const canPrepareReports = ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = isCEO || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -533,6 +534,435 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
       </div>
     );
   };
+
+  // ----------------------------------------------------
+  // DEDICATED CEO EXECUTIVE DASHBOARD VIEW (Role: CEO)
+  // ----------------------------------------------------
+  if (isCEO) {
+    const stats = dashboardStats || {};
+    const fin = stats.financials || {};
+    const emp = stats.employeeSummary || {};
+    const att = stats.attendanceSummary || {};
+    const prj = stats.projectsStats || {};
+    const expiringAMC = (stats.expiring30Days || 0) + (stats.expiring60Days || 0) + (stats.expiring90Days || 0);
+
+    return (
+      <div className="space-y-4 pb-28">
+        {/* CEO Executive Welcome Banner */}
+        <div className="bg-gradient-to-r from-navy-950 via-slate-900 to-amber-950 rounded-2xl p-4 sm:p-5 text-white shadow-lg border border-amber-900/40 relative overflow-hidden">
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-amber-500/10 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm">
+                  Executive CEO Mode • Full Access
+                </span>
+                <span className="text-xs text-slate-300 font-medium">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-white mt-1 tracking-tight">
+                Welcome, {currentUser?.name || 'Chief Executive Officer'}
+              </h1>
+              <p className="text-xs text-amber-200/80 mt-0.5 max-w-2xl font-medium">
+                Executive command radar: Company-wide operational overview, real-time finances, field workforce, and system audit log.
+              </p>
+            </div>
+
+            {/* Quick Executive Shortcuts */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setActiveTab('audit_logs')}
+                className="px-3 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Audit Trail Log</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('accounts')}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-white border border-slate-700 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Receipt className="w-3.5 h-3.5 text-teal-400" />
+                <span>Accounts</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Actions Row */}
+          <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <span className="text-slate-300 font-semibold">Executive Actions:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={onStartJob}
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3 text-emerald-400" />
+                <span>New Job</span>
+              </button>
+              <button
+                onClick={onNewAMC}
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3 text-blue-400" />
+                <span>New AMC</span>
+              </button>
+              <button
+                onClick={onNewReport}
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3 text-purple-400" />
+                <span>New Report</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold flex items-center gap-1"
+              >
+                <Users className="w-3 h-3 text-amber-400" />
+                <span>Staff Management</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment & Operational Holds Alert Banner */}
+        {((stats.paymentHoldsCount || 0) + (stats.operationalHoldsCount || 0) > 0) && (
+          <div 
+            onClick={() => setActiveTab('jobs')}
+            className="bg-gradient-to-r from-red-50 to-amber-50 border border-red-300 rounded-2xl p-3.5 flex items-start justify-between cursor-pointer hover:shadow-md transition-all"
+          >
+            <div className="flex items-start space-x-3">
+              <div className="p-2 rounded-xl bg-red-600 text-white shadow-sm mt-0.5">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-xs font-black text-red-950 uppercase tracking-wide">
+                  Jobs on Hold ({((stats.paymentHoldsCount || 0) + (stats.operationalHoldsCount || 0))})
+                </h2>
+                <p className="text-xs text-red-900 mt-0.5 font-medium">
+                  {stats.paymentHoldsCount > 0 && (
+                    <span className="font-bold text-red-900">
+                      🔴 {stats.paymentHoldsCount} Payment Hold(s){" "}
+                    </span>
+                  )}
+                  {stats.operationalHoldsCount > 0 && (
+                    <span className="font-bold text-amber-900">
+                      🟠 {stats.operationalHoldsCount} Operational Hold(s)
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-red-600 self-center" />
+          </div>
+        )}
+
+        {/* 20 EXECUTIVE METRICS OVERVIEW PANELS */}
+        <div className="space-y-3">
+          {/* Group 1: Commercial & Operations Overview (Cards 1 to 7) */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <span>Commercial &amp; Core Operations Radar</span>
+              </h2>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Click any card to inspect</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+              {/* 1. Total Customers */}
+              <div 
+                onClick={() => setActiveTab('customers')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Customers</span>
+                <span className="text-xl font-black text-slate-900 block mt-0.5">{stats.customersCount || 0}</span>
+                <span className="text-[10px] text-blue-600 font-bold flex items-center gap-0.5 mt-1">View list &rarr;</span>
+              </div>
+
+              {/* 2. Active AMC */}
+              <div 
+                onClick={() => setActiveTab('amc')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Active AMC</span>
+                <span className="text-xl font-black text-emerald-700 block mt-0.5">{stats.totalActiveAMC || 0}</span>
+                <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5 mt-1">Contracts &rarr;</span>
+              </div>
+
+              {/* 3. Expiring AMC */}
+              <div 
+                onClick={() => setActiveTab('amc')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 hover:border-amber-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Expiring AMC</span>
+                <span className="text-xl font-black text-amber-700 block mt-0.5">{expiringAMC}</span>
+                <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5 mt-1">Next 90 days &rarr;</span>
+              </div>
+
+              {/* 4. AMC Scheduled Visits */}
+              <div 
+                onClick={() => setActiveTab('amc')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Scheduled Visits</span>
+                <span className="text-xl font-black text-purple-700 block mt-0.5">
+                  {stats.quarters_count?.details?.q1?.scheduled || upcomingVisits.length || 0}
+                </span>
+                <span className="text-[10px] text-purple-600 font-bold flex items-center gap-0.5 mt-1">Schedules &rarr;</span>
+              </div>
+
+              {/* 5. Today's Jobs */}
+              <div 
+                onClick={() => setActiveTab('jobs')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Today's Jobs</span>
+                <span className="text-xl font-black text-blue-700 block mt-0.5">{stats.todayJobsCount || 0}</span>
+                <span className="text-[10px] text-blue-600 font-bold flex items-center gap-0.5 mt-1">Field dispatch &rarr;</span>
+              </div>
+
+              {/* 6. Pending Jobs */}
+              <div 
+                onClick={() => setActiveTab('jobs')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 hover:border-amber-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Pending Jobs</span>
+                <span className="text-xl font-black text-amber-600 block mt-0.5">{stats.pendingJobsCount || 0}</span>
+                <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5 mt-1">In progress &rarr;</span>
+              </div>
+
+              {/* 7. Completed Jobs */}
+              <div 
+                onClick={() => setActiveTab('jobs')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Completed Jobs</span>
+                <span className="text-xl font-black text-emerald-600 block mt-0.5">{stats.completedJobsCount || 0}</span>
+                <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5 mt-1">Finished &rarr;</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Group 2: Field Incidents & Projects (Cards 8 to 13) */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="w-4 h-4 text-indigo-600" />
+                <span>Field Incidents, Projects &amp; Quotations</span>
+              </h2>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Operational health</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+              {/* 8. Pending Breakdowns */}
+              <div 
+                onClick={() => setActiveTab('jobs')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-red-50/60 border border-slate-200 hover:border-red-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Pending Breakdowns</span>
+                <span className="text-xl font-black text-red-600 block mt-0.5">{stats.pendingBreakdownsCount || 0}</span>
+                <span className="text-[10px] text-red-600 font-bold flex items-center gap-0.5 mt-1">Emergency repairs &rarr;</span>
+              </div>
+
+              {/* 9. Open Defects */}
+              <div 
+                onClick={() => setActiveTab('faults')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-orange-50/60 border border-slate-200 hover:border-orange-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Open Defects</span>
+                <span className="text-xl font-black text-orange-600 block mt-0.5">{stats.openFaultsCount || 0}</span>
+                <span className="text-[10px] text-orange-600 font-bold flex items-center gap-0.5 mt-1">Defect ledger &rarr;</span>
+              </div>
+
+              {/* 10. Total Projects */}
+              <div 
+                onClick={() => setActiveTab('projects')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Total Projects</span>
+                <span className="text-xl font-black text-indigo-700 block mt-0.5">{prj.totalProjects || 0}</span>
+                <span className="text-[10px] text-indigo-600 font-bold flex items-center gap-0.5 mt-1">Fit-outs &amp; Projects &rarr;</span>
+              </div>
+
+              {/* 11. Active Projects */}
+              <div 
+                onClick={() => setActiveTab('projects')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Active Projects</span>
+                <span className="text-xl font-black text-indigo-900 block mt-0.5">{prj.activeProjects || 0}</span>
+                <span className="text-[10px] text-indigo-600 font-bold flex items-center gap-0.5 mt-1">On-site execution &rarr;</span>
+              </div>
+
+              {/* 12. Project Progress */}
+              <div 
+                onClick={() => setActiveTab('projects')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-teal-50/60 border border-slate-200 hover:border-teal-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Avg Project Progress</span>
+                <span className="text-xl font-black text-teal-700 block mt-0.5">{prj.avgCompletion || 0}%</span>
+                <span className="text-[10px] text-teal-600 font-bold flex items-center gap-0.5 mt-1">Milestones &rarr;</span>
+              </div>
+
+              {/* 13. Quotations */}
+              <div 
+                onClick={() => setActiveTab('quotations')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 hover:border-amber-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-bold uppercase text-slate-500 block">Quotations Draft/Pending</span>
+                <span className="text-xl font-black text-amber-700 block mt-0.5">{stats.pendingQuotationsCount || 0}</span>
+                <span className="text-[10px] text-amber-600 font-bold flex items-center gap-0.5 mt-1">Commercial proposals &rarr;</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Group 3: Financial Overview (Cards 14 to 17) */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-teal-600" />
+                <span>Executive Financial Overview (Accounts &amp; Cash Flow)</span>
+              </h2>
+              <button
+                onClick={() => setActiveTab('accounts')}
+                className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-0.5"
+              >
+                <span>Full Accounts Module</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* 14. Total Invoiced */}
+              <div 
+                onClick={() => setActiveTab('accounts')}
+                className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 hover:border-teal-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-black uppercase text-teal-900 block">Total Invoiced</span>
+                <span className="text-xl font-black text-teal-950 font-mono block mt-1">
+                  {formatBHD(fin.total_invoiced || 0)}
+                </span>
+                <span className="text-[10px] text-teal-700 font-semibold mt-1 block">BHD • {fin.invoice_count || 0} Invoices</span>
+              </div>
+
+              {/* 15. Collected Revenue */}
+              <div 
+                onClick={() => setActiveTab('accounts')}
+                className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-black uppercase text-emerald-900 block">Collected Revenue</span>
+                <span className="text-xl font-black text-emerald-950 font-mono block mt-1">
+                  {formatBHD(fin.total_paid || 0)}
+                </span>
+                <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">BHD Paid in Full</span>
+              </div>
+
+              {/* 16. Outstanding Balance */}
+              <div 
+                onClick={() => setActiveTab('accounts')}
+                className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 hover:border-amber-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-black uppercase text-amber-900 block">Outstanding Balance</span>
+                <span className="text-xl font-black text-amber-950 font-mono block mt-1">
+                  {formatBHD(fin.total_outstanding || 0)}
+                </span>
+                <span className="text-[10px] text-amber-700 font-semibold mt-1 block">BHD Pending Collection</span>
+              </div>
+
+              {/* 17. Overdue Invoices */}
+              <div 
+                onClick={() => setActiveTab('accounts')}
+                className="p-3.5 rounded-xl bg-red-50/70 border border-red-200 hover:border-red-300 cursor-pointer transition-all"
+              >
+                <span className="text-[10px] font-black uppercase text-red-900 block">Overdue Invoices</span>
+                <span className="text-xl font-black text-red-950 font-mono block mt-1">
+                  {stats.overdueInvoicesCount || 0}
+                </span>
+                <span className="text-[10px] text-red-700 font-semibold mt-1 block">
+                  {formatBHD(stats.overdueInvoicesAmount || 0)} Overdue
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Group 4: Workforce & Compliance (Cards 18 to 20) */}
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-purple-600" />
+                <span>Workforce, Attendance &amp; Report Approvals</span>
+              </h2>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Human Resources &amp; QA</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* 18. Employee Summary */}
+              <div 
+                onClick={() => setActiveTab('users')}
+                className="p-3.5 rounded-xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 cursor-pointer transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Employee Summary</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800">HR Directory</span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-900 mt-1">
+                    {emp.total || 0} Staff
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2">
+                  <span className="text-emerald-700 font-bold">{emp.active || 0} Active</span> • {emp.engineers || 0} Eng • {emp.supervisors || 0} Sup • {emp.technicians || 0} Tech • {emp.sales || 0} Sales • {emp.accounts || 0} Acct
+                </div>
+              </div>
+
+              {/* 19. Attendance Summary */}
+              <div 
+                onClick={() => setActiveTab('users')}
+                className="p-3.5 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 cursor-pointer transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Attendance Summary</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">Today</span>
+                  </div>
+                  <div className="text-2xl font-black text-emerald-700 mt-1">
+                    {att.onDuty || 0} On Duty
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2">
+                  {att.available || 0} Available for dispatch • {att.totalStaff || 0} Total rostered staff
+                </div>
+              </div>
+
+              {/* 20. Reports Summary */}
+              <div 
+                onClick={() => setActiveTab('reports')}
+                className="p-3.5 rounded-xl bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 cursor-pointer transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Technical Reports</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-800">Approvals</span>
+                  </div>
+                  <div className="text-2xl font-black text-blue-700 mt-1">
+                    {stats.pendingReportsCount || 0} Pending
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2">
+                  CEO has full review and approval authorization on all reports &rarr;
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Call-Outs & Rapid Response */}
+        {renderEmergencyCalloutWidget()}
+
+        {/* AMC Service Cards — Active Contracts & Dynamic Cycles */}
+        {renderAmcServiceCardsWidget()}
+
+        {/* Upcoming AMC Visits Widget */}
+        {renderUpcomingVisitsWidget()}
+      </div>
+    );
+  }
 
   // ----------------------------------------------------
   // DEDICATED SALES DASHBOARD VIEW (Role: Sales)

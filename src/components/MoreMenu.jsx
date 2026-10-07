@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, Building2, Wrench, Package, Sparkles, 
   Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt, Flame,
-  Briefcase, FileText
+  Briefcase, FileText, ShieldAlert
 } from 'lucide-react';
 
 export default function MoreMenu({ onSelectView }) {
@@ -13,9 +13,10 @@ export default function MoreMenu({ onSelectView }) {
   const isSales = currentUser?.role === 'Sales';
   const isAccounts = currentUser?.role === 'Accounts';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
-  const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
   const isGM = currentUser?.role === 'GM';
-  const canAccessFinance = isGM || isAccounts || currentUser?.role === 'Engineer';
+  const isCEO = currentUser?.role === 'CEO';
+  const isManagement = ['GM', 'CEO', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
+  const canAccessFinance = isGM || isCEO || isAccounts || currentUser?.role === 'Engineer';
 
   const menuSections = [
     {
@@ -132,6 +133,16 @@ export default function MoreMenu({ onSelectView }) {
           badge: isManagement ? 'Manage' : null,
           badgeColor: 'bg-purple-100 text-purple-800',
           hide: !isManagement || isProjectsManager
+        },
+        {
+          id: 'audit_logs',
+          label: 'System Audit Trail Log',
+          description: 'Security & activity audit trail of all transactions and changes',
+          icon: ShieldAlert,
+          iconColor: 'text-amber-700 bg-amber-50',
+          badge: (isCEO || isGM) ? 'Executive' : null,
+          badgeColor: 'bg-amber-100 text-amber-800 font-bold',
+          hide: !(isCEO || isGM)
         },
         {
           id: 'settings',

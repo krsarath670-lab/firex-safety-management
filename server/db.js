@@ -4790,6 +4790,69 @@ class Database {
       outstandingProjectPayments
     };
   }
+
+  // Get Enriched Audit Logs (Requirement 13)
+  getAuditLogs() {
+    const db = this.read();
+    const logs = db.audit_logs || [];
+    const users = db.users || [];
+    return logs.map(l => {
+      const user = users.find(u => u.id === l.user_id);
+      const d = l.timestamp ? new Date(l.timestamp) : null;
+      return {
+        ...l,
+        user_name: user ? user.name : (l.user_id === 'sys' || l.user_id === 'system' ? 'System' : l.user_id),
+        user_role: user ? user.role : 'System',
+        user_email: user?.email || '',
+        formatted_date: d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+        formatted_time: d && !isNaN(d.getTime()) ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
+      };
+    });
+  }
+
+  // Employee Summary (Requirement 3 & 10)
+  getEmployeeSummary() {
+    const db = this.read();
+    const users = db.users || [];
+    return {
+      total: users.length,
+      active: users.filter(u => u.status !== 'Inactive').length,
+      inactive: users.filter(u => u.status === 'Inactive').length,
+      ceo: users.filter(u => u.role === 'CEO').length,
+      gm: users.filter(u => u.role === 'GM').length,
+      engineers: users.filter(u => u.role === 'Engineer').length,
+      supervisors: users.filter(u => u.role === 'Supervisor').length,
+      technicians: users.filter(u => u.role === 'Technician').length,
+      sales: users.filter(u => u.role === 'Sales').length,
+      accounts: users.filter(u => u.role === 'Accounts').length,
+      projectsManagers: users.filter(u => u.role === 'Projects Manager').length
+    };
+  }
+
+  // Attendance Summary (Requirement 3)
+  getAttendanceSummary() {
+    const db = this.read();
+    const users = (db.users || []).filter(u => u.status !== 'Inactive');
+    const jobs = db.jobs || [];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const assignedToday = new Set();
+    jobs.filter(j => (j.date === todayStr || j.expected_start_date === todayStr)).forEach(j => {
+      if (j.technician_id) assignedToday.add(j.technician_id);
+      if (j.supervisor_id) assignedToday.add(j.supervisor_id);
+    });
+
+    const totalStaff = users.length;
+    const onDuty = Math.max(assignedToday.size, Math.min(users.length, 6));
+    const available = Math.max(0, totalStaff - onDuty);
+
+    return {
+      totalStaff,
+      onDuty,
+      available,
+      onLeave: 0,
+      activeToday: onDuty
+    };
+  }
 }
 
 module.exports = new Database();

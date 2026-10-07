@@ -26,6 +26,7 @@ export default function Header() {
   const [notifMenuOpen, setNotifMenuOpen] = useState(false);
 
   const roles = [
+    { role: 'CEO', label: 'CEO (Executive Access)', badgeColor: 'bg-amber-600' },
     { role: 'GM', label: 'GM (Full Access)', badgeColor: 'bg-purple-600' },
     { role: 'Engineer', label: 'Engineer (Operational)', badgeColor: 'bg-indigo-600' },
     { role: 'Supervisor', label: 'Supervisor (Field Lead)', badgeColor: 'bg-blue-600' },
@@ -247,7 +248,7 @@ export default function Header() {
               className="flex items-center space-x-1.5 bg-navy-800 hover:bg-navy-700 border border-navy-700 px-2.5 py-1.5 rounded-lg text-xs font-medium text-white transition-all shadow-sm"
             >
               <div className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] text-white ${
-                currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : currentUser?.role === 'Accounts' ? 'bg-teal-600' : currentUser?.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
+                currentUser?.role === 'CEO' ? 'bg-amber-600' : currentUser?.role === 'Sales' ? 'bg-amber-600' : currentUser?.role === 'GM' ? 'bg-purple-600' : currentUser?.role === 'Technician' ? 'bg-emerald-600' : currentUser?.role === 'Accounts' ? 'bg-teal-600' : currentUser?.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
               }`}>
                 {currentUser?.avatar || currentUser?.role?.[0] || 'U'}
               </div>
@@ -256,7 +257,7 @@ export default function Header() {
                   {currentUser?.name?.split(' ')[0]}
                 </span>
                 <span className={`block text-[9px] font-semibold uppercase leading-none ${
-                  currentUser?.role === 'Sales' ? 'text-amber-400' : currentUser?.role === 'Accounts' ? 'text-teal-400' : currentUser?.role === 'Projects Manager' ? 'text-cyan-400' : 'text-blue-300'
+                  currentUser?.role === 'CEO' ? 'text-amber-400' : currentUser?.role === 'Sales' ? 'text-amber-400' : currentUser?.role === 'Accounts' ? 'text-teal-400' : currentUser?.role === 'Projects Manager' ? 'text-cyan-400' : 'text-blue-300'
                 }`}>
                   {currentUser?.role}
                 </span>
@@ -273,6 +274,7 @@ export default function Header() {
                       Active Session
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                      currentUser?.role === 'CEO' ? 'bg-amber-500/20 text-amber-300' :
                       currentUser?.role === 'Sales' ? 'bg-amber-500/20 text-amber-300' :
                       currentUser?.role === 'GM' ? 'bg-purple-500/20 text-purple-300' :
                       currentUser?.role === 'Technician' ? 'bg-emerald-500/20 text-emerald-300' :
