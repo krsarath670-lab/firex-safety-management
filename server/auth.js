@@ -509,8 +509,17 @@ function sanitizeContractForRole(contract, user) {
  * Extracts user ID or role from header 'x-user-id' or 'x-user-role' or Bearer token.
  */
 function authMiddleware(req, res, next) {
-  const userId = req.headers['x-user-id'];
+  let userId = req.headers['x-user-id'];
   const userRole = req.headers['x-user-role'];
+  const authHeader = req.headers['authorization'];
+
+  if (!userId && authHeader && authHeader.startsWith('Bearer token-')) {
+    const raw = authHeader.replace(/^Bearer token-/, '');
+    const lastDash = raw.lastIndexOf('-');
+    if (lastDash > 0) {
+      userId = raw.substring(0, lastDash);
+    }
+  }
 
   let currentUser = null;
 
