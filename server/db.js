@@ -842,6 +842,92 @@ class Database {
         }
       }
 
+      // Maintain Accounts user (Yaser Zidan)
+      const accountsUser = (data.users || []).find(u => 
+        (u.role && u.role.toLowerCase() === 'accounts') || 
+        (u.username && u.username.toLowerCase() === 'yaser') ||
+        (u.name && u.name.toLowerCase() === 'yaser zidan')
+      );
+      if (!accountsUser) {
+        data.users.push({
+          id: "use-1791834827379-338",
+          name: "Yaser Zidan",
+          username: "yaser",
+          employee_id: "",
+          department: "Accounts Manager",
+          email: "yaser.zidan@firexbahrain.com",
+          role: "Accounts",
+          phone: "+973 66630308",
+          designation: "Senior Accountant & Billing Officer",
+          status: "Active",
+          pin: "1234",
+          password: "1234",
+          notes: "",
+          avatar: "YZ",
+          created_by: "usr-md-1",
+          created_by_name: "Wissam Jamal Hussein",
+          created_by_role: "Managing Director (MD)",
+          created_at: new Date().toISOString(),
+          joining_date: "2026-10-12"
+        });
+        modified = true;
+      }
+
+      // Maintain Admin user
+      const adminUser = (data.users || []).find(u => 
+        (u.role && u.role.toLowerCase() === 'admin') || 
+        (u.username && u.username.toLowerCase() === 'admin')
+      );
+      if (!adminUser) {
+        data.users.push({
+          id: "use-1791834992009-260",
+          name: "Admin",
+          username: "admin",
+          email: "admin@firexbahrain.com",
+          role: "Admin",
+          phone: "+973 39027232",
+          designation: "System Administrator",
+          status: "Active",
+          pin: "1234",
+          password: "1234",
+          avatar: "A",
+          created_by: "usr-md-1",
+          created_by_name: "Wissam Jamal Hussein",
+          created_by_role: "Managing Director (MD)",
+          created_at: new Date().toISOString(),
+          joining_date: "2026-10-12"
+        });
+        modified = true;
+      }
+
+      // Maintain CEO user (Ahamd Jamal)
+      const ceoUser = (data.users || []).find(u => 
+        (u.role && u.role.toLowerCase() === 'ceo') || 
+        (u.username && u.username.toLowerCase() === 'ahamdjamal') ||
+        (u.name && u.name.toLowerCase() === 'ahamd jamal')
+      );
+      if (!ceoUser) {
+        data.users.push({
+          id: "use-1791834992192-908",
+          name: "Ahamd Jamal",
+          username: "AhamdJamal",
+          email: "ahamd.jamal@firexbahrain.com",
+          role: "CEO",
+          phone: "+973 17162240",
+          designation: "Chief Executive Officer",
+          status: "Active",
+          pin: "1234",
+          password: "1234",
+          avatar: "AJ",
+          created_by: "use-1791834992009-260",
+          created_by_name: "Admin",
+          created_by_role: "Admin",
+          created_at: new Date().toISOString(),
+          joining_date: "2026-10-12"
+        });
+        modified = true;
+      }
+
       if (data.reports && Array.isArray(data.reports)) {
         data.reports.forEach(r => {
           if (r.created_by_user_id === 'usr-ceo-1') { r.created_by_user_id = 'usr-md-1'; modified = true; }
