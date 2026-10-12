@@ -40,8 +40,34 @@ app.get('/api/auth/me', (req, res) => {
   res.json({
     user: req.user,
     permissions: req.permissions,
-    allRoles: ['GM', 'Engineer', 'Supervisor', 'Technician', 'Sales', 'Accounts', 'Projects Manager']
+    allRoles: [
+      'Managing Director (MD)',
+      'CEO',
+      'Admin',
+      'GM',
+      'Engineer',
+      'Supervisor',
+      'Technician',
+      'Sales',
+      'Accounts',
+      'Projects Manager'
+    ]
   });
+});
+
+app.get('/api/auth/roles', (req, res) => {
+  res.json([
+    { id: 1, key: 'MD', role: 'Managing Director (MD)', label: 'MD', description: 'Managing Director - Executive & Strategic Oversight' },
+    { id: 2, key: 'CEO', role: 'CEO', label: 'CEO', description: 'Chief Executive Officer - Executive Operations & Approvals' },
+    { id: 3, key: 'Admin', role: 'Admin', label: 'Admin', description: 'System Administrator - Full Access & Security Control' },
+    { id: 4, key: 'GM', role: 'GM', label: 'GM', description: 'General Manager - Company Operations & Approvals' },
+    { id: 5, key: 'Engineer', role: 'Engineer', label: 'Engineer', description: 'Fire Protection Engineer - Technical Reviews & Service' },
+    { id: 6, key: 'Supervisor', role: 'Supervisor', label: 'Supervisor', description: 'Field Supervisor - Service Teams & Checklists' },
+    { id: 7, key: 'Technician', role: 'Technician', label: 'Technician', description: 'Certified Service Technician - Field Inspections' },
+    { id: 8, key: 'Sales', role: 'Sales', label: 'Sales', description: 'Commercial Sales - AMC & Quotations' },
+    { id: 9, key: 'Accounts', role: 'Accounts', label: 'Accounts', description: 'Finance & Billing - Invoices, Payments & Ledgers' },
+    { id: 10, key: 'Projects Manager', role: 'Projects Manager', label: 'Projects Manager', description: 'Projects & Fit-out Operations Manager' }
+  ]);
 });
 
 // --- DATABASE BACKUP (GM, Engineer, Supervisor; Forbidden for Tech & Sales) ---
@@ -169,22 +195,88 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(403).json({ error: 'Account Inactive', message: 'Your staff account is currently deactivated. Please contact your manager.' });
   }
 
-  const expectedSecret = (user.password || user.pin || '1234').toString().trim();
+  const expectedSecret = (user.password || user.pin || '').toString().trim();
+  if (!expectedSecret) {
+    return res.status(401).json({ error: 'Password Not Set', message: 'No password has been configured for this account. Please contact an Administrator.' });
+  }
   if (!verifyPassword(inputSecret, expectedSecret)) {
     db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Failed login attempt for user ${user.name}`, { status: 'FAILED' });
     return res.status(401).json({ error: 'Incorrect Password', message: 'Invalid password or PIN entered. Please try again.' });
   }
 
+  // Check if temporary password has expired (24 hours)
+  if (user.temp_password_active && user.temp_password_expires_at) {
+    const expiresAt = new Date(user.temp_password_expires_at).getTime();
+    if (Date.now() > expiresAt) {
+      db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Temporary password expired for user ${user.name}`, { status: 'FAILED' });
+      return res.status(401).json({ 
+        error: 'Password Expired', 
+        message: 'Your temporary password has expired (valid for 24 hours). Please contact an Administrator to reset your password.' 
+      });
+    }
+  }
+
   const userRole = normalizeRole(user.role);
+  const nowIso = new Date().toISOString();
+
+  // Update last_login
+  db.update('users', user.id, {
+    last_login: nowIso
+  });
+  user.last_login = nowIso;
 
   // Audit login
   db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully (${userRole})`, { status: 'SUCCESS' });
+
+  const mustChangePassword = Boolean(user.must_change_password || user.temp_password_active);
 
   res.json({
     message: `Welcome back, ${user.name}!`,
     user: sanitizeUser({ ...user, role: userRole }),
     permissions: ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.Technician,
-    token: `token-${user.id}-${Date.now()}`
+    token: `token-${user.id}-${Date.now()}`,
+    must_change_password: mustChangePassword
+  });
+});
+
+// Self change password endpoint (used upon forced password reset or normal self-service)
+app.post('/api/auth/change-password', (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!req.user || req.user.id === 'guest') {
+    return res.status(401).json({ error: 'Unauthorized', message: 'You must be signed in to change your password.' });
+  }
+
+  const cleanNew = (newPassword || '').toString().trim();
+  if (!cleanNew || cleanNew.length < 3) {
+    return res.status(400).json({ error: 'Password Required', message: 'New password must be at least 3 characters.' });
+  }
+
+  const user = db.getById('users', req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  // If user doesn't have must_change_password flag, verify current password
+  if (!user.must_change_password && !user.temp_password_active) {
+    const expectedCurrent = (user.password || user.pin || '').toString().trim();
+    if (expectedCurrent && !verifyPassword(currentPassword, expectedCurrent)) {
+      return res.status(400).json({ error: 'Incorrect Current Password', message: 'Current password entered is incorrect.' });
+    }
+  }
+
+  const hashed = hashPassword(cleanNew);
+  const updated = db.update('users', user.id, {
+    password: hashed,
+    pin: hashed,
+    must_change_password: false,
+    temp_password_active: false,
+    temp_password_expires_at: null,
+    password_updated_at: new Date().toISOString()
+  });
+
+  db.logAudit(req.user.id, 'CHANGE_PASSWORD', 'users', user.id, `User ${user.name} changed their password`);
+
+  res.json({
+    message: 'Password changed successfully.',
+    user: sanitizeUser(updated)
   });
 });
 
@@ -212,8 +304,8 @@ app.post('/api/auth/switch-role', (req, res) => {
   // If password or PIN is provided, validate it
   if (password || pin) {
     const inputSecret = (password || pin).toString().trim();
-    const expectedSecret = (targetUser.password || targetUser.pin || '1234').toString().trim();
-    if (inputSecret !== expectedSecret) {
+    const expectedSecret = (targetUser.password || targetUser.pin || '').toString().trim();
+    if (!verifyPassword(inputSecret, expectedSecret)) {
       return res.status(401).json({ error: 'Incorrect Password', message: 'Password or PIN entered is incorrect.' });
     }
   }
@@ -365,11 +457,107 @@ app.post('/api/users/:id/password', (req, res) => {
   const hashed = hashPassword(cleanPass);
   const updated = db.update('users', target.id, {
     password: hashed,
-    pin: hashed
+    pin: hashed,
+    must_change_password: false,
+    temp_password_active: false,
+    temp_password_expires_at: null,
+    password_updated_at: new Date().toISOString()
   });
 
   db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role})`);
   res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated) });
+});
+
+// Admin & Executive Advanced Password Reset (Part 3 Requirements):
+// 1. Generate 24-hour time-limited temporary password
+// 2. Force password change on next login
+// 3. Deactivate or reactivate account
+app.post('/api/users/:id/reset-password', (req, res) => {
+  const isExecutive = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role);
+  if (!isExecutive && !req.permissions?.canManageUsers) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Administrators and Executive Management can reset staff passwords.' });
+  }
+
+  const target = db.getById('users', req.params.id);
+  if (!target) return res.status(404).json({ error: 'User not found' });
+
+  const { mode, newPassword, deactivate } = req.body; // mode: 'temp' | 'force' | 'set' | 'toggle_status'
+
+  if (deactivate !== undefined) {
+    const newStatus = deactivate ? 'Inactive' : 'Active';
+    const updated = db.update('users', target.id, { status: newStatus });
+    db.logAudit(req.user.id, 'STATUS_CHANGE', 'users', target.id, `Account status for ${target.name} changed to ${newStatus}`);
+    return res.json({
+      message: `Account status updated to ${newStatus}`,
+      user: sanitizeUser(updated)
+    });
+  }
+
+  if (mode === 'temp') {
+    // Generate secure temporary random password (alphanumeric, 8 chars)
+    const crypto = require('crypto');
+    const plainTemp = 'FX-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    const hashedTemp = hashPassword(plainTemp);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+
+    const updated = db.update('users', target.id, {
+      password: hashedTemp,
+      pin: hashedTemp,
+      temp_password_active: true,
+      temp_password_expires_at: expiresAt,
+      must_change_password: true,
+      password_updated_at: new Date().toISOString()
+    });
+
+    db.logAudit(req.user.id, 'RESET_PASSWORD_TEMP', 'users', target.id, `Temporary password issued for ${target.name} (${target.role}); valid for 24 hours`);
+
+    return res.json({
+      message: `Temporary password generated for ${target.name}. It will expire in 24 hours.`,
+      tempPassword: plainTemp,
+      expiresAt,
+      user: sanitizeUser(updated)
+    });
+  }
+
+  if (mode === 'force') {
+    const updated = db.update('users', target.id, {
+      must_change_password: true,
+      password_updated_at: new Date().toISOString()
+    });
+
+    db.logAudit(req.user.id, 'FORCE_PASSWORD_CHANGE', 'users', target.id, `Forced password change on next login for ${target.name} (${target.role})`);
+
+    return res.json({
+      message: `User ${target.name} will be required to change password on next login.`,
+      user: sanitizeUser(updated)
+    });
+  }
+
+  if (mode === 'set') {
+    const cleanPass = (newPassword || '').toString().trim();
+    if (!cleanPass || cleanPass.length < 3) {
+      return res.status(400).json({ error: 'Password Required', message: 'Password must be at least 3 characters.' });
+    }
+
+    const hashed = hashPassword(cleanPass);
+    const updated = db.update('users', target.id, {
+      password: hashed,
+      pin: hashed,
+      must_change_password: false,
+      temp_password_active: false,
+      temp_password_expires_at: null,
+      password_updated_at: new Date().toISOString()
+    });
+
+    db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password manually set for ${target.name} (${target.role})`);
+
+    return res.json({
+      message: `Password for ${target.name} updated successfully.`,
+      user: sanitizeUser(updated)
+    });
+  }
+
+  res.status(400).json({ error: 'Invalid Mode', message: 'Mode must be temp, force, set, or specify deactivate.' });
 });
 
 app.delete('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {

@@ -826,6 +826,27 @@
   "quotations": [],
   "audit_logs": [
     {
+      "id": "aud-1791814648027-664",
+      "user_id": "usr-admin-test",
+      "user_name": "usr-admin-test",
+      "user_role": "Unknown",
+      "action": "ADMIN_RESET_PASSWORD",
+      "module": "users",
+      "resource": "users",
+      "entity": "users",
+      "entity_id": "usr-test-1",
+      "record_id": "usr-test-1",
+      "details": "Generated 24-hour temporary password for Test Staff",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-12T14:17:28.006Z",
+      "formatted_date": "12 Oct 2026",
+      "formatted_time": "05:17:28 PM",
+      "bahrain_date": "12 Oct 2026",
+      "bahrain_time": "12 Oct 2026 05:17:28 PM"
+    },
+    {
       "id": "aud-1791802589485-208",
       "user_id": "usr-md-1",
       "user_name": "Wissam Jamal Hussein",

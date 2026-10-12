@@ -614,9 +614,22 @@ function verifyPassword(inputPassword, storedPassword) {
 function sanitizeUser(user) {
   if (!user) return null;
   const { password, pin, ...safe } = user;
+  
+  let resetStatus = 'Active';
+  if (user.temp_password_active) {
+    if (user.temp_password_expires_at && new Date(user.temp_password_expires_at).getTime() < Date.now()) {
+      resetStatus = 'Temp Expired';
+    } else {
+      resetStatus = 'Temp Password Issued';
+    }
+  } else if (user.must_change_password) {
+    resetStatus = 'Reset Required';
+  }
+
   return {
     ...safe,
-    has_password: Boolean(password || pin)
+    has_password: Boolean(password || pin),
+    password_reset_status: resetStatus
   };
 }
 
@@ -728,14 +741,7 @@ function authMiddleware(req, res, next) {
     const roleCapitalized = normalizeRole(userRole);
     currentUser = {
       id: userId || `usr-${roleCapitalized.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-1`,
-      name: (roleCapitalized === 'Managing Director (MD)' || roleCapitalized === 'Managing Director') ? 'Wissam Jamal Hussein' :
-            roleCapitalized === 'Projects Manager' ? 'Sarah Ali' :
-            roleCapitalized === 'Accounts' ? 'Zahra Hasan' :
-            roleCapitalized === 'Engineer' ? 'John Smith' :
-            roleCapitalized === 'Supervisor' ? 'David Thomas' :
-            roleCapitalized === 'Technician' ? 'Ahmed Mohammed' :
-            roleCapitalized === 'Sales' ? 'Mohammed Alwadhi' :
-            'Eng. Mohamed Hweidi',
+      name: roleCapitalized,
       role: roleCapitalized,
       email: `${roleCapitalized.toLowerCase().replace(/[^a-z0-9]+/g, '')}@firexbahrain.com`,
       designation: roleCapitalized
@@ -763,6 +769,10 @@ function authMiddleware(req, res, next) {
  */
 function requirePermission(permKey) {
   return (req, res, next) => {
+    // Admin has full system access across all modules
+    if (req.user && normalizeRole(req.user.role) === 'Admin') {
+      return next();
+    }
     if (!req.permissions || !req.permissions[permKey]) {
       return res.status(403).json({
         error: "Access Denied",
@@ -779,6 +789,10 @@ function requirePermission(permKey) {
 function requireRole(...allowedRoles) {
   const normAllowed = allowedRoles.map(r => normalizeRole(r));
   return (req, res, next) => {
+    // Admin has full system access across all modules
+    if (req.user && normalizeRole(req.user.role) === 'Admin') {
+      return next();
+    }
     const userRole = req.user ? normalizeRole(req.user.role) : 'None';
     if (!req.user || !normAllowed.includes(userRole)) {
       return res.status(403).json({

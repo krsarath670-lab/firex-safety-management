@@ -29,6 +29,26 @@ export default function LoginView() {
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupError, setSetupError] = useState('');
 
+  const [mustChangePasswordData, setMustChangePasswordData] = useState(null); // { user, token }
+  const [newPasswordValue, setNewPasswordValue] = useState('');
+  const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState('');
+
+  // 10 Standard roles defined in Part 1
+  const ALL_SYSTEM_ROLES = [
+    { id: 1, key: 'MD', role: 'Managing Director (MD)', label: '1. MD', color: 'bg-amber-600', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
+    { id: 2, key: 'CEO', role: 'CEO', label: '2. CEO', color: 'bg-amber-700', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
+    { id: 3, key: 'Admin', role: 'Admin', label: '3. Admin', color: 'bg-rose-700', badgeColor: 'bg-rose-100 text-rose-800 border-rose-300' },
+    { id: 4, key: 'GM', role: 'GM', label: '4. GM', color: 'bg-purple-600', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { id: 5, key: 'Engineer', role: 'Engineer', label: '5. Engineer', color: 'bg-indigo-600', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+    { id: 6, key: 'Supervisor', role: 'Supervisor', label: '6. Supervisor', color: 'bg-blue-600', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200' },
+    { id: 7, key: 'Technician', role: 'Technician', label: '7. Technician', color: 'bg-emerald-600', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { id: 8, key: 'Sales', role: 'Sales', label: '8. Sales', color: 'bg-amber-600', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
+    { id: 9, key: 'Accounts', role: 'Accounts', label: '9. Accounts', color: 'bg-teal-600', badgeColor: 'bg-teal-100 text-teal-800 border-teal-200' },
+    { id: 10, key: 'Projects Manager', role: 'Projects Manager', label: '10. Projects Manager', color: 'bg-cyan-600', badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200' }
+  ];
+
   // Fetch all available active staff users
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -37,10 +57,6 @@ export default function LoginView() {
       if (res.ok) {
         const data = await res.json();
         setUsersList(data);
-        if (data.length > 0) {
-          const gm = data.find(u => u.role === 'GM') || data[0];
-          setSelectedUserId(gm.id);
-        }
       }
     } catch (err) {
       console.warn('Failed loading users list:', err);
@@ -54,12 +70,23 @@ export default function LoginView() {
   }, []);
 
   const handleSelectRole = (role) => {
-    const found = usersList.find(u => u.role === role || (role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)));
-    if (found) {
-      setSelectedUserId(found.id);
-      setPassword('');
-      setLoginError('');
+    // When a role is clicked, if an account exists for this role, select that account
+    // Never bypass authentication or auto-fill password
+    const matches = usersList.filter(u => 
+      u.role === role || 
+      (role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role))
+    );
+    if (matches.length > 0) {
+      setSelectedUserId(matches[0].id);
+      if (matches[0].username) {
+        setLoginUsername(matches[0].username);
+      }
+    } else {
+      setSelectedUserId('');
+      setLoginUsername('');
     }
+    setPassword('');
+    setLoginError('');
   };
 
   // Submit standard login
@@ -69,11 +96,11 @@ export default function LoginView() {
 
     const typedUsername = loginUsername.trim();
     if (!typedUsername && !selectedUserId) {
-      setLoginError('Please enter your username or select a staff account');
+      setLoginError('Please enter your username or select your registered account');
       return;
     }
     if (!password) {
-      setLoginError('Please enter your password or PIN');
+      setLoginError('Please enter your assigned password or PIN');
       return;
     }
 
@@ -87,7 +114,12 @@ export default function LoginView() {
 
       const data = await res.json();
       if (res.ok) {
-        login(data.user, data.permissions);
+        if (data.must_change_password) {
+          // Trigger password change modal
+          setMustChangePasswordData({ user: data.user, permissions: data.permissions });
+        } else {
+          login(data.user, data.permissions);
+        }
       } else {
         setLoginError(data.message || 'Incorrect password or PIN. Please try again.');
       }
@@ -95,6 +127,46 @@ export default function LoginView() {
       setLoginError('Network connection error. Please verify your connection.');
     } finally {
       setLoginLoading(false);
+    }
+  };
+
+  const handleCompletePasswordChange = async (e) => {
+    if (e) e.preventDefault();
+    setChangePasswordError('');
+    if (!newPasswordValue || newPasswordValue.length < 3) {
+      setChangePasswordError('Password must be at least 3 characters.');
+      return;
+    }
+    if (newPasswordValue !== confirmPasswordValue) {
+      setChangePasswordError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setChangePasswordLoading(true);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': mustChangePasswordData.user.id,
+          'x-user-role': mustChangePasswordData.user.role
+        },
+        body: JSON.stringify({
+          newPassword: newPasswordValue.trim()
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        login(data.user, mustChangePasswordData.permissions);
+        setMustChangePasswordData(null);
+      } else {
+        setChangePasswordError(data.message || 'Failed to update password.');
+      }
+    } catch {
+      setChangePasswordError('Network connection error while updating password.');
+    } finally {
+      setChangePasswordLoading(false);
     }
   };
 
@@ -387,39 +459,47 @@ export default function LoginView() {
               </div>
             )}
 
-            {/* Quick Role Selector Pills */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Quick Pick Role:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { role: 'Managing Director (MD)', label: 'Managing Director (MD)', color: 'bg-amber-600' },
-                  { role: 'GM', label: 'GM', color: 'bg-purple-600' },
-                  { role: 'Engineer', label: 'Engineer', color: 'bg-indigo-600' },
-                  { role: 'Supervisor', label: 'Supervisor', color: 'bg-blue-600' },
-                  { role: 'Technician', label: 'Technician', color: 'bg-emerald-600' },
-                  { role: 'Sales', label: 'Sales', color: 'bg-amber-600' },
-                  { role: 'Accounts', label: 'Accounts', color: 'bg-teal-600' },
-                  { role: 'Projects Manager', label: 'Projects Mgr', color: 'bg-cyan-600' }
-                ].map((r) => {
-                  const isSelected = selectedUser?.role === r.role || (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser?.role));
-                  const hasUserInRole = usersList.some(u => u.role === r.role || (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)));
+            {/* 10 Standard Application Roles (Part 1 Requirements) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                  Available Roles (10 System Roles):
+                </label>
+                <span className="text-[10px] text-slate-400 font-medium">Select to filter user</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                {ALL_SYSTEM_ROLES.map((r) => {
+                  const hasUserInRole = usersList.some(u => 
+                    u.role === r.role || 
+                    (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role))
+                  );
+                  const isRoleSelected = selectedUser?.role === r.role || 
+                    (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser?.role));
+
                   return (
                     <button
-                      key={r.role}
+                      key={r.id}
                       type="button"
-                      disabled={!hasUserInRole}
                       onClick={() => handleSelectRole(r.role)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
-                        isSelected
-                          ? `${r.color} text-white border-transparent shadow-sm scale-105`
+                      className={`p-2 rounded-xl text-left border transition-all flex flex-col justify-between ${
+                        isRoleSelected
+                          ? `${r.color} text-white border-transparent shadow-md scale-[1.02]`
                           : hasUserInRole
-                            ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                            : 'bg-slate-50 text-slate-400 border-slate-100 opacity-50 cursor-not-allowed'
+                            ? 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200 hover:border-slate-300'
+                            : 'bg-slate-50/60 text-slate-400 border-dashed border-slate-200 hover:bg-slate-50'
                       }`}
                     >
-                      {r.label}
+                      <span className={`text-[11px] font-black leading-tight block ${isRoleSelected ? 'text-white' : 'text-slate-800'}`}>
+                        {r.label}
+                      </span>
+                      <span className={`text-[9px] font-bold mt-1 block truncate ${
+                        isRoleSelected 
+                          ? 'text-white/80' 
+                          : hasUserInRole ? 'text-emerald-600' : 'text-slate-400'
+                      }`}>
+                        {hasUserInRole ? '● Registered' : '○ Not added yet'}
+                      </span>
                     </button>
                   );
                 })}
@@ -429,7 +509,7 @@ export default function LoginView() {
             {/* Username Sign-in */}
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Username:
+                Username / Email / Mobile:
               </label>
               <div className="relative">
                 <div className="absolute left-3.5 top-3.5 text-slate-400">
@@ -438,7 +518,7 @@ export default function LoginView() {
                 <input
                   type="text"
                   autoComplete="username"
-                  placeholder="Enter your username (or pick your name below)"
+                  placeholder="Enter your assigned username"
                   value={loginUsername}
                   onChange={(e) => { setLoginUsername(e.target.value); setLoginError(''); }}
                   className="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
@@ -449,21 +529,26 @@ export default function LoginView() {
             {/* User Account Dropdown */}
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Select User Name:
+                Or Select Registered User:
               </label>
               <div className="relative">
                 <select
                   value={selectedUserId}
                   onChange={(e) => {
                     setSelectedUserId(e.target.value);
+                    const chosen = usersList.find(u => u.id === e.target.value);
+                    if (chosen && chosen.username) {
+                      setLoginUsername(chosen.username);
+                    }
                     setPassword('');
                     setLoginError('');
                   }}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 appearance-none pr-10 text-xs sm:text-sm"
                 >
+                  <option value="">-- Choose User Account ({usersList.length} registered) --</option>
                   {usersList.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.name} — {u.role} ({u.designation || u.role})
+                      {u.name} — {u.role} {u.username ? `(@${u.username})` : ''}
                     </option>
                   ))}
                 </select>
@@ -478,6 +563,8 @@ export default function LoginView() {
                   <div className="flex items-center gap-2">
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white ${
                       ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-600' :
+                      selectedUser.role === 'CEO' ? 'bg-amber-700' :
+                      selectedUser.role === 'Admin' ? 'bg-rose-700' :
                       selectedUser.role === 'Sales' ? 'bg-amber-600' :
                       selectedUser.role === 'GM' ? 'bg-purple-600' :
                       selectedUser.role === 'Engineer' ? 'bg-indigo-600' :
@@ -489,11 +576,15 @@ export default function LoginView() {
                     </div>
                     <div>
                       <span className="text-xs font-bold text-slate-900 block leading-tight">{selectedUser.name}</span>
-                      <span className="text-[10px] text-slate-500 block leading-tight">{selectedUser.designation || selectedUser.role}</span>
+                      <span className="text-[10px] text-slate-500 block leading-tight">
+                        {selectedUser.username ? `@${selectedUser.username} • ` : ''}{selectedUser.designation || selectedUser.role}
+                      </span>
                     </div>
                   </div>
                   <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                     ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                    selectedUser.role === 'CEO' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
+                    selectedUser.role === 'Admin' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
                     selectedUser.role === 'Sales' ? 'bg-amber-100 text-amber-800' :
                     selectedUser.role === 'GM' ? 'bg-purple-100 text-purple-800' :
                     selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' :
@@ -520,8 +611,7 @@ export default function LoginView() {
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  autoFocus
-                  placeholder="Enter password or PIN"
+                  placeholder="Enter assigned password or PIN"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
@@ -535,7 +625,7 @@ export default function LoginView() {
                 </button>
               </div>
               <p className="text-[10px] text-slate-400 mt-1">
-                GM, Engineer, and Supervisor can change passwords in Staff Management.
+                Users authenticate with credentials assigned by Management or Administrator.
               </p>
             </div>
 
@@ -558,7 +648,7 @@ export default function LoginView() {
             {/* Helper Footer */}
             <div className="pt-2 text-center border-t border-slate-100">
               <span className="text-[11px] text-slate-500">
-                Staff can be added or updated from <strong className="text-navy-900 font-bold">Staff Management</strong> inside the app.
+                Staff accounts and access rights are managed in <strong className="text-navy-900 font-bold">User Management</strong>.
               </span>
             </div>
 
@@ -566,6 +656,74 @@ export default function LoginView() {
         )}
 
       </div>
+
+      {/* FORCE PASSWORD CHANGE MODAL */}
+      {mustChangePasswordData && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white max-w-sm w-full rounded-2xl p-6 shadow-2xl space-y-4 text-xs">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto">
+                <KeyRound className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-slate-900">
+                Password Change Required
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Welcome <strong>{mustChangePasswordData.user.name}</strong>. An Administrator has reset your password or issued a temporary code. Please create a new personal password to continue.
+              </p>
+            </div>
+
+            {changePasswordError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                <span className="font-semibold">{changePasswordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCompletePasswordChange} className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">New Password / PIN *</label>
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  placeholder="Minimum 3 characters"
+                  value={newPasswordValue}
+                  onChange={(e) => setNewPasswordValue(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Confirm New Password *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter password"
+                  value={confirmPasswordValue}
+                  onChange={(e) => setConfirmPasswordValue(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={changePasswordLoading}
+                className="w-full h-11 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition-all disabled:opacity-50 mt-2"
+              >
+                {changePasswordLoading ? (
+                  <span>Updating Password...</span>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>Set New Password &amp; Open App</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

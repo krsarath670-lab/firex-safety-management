@@ -1718,6 +1718,7 @@ class Database {
       timestamp: now.toISOString(),
       formatted_date: bahrainDate,
       formatted_time: bahrainTime,
+      bahrain_date: bahrainDate,
       bahrain_time: bahrainFull
     };
 

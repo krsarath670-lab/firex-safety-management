@@ -186,9 +186,6 @@ export default function LoginModal({ isOpen, onClose }) {
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Enter Password / PIN
               </label>
-              <span className="text-[11px] text-blue-600 font-semibold cursor-pointer" onClick={() => setPassword('1234')}>
-                Fill Default (1234)
-              </span>
             </div>
 
             <div className="relative">
@@ -198,7 +195,7 @@ export default function LoginModal({ isOpen, onClose }) {
               <input
                 type={showPassword ? 'text' : 'password'}
                 autoFocus
-                placeholder="Enter password or 4-digit PIN"
+                placeholder="Enter your assigned password or PIN"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
@@ -212,7 +209,7 @@ export default function LoginModal({ isOpen, onClose }) {
               </button>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              Managers (GM, Engineer, Supervisor) can create or change passwords in Staff Management.
+              Users authenticate with credentials assigned by Management or Administrator.
             </p>
           </div>
 
@@ -235,7 +232,7 @@ export default function LoginModal({ isOpen, onClose }) {
           {/* Note / Hint */}
           <div className="pt-2 text-center border-t border-slate-100">
             <span className="text-[11px] text-slate-500">
-              Initial Testing Password for all accounts is: <strong className="text-navy-900 font-mono">1234</strong>
+              Staff accounts and credentials are encrypted and protected.
             </span>
           </div>
 

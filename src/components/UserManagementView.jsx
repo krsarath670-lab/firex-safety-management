@@ -12,7 +12,7 @@ export default function UserManagementView() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All'); // 'All' | 'Technician' | 'Sales' | 'Management'
+  const [activeFilter, setActiveFilter] = useState('All');
   
   // Modal State
   const [modalMode, setModalMode] = useState(null); // null | 'add' | 'edit'
@@ -21,6 +21,8 @@ export default function UserManagementView() {
   const [passwordModalUser, setPasswordModalUser] = useState(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+  const [tempPasswordResult, setTempPasswordResult] = useState(null); // { tempPassword, expiresAt }
+  const [copiedTemp, setCopiedTemp] = useState(false);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -261,9 +263,75 @@ export default function UserManagementView() {
     }
     setPasswordModalUser(user);
     setNewPasswordInput('');
+    setTempPasswordResult(null);
+    setCopiedTemp(false);
   };
 
-  // Save New Password / PIN
+  // Generate 24-hour temporary password (shown once to Admin with copy button)
+  const handleGenerateTempPassword = async () => {
+    if (!passwordModalUser) return;
+    setSavingPassword(true);
+    try {
+      const res = await fetch(`/api/users/${passwordModalUser.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify({ mode: 'temp' })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setTempPasswordResult({
+          tempPassword: data.tempPassword,
+          expiresAt: data.expiresAt
+        });
+        showToast(`Temporary password generated for ${passwordModalUser.name}. Valid for 24h.`, 'success');
+        await loadUsers();
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed generating temporary password', 'error');
+      }
+    } catch {
+      showToast('Network error generating temporary password', 'error');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // Force password change on next login
+  const handleForcePasswordChange = async () => {
+    if (!passwordModalUser) return;
+    setSavingPassword(true);
+    try {
+      const res = await fetch(`/api/users/${passwordModalUser.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-role': currentUser.role,
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify({ mode: 'force' })
+      });
+
+      if (res.ok) {
+        showToast(`User ${passwordModalUser.name} will be prompted to set a new password on their next login.`, 'success');
+        setPasswordModalUser(null);
+        await loadUsers();
+      } else {
+        const err = await res.json();
+        showToast(err.message || 'Failed forcing password change', 'error');
+      }
+    } catch {
+      showToast('Network error forcing password change', 'error');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // Save New Password / PIN directly
   const handleSavePassword = async (e) => {
     if (e) e.preventDefault();
     if (!newPasswordInput || newPasswordInput.trim().length < 3) {
@@ -273,14 +341,14 @@ export default function UserManagementView() {
 
     setSavingPassword(true);
     try {
-      const res = await fetch(`/api/users/${passwordModalUser.id}/password`, {
+      const res = await fetch(`/api/users/${passwordModalUser.id}/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-role': currentUser.role,
           'x-user-id': currentUser.id
         },
-        body: JSON.stringify({ newPassword: newPasswordInput.trim() })
+        body: JSON.stringify({ mode: 'set', newPassword: newPasswordInput.trim() })
       });
 
       if (res.ok) {
@@ -332,30 +400,41 @@ export default function UserManagementView() {
     );
   }
 
-  // Filter calculations
-  const totalTechnicians = users.filter(u => u.role === 'Technician').length;
-  const totalSales = users.filter(u => u.role === 'Sales').length;
-  const totalManagement = users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor', 'CEO', 'Admin'].includes(u.role)).length;
-  const totalAccounts = users.filter(u => u.role === 'Accounts').length;
-  const totalProjects = users.filter(u => u.role === 'Projects Manager').length;
+  // Filter calculations for all 10 roles
+  const countMD = users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)).length;
+  const countCEO = users.filter(u => u.role === 'CEO').length;
+  const countAdmin = users.filter(u => u.role === 'Admin').length;
+  const countGM = users.filter(u => u.role === 'GM').length;
+  const countEngineer = users.filter(u => u.role === 'Engineer').length;
+  const countSupervisor = users.filter(u => u.role === 'Supervisor').length;
+  const countTechnician = users.filter(u => u.role === 'Technician').length;
+  const countSales = users.filter(u => u.role === 'Sales').length;
+  const countAccounts = users.filter(u => u.role === 'Accounts').length;
+  const countProjects = users.filter(u => ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(u.role)).length;
 
   const filteredUsers = users.filter(u => {
     // Role filter
+    if (activeFilter === 'MD' && !['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)) return false;
+    if (activeFilter === 'CEO' && u.role !== 'CEO') return false;
+    if (activeFilter === 'Admin' && u.role !== 'Admin') return false;
+    if (activeFilter === 'GM' && u.role !== 'GM') return false;
+    if (activeFilter === 'Engineer' && u.role !== 'Engineer') return false;
+    if (activeFilter === 'Supervisor' && u.role !== 'Supervisor') return false;
     if (activeFilter === 'Technician' && u.role !== 'Technician') return false;
     if (activeFilter === 'Sales' && u.role !== 'Sales') return false;
     if (activeFilter === 'Accounts' && u.role !== 'Accounts') return false;
-    if (activeFilter === 'Projects' && u.role !== 'Projects Manager') return false;
-    if (activeFilter === 'Management' && !['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor', 'CEO', 'Admin'].includes(u.role)) return false;
+    if (activeFilter === 'Projects Manager' && !['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(u.role)) return false;
 
     // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = (u.name || '').toLowerCase().includes(q);
+      const matchUsername = (u.username || '').toLowerCase().includes(q);
       const matchPhone = (u.phone || '').toLowerCase().includes(q);
       const matchEmail = (u.email || '').toLowerCase().includes(q);
       const matchDesig = (u.designation || '').toLowerCase().includes(q);
       const matchRole = (u.role || '').toLowerCase().includes(q);
-      return matchName || matchPhone || matchEmail || matchDesig || matchRole;
+      return matchName || matchUsername || matchPhone || matchEmail || matchDesig || matchRole;
     }
     return true;
   });
@@ -485,15 +564,20 @@ export default function UserManagementView() {
           )}
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
+        {/* Filter Pills for All 10 Roles */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           {[
             { id: 'All', label: `All Staff (${users.length})` },
-            { id: 'Technician', label: `Technicians (${totalTechnicians})` },
-            { id: 'Sales', label: `Sales Team (${totalSales})` },
-            { id: 'Accounts', label: `Accounts (${totalAccounts})` },
-            { id: 'Projects', label: `Projects Mgr (${totalProjects})` },
-            { id: 'Management', label: `Management (${totalManagement})` }
+            { id: 'MD', label: `MD (${countMD})` },
+            { id: 'CEO', label: `CEO (${countCEO})` },
+            { id: 'Admin', label: `Admin (${countAdmin})` },
+            { id: 'GM', label: `GM (${countGM})` },
+            { id: 'Engineer', label: `Engineer (${countEngineer})` },
+            { id: 'Supervisor', label: `Supervisor (${countSupervisor})` },
+            { id: 'Technician', label: `Technician (${countTechnician})` },
+            { id: 'Sales', label: `Sales (${countSales})` },
+            { id: 'Accounts', label: `Accounts (${countAccounts})` },
+            { id: 'Projects Manager', label: `Projects Mgr (${countProjects})` }
           ].map(f => (
             <button
               key={f.id}
@@ -604,8 +688,26 @@ export default function UserManagementView() {
                     </div>
                   </div>
 
-                  {/* Contact Details & Credentials */}
+                  {/* Contact Details, Username, Credentials & Last Login */}
                   <div className="mt-3 pt-2.5 border-t border-slate-100 text-xs space-y-1.5">
+                    {/* Username & Reset Status */}
+                    <div className="flex items-center justify-between text-slate-700">
+                      <span className="font-mono text-[11px] font-bold text-navy-900 bg-slate-100 px-2 py-0.5 rounded">
+                        @{u.username || u.id}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        u.password_reset_status === 'Temp Password Issued'
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : u.password_reset_status === 'Reset Required'
+                          ? 'bg-orange-100 text-orange-800 border-orange-300'
+                          : u.password_reset_status === 'Temp Expired'
+                          ? 'bg-red-100 text-red-800 border-red-300'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {u.password_reset_status || (u.has_password ? 'Active' : 'No Password')}
+                      </span>
+                    </div>
+
                     <div className="flex items-center justify-between text-slate-600">
                       <span className="flex items-center gap-1.5 font-medium truncate">
                         <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -613,8 +715,8 @@ export default function UserManagementView() {
                           {u.phone || '+973 3000 0000'}
                         </a>
                       </span>
-                      <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold flex items-center gap-1">
-                        <Key className="w-2.5 h-2.5 text-slate-400" /> Protected
+                      <span className="font-mono text-[10px] text-slate-500 font-medium">
+                        Last login: {u.last_login ? new Date(u.last_login).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Never'}
                       </span>
                     </div>
 
@@ -1062,53 +1164,130 @@ export default function UserManagementView() {
         </div>
       )}
 
-      {/* DEDICATED PASSWORD / PIN MODAL */}
+      {/* DEDICATED PASSWORD / PIN & RESET MODAL */}
       {passwordModalUser && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl space-y-4 text-xs animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center">
-                <Key className="w-5 h-5" />
+          <div className="bg-white max-w-md w-full rounded-2xl p-5 shadow-2xl space-y-4 text-xs animate-in fade-in">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Manage Password &amp; Access</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {passwordModalUser.name} • <span className="font-bold text-navy-900">{passwordModalUser.role}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900">Set App Password / PIN</h3>
-                <p className="text-[11px] text-slate-500">
-                  {passwordModalUser.name} ({passwordModalUser.role})
-                </p>
-              </div>
+              <button
+                onClick={() => setPasswordModalUser(null)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleSavePassword} className="space-y-3">
+            {/* Generated Temporary Password Display (Shown once to Admin) */}
+            {tempPasswordResult && (
+              <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2.5 animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 text-amber-900 font-black text-xs uppercase tracking-wide">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>Time-Limited Temporary Password (24h)</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Provide this one-time code to <strong>{passwordModalUser.name}</strong>. It will expire in 24 hours. They will be required to choose a new password upon signing in.
+                </p>
+                <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-amber-200">
+                  <span className="font-mono text-base font-black text-slate-900 tracking-widest select-all">
+                    {tempPasswordResult.tempPassword}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(tempPasswordResult.tempPassword);
+                      setCopiedTemp(true);
+                      setTimeout(() => setCopiedTemp(false), 2500);
+                      showToast('Temporary password copied to clipboard', 'success');
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-sm"
+                  >
+                    {copiedTemp ? <Check className="w-3.5 h-3.5" /> : <Key className="w-3.5 h-3.5" />}
+                    <span>{copiedTemp ? 'Copied!' : 'Copy Code'}</span>
+                  </button>
+                </div>
+                <div className="text-[10px] text-amber-700 font-semibold">
+                  ⏰ Expires at: {new Date(tempPasswordResult.expiresAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Bahrain', hour: '2-digit', minute: '2-digit' })}, {new Date(tempPasswordResult.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Asia/Bahrain' })} (Bahrain Time)
+                </div>
+              </div>
+            )}
+
+            {/* Admin Reset Options Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                disabled={savingPassword}
+                onClick={handleGenerateTempPassword}
+                className="p-3 bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-200 rounded-xl text-left transition-all group disabled:opacity-50"
+              >
+                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
+                  Option A
+                </span>
+                <span className="text-xs font-black text-slate-900 block mt-0.5 group-hover:text-amber-800">
+                  Issue 24h Temp Password
+                </span>
+                <span className="text-[10px] text-slate-500 mt-1 block leading-snug">
+                  Generates a random secure code shown once with copy button.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                disabled={savingPassword}
+                onClick={handleForcePasswordChange}
+                className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-xl text-left transition-all group disabled:opacity-50"
+              >
+                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
+                  Option B
+                </span>
+                <span className="text-xs font-black text-slate-900 block mt-0.5 group-hover:text-blue-800">
+                  Force Password Change
+                </span>
+                <span className="text-[10px] text-slate-500 mt-1 block leading-snug">
+                  Forces user to choose a new password on their next login attempt.
+                </span>
+              </button>
+            </div>
+
+            {/* Option C: Direct Manual Password Assignment */}
+            <form onSubmit={handleSavePassword} className="pt-2 border-t border-slate-100 space-y-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">New Password / PIN *</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Option C: Set Specific Password / PIN Directly
+                </label>
                 <input
                   type="password"
-                  required
-                  autoFocus
-                  placeholder="Enter new password / PIN"
+                  placeholder="Enter new password / PIN (min 3 chars)"
                   value={newPasswordInput}
                   onChange={(e) => setNewPasswordInput(e.target.value)}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-base font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 tracking-wider"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  The user must enter this password to log in to the application.
-                </p>
               </div>
 
-              <div className="pt-2 flex gap-2">
+              <div className="pt-1 flex gap-2">
                 <button
                   type="button"
                   onClick={() => setPasswordModalUser(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100"
+                  className="flex-1 py-2 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100"
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
-                  disabled={savingPassword}
-                  className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-sm"
+                  disabled={savingPassword || !newPasswordInput}
+                  className="flex-1 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-sm"
                 >
-                  {savingPassword ? 'Saving...' : 'Save Password'}
+                  {savingPassword ? 'Updating...' : 'Set Direct Password'}
                 </button>
               </div>
             </form>
