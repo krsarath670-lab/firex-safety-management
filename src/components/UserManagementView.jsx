@@ -50,6 +50,7 @@ export default function UserManagementView() {
   const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const canManageStaff = isAdmin || isCEO || isMD || isGM || isProjectsManager;
+  const isExecutive = canManageStaff;
 
   // Load all users from backend
   const loadUsers = async () => {
@@ -113,9 +114,8 @@ export default function UserManagementView() {
 
   // Open Edit Modal
   const handleOpenEdit = (user) => {
-    // Check permissions: Engineer & Supervisor can only edit Technician & Sales
-    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
-      showToast('Engineers and Supervisors can only edit Technician and Sales staff.', 'error');
+    if (!canManageStaff) {
+      showToast('Staff editing is restricted to Management roles (Admin, CEO, MD, GM, Projects Manager).', 'error');
       return;
     }
     setSelectedUser(user);

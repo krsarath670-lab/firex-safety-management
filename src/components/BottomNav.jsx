@@ -80,7 +80,7 @@ export default function BottomNav() {
       <div className="max-w-lg mx-auto flex items-center justify-around h-16 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id || (item.id === 'more' && ['reports', 'faults', 'materials', 'settings', 'ai', 'quotations', 'projects'].includes(activeTab));
+          const isActive = activeTab === item.id || (item.id === 'more' && ['reports', 'faults', 'materials', 'settings', 'ai', 'quotations', 'projects', 'users', 'audit_logs'].includes(activeTab));
           
           return (
             <button

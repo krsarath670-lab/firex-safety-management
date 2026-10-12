@@ -301,6 +301,10 @@ app.post('/api/auth/switch-role', (req, res) => {
     return res.status(404).json({ error: `User with role ${role} not found` });
   }
 
+  if (targetUser.status === 'Inactive') {
+    return res.status(403).json({ error: 'Account Inactive', message: 'This staff account is deactivated. Please contact your manager.' });
+  }
+
   // If password or PIN is provided, validate it
   if (password || pin) {
     const inputSecret = (password || pin).toString().trim();
@@ -397,6 +401,12 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
         return res.status(409).json({ error: 'Username Taken', message: `Username "${updates.username}" is already in use.` });
       }
     }
+  }
+  if (!updates.password || typeof updates.password !== 'string' || !updates.password.trim()) {
+    delete updates.password;
+  }
+  if (!updates.pin || typeof updates.pin !== 'string' || !updates.pin.trim()) {
+    delete updates.pin;
   }
   if (updates.password || updates.pin) {
     const cleanPass = (updates.password || updates.pin).toString().trim();
