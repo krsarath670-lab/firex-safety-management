@@ -104,6 +104,8 @@ const ROLE_PERMISSIONS = {
     canReviewReports: true,
     canApproveReports: true,
     canManageUsers: true,
+    canManageRoles: true,
+    canViewAuditLogs: true,
     canManageSettings: true,
     canViewFinancials: true,
     canViewAllJobs: true,
@@ -157,7 +159,7 @@ const ROLE_PERMISSIONS = {
     canDeleteReports: true,
     canReviewReports: true,
     canApproveReports: true,
-    canManageUsers: true,
+    canManageUsers: false,
     canManageSettings: false,
     canViewFinancials: true,
     canViewAllJobs: true,
@@ -204,8 +206,8 @@ const ROLE_PERMISSIONS = {
     canDeleteReports: true,
     canReviewReports: true,
     canApproveReports: true,
-    canManageUsers: true,
-    canManageSettings: true,
+    canManageUsers: false,
+    canManageSettings: false,
     canViewFinancials: true,
     canViewAllJobs: true,
     canAccessAccounts: false,
@@ -405,7 +407,8 @@ const ROLE_PERMISSIONS = {
     canReviewReports: true,
     canApproveReports: true,
     canCompleteReports: true,
-    canManageUsers: false,
+    canManageUsers: true,
+    canManageRoles: true,
     canManageSettings: false,
     canViewFinancials: true,
     canViewInvoices: true,
@@ -467,7 +470,8 @@ const ROLE_PERMISSIONS = {
     canReviewReports: false,
     canApproveReports: false,
     canCompleteReports: false,
-    canManageUsers: false,
+    canManageUsers: true,
+    canManageRoles: true,
     canManageSettings: false,
     canViewFinancials: true,
     canViewAllJobs: true,
@@ -494,7 +498,6 @@ const ROLE_PERMISSIONS = {
     canCloseEmergency: false,
     canDistributeEmergency: false,
     canViewAuditLogs: true,
-    canManageRoles: false,
     canViewAttendance: false,
     canManageAttendance: false
   },
@@ -626,10 +629,25 @@ function sanitizeUser(user) {
     resetStatus = 'Reset Required';
   }
 
+  let createdByName = user.created_by_name;
+  if (!createdByName && user.created_by) {
+    if (user.created_by === 'system') {
+      createdByName = 'System Administrator';
+    } else {
+      const creator = db.getById('users', user.created_by);
+      if (creator) createdByName = creator.name;
+    }
+  }
+
   return {
     ...safe,
     has_password: Boolean(password || pin),
-    password_reset_status: resetStatus
+    password_reset_status: resetStatus,
+    created_by_name: createdByName || user.created_by || 'System',
+    last_reset_by_name: user.last_reset_by_name || null,
+    last_reset_by_role: user.last_reset_by_role || null,
+    last_reset_at: user.last_reset_at || null,
+    last_reset_mode: user.last_reset_mode || null
   };
 }
 

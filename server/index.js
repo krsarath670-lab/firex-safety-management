@@ -317,12 +317,23 @@ app.post('/api/auth/switch-role', (req, res) => {
   });
 });
 
-// --- USERS MANAGEMENT (GM, Engineer, Supervisor; Forbidden for Tech & Sales) ---
+// --- USERS MANAGEMENT (Admin, CEO, MD, GM, Projects Manager; Forbidden for Supervisor, Tech, Sales, Accounts) ---
 app.get('/api/users', (req, res) => {
-  if (req.user.role === 'Technician' || req.user.role === 'Sales') {
+  const isManager = Boolean(req.permissions?.canManageUsers);
+  if (!isManager && !['Supervisor', 'Engineer'].includes(req.user.role)) {
     return res.status(403).json({ error: 'Access Denied', message: 'You do not have permission to browse the user directory.' });
   }
   const users = db.get('users') || [];
+  if (!isManager) {
+    // Non-management operational roles only receive public assignment data (no security or reset metadata)
+    return res.json(users.map(u => ({
+      id: u.id,
+      name: u.name,
+      role: u.role,
+      designation: u.designation,
+      status: u.status
+    })));
+  }
   res.json(users.map(u => sanitizeUser(u)));
 });
 
@@ -330,16 +341,6 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
   const { name, email, role, phone, designation, status, pin, password, notes } = req.body;
   if (!name || !role) {
     return res.status(400).json({ error: 'Name and Role are required' });
-  }
-
-  // Engineer and Supervisor can only add Technician and Sales users
-  if (['Engineer', 'Supervisor'].includes(req.user.role)) {
-    if (!['Technician', 'Sales'].includes(role)) {
-      return res.status(403).json({ 
-        error: 'Access Denied', 
-        message: 'Engineers and Supervisors can only add Technician and Sales staff members.' 
-      });
-    }
   }
 
   const cleanPass = (password || pin || '').toString().trim();
@@ -374,32 +375,18 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     notes: notes || '',
     avatar: initials || 'FS',
     created_by: req.user.id,
+    created_by_name: req.user.name,
+    created_by_role: req.user.role,
     created_at: new Date().toISOString()
   });
 
-  db.logAudit(req.user.id, 'CREATE_USER', 'users', newUser.id, `Created user ${name} with role ${role}`);
+  db.logAudit(req.user.id, 'CREATE_USER', 'users', newUser.id, `Created user ${name} with role ${role} by ${req.user.name}`);
   res.status(201).json(sanitizeUser(newUser));
 });
 
 app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
   const existing = db.getById('users', req.params.id);
   if (!existing) return res.status(404).json({ error: 'User not found' });
-
-  // Engineer and Supervisor can only modify Technician and Sales accounts
-  if (['Engineer', 'Supervisor'].includes(req.user.role)) {
-    if (!['Technician', 'Sales'].includes(existing.role)) {
-      return res.status(403).json({ 
-        error: 'Access Denied', 
-        message: 'Engineers and Supervisors can only modify Technician and Sales accounts.' 
-      });
-    }
-    if (req.body.role && !['Technician', 'Sales'].includes(req.body.role)) {
-      return res.status(403).json({ 
-        error: 'Access Denied', 
-        message: 'Engineers and Supervisors can only assign Technician or Sales role.' 
-      });
-    }
-  }
 
   const updates = { ...req.body };
   if (typeof updates.username === 'string') {
@@ -417,16 +404,21 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
       const hashedPass = hashPassword(cleanPass);
       updates.password = hashedPass;
       updates.pin = hashedPass;
+      updates.last_reset_by_id = req.user.id;
+      updates.last_reset_by_name = req.user.name;
+      updates.last_reset_by_role = req.user.role;
+      updates.last_reset_at = new Date().toISOString();
+      updates.last_reset_mode = 'Password Updated in Edit';
     }
   }
 
   const updated = db.update('users', req.params.id, updates);
-  db.logAudit(req.user.id, 'UPDATE_USER', 'users', req.params.id, `Updated user details for ${existing.name}`);
+  db.logAudit(req.user.id, 'UPDATE_USER', 'users', req.params.id, `Updated user details for ${existing.name} by ${req.user.name}`);
   res.json(sanitizeUser(updated));
 });
 
-// Dedicated Password Management: GM, Admin, Engineer, Supervisor can set password
-app.post('/api/users/:id/password', (req, res) => {
+// Dedicated Password Management: Admin, CEO, MD, GM, Projects Manager can set password
+app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, res) => {
   const { newPassword, pin } = req.body;
   const cleanPass = (newPassword || pin || '').toString().trim();
   if (!cleanPass || cleanPass.length < 3) {
@@ -436,24 +428,6 @@ app.post('/api/users/:id/password', (req, res) => {
   const target = db.getById('users', req.params.id);
   if (!target) return res.status(404).json({ error: 'User not found' });
 
-  const isExecutive = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role);
-  const isEngineerOrSupervisor = ['Engineer', 'Supervisor'].includes(req.user.role);
-  const isSelf = req.user.id === target.id;
-  const isTargetTechOrSales = ['Technician', 'Sales'].includes(target.role);
-
-  if (isExecutive) {
-    // Executive (Managing Director, GM, Admin) can set password for anyone
-  } else if (isEngineerOrSupervisor && isTargetTechOrSales) {
-    // Engineer & Supervisor can set password for Tech and Sales
-  } else if (isSelf) {
-    // Self update
-  } else {
-    return res.status(403).json({ 
-      error: 'Access Denied', 
-      message: 'You do not have permission to change the password for this account.' 
-    });
-  }
-
   const hashed = hashPassword(cleanPass);
   const updated = db.update('users', target.id, {
     password: hashed,
@@ -461,23 +435,23 @@ app.post('/api/users/:id/password', (req, res) => {
     must_change_password: false,
     temp_password_active: false,
     temp_password_expires_at: null,
-    password_updated_at: new Date().toISOString()
+    password_updated_at: new Date().toISOString(),
+    last_reset_by_id: req.user.id,
+    last_reset_by_name: req.user.name,
+    last_reset_by_role: req.user.role,
+    last_reset_at: new Date().toISOString(),
+    last_reset_mode: 'Direct Password Set'
   });
 
-  db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role})`);
+  db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role}) by ${req.user.name}`);
   res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated) });
 });
 
-// Admin & Executive Advanced Password Reset (Part 3 Requirements):
+// Management Advanced Password Reset (Admin, CEO, MD, GM, Projects Manager):
 // 1. Generate 24-hour time-limited temporary password
 // 2. Force password change on next login
 // 3. Deactivate or reactivate account
-app.post('/api/users/:id/reset-password', (req, res) => {
-  const isExecutive = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role);
-  if (!isExecutive && !req.permissions?.canManageUsers) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Administrators and Executive Management can reset staff passwords.' });
-  }
-
+app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (req, res) => {
   const target = db.getById('users', req.params.id);
   if (!target) return res.status(404).json({ error: 'User not found' });
 
@@ -485,8 +459,13 @@ app.post('/api/users/:id/reset-password', (req, res) => {
 
   if (deactivate !== undefined) {
     const newStatus = deactivate ? 'Inactive' : 'Active';
-    const updated = db.update('users', target.id, { status: newStatus });
-    db.logAudit(req.user.id, 'STATUS_CHANGE', 'users', target.id, `Account status for ${target.name} changed to ${newStatus}`);
+    const updated = db.update('users', target.id, { 
+      status: newStatus,
+      status_updated_by_id: req.user.id,
+      status_updated_by_name: req.user.name,
+      status_updated_at: new Date().toISOString()
+    });
+    db.logAudit(req.user.id, 'STATUS_CHANGE', 'users', target.id, `Account status for ${target.name} changed to ${newStatus} by ${req.user.name}`);
     return res.json({
       message: `Account status updated to ${newStatus}`,
       user: sanitizeUser(updated)
@@ -506,10 +485,15 @@ app.post('/api/users/:id/reset-password', (req, res) => {
       temp_password_active: true,
       temp_password_expires_at: expiresAt,
       must_change_password: true,
-      password_updated_at: new Date().toISOString()
+      password_updated_at: new Date().toISOString(),
+      last_reset_by_id: req.user.id,
+      last_reset_by_name: req.user.name,
+      last_reset_by_role: req.user.role,
+      last_reset_at: new Date().toISOString(),
+      last_reset_mode: 'Temporary Password (24h)'
     });
 
-    db.logAudit(req.user.id, 'RESET_PASSWORD_TEMP', 'users', target.id, `Temporary password issued for ${target.name} (${target.role}); valid for 24 hours`);
+    db.logAudit(req.user.id, 'RESET_PASSWORD_TEMP', 'users', target.id, `Temporary password issued for ${target.name} (${target.role}) by ${req.user.name}; valid for 24 hours`);
 
     return res.json({
       message: `Temporary password generated for ${target.name}. It will expire in 24 hours.`,
@@ -522,10 +506,15 @@ app.post('/api/users/:id/reset-password', (req, res) => {
   if (mode === 'force') {
     const updated = db.update('users', target.id, {
       must_change_password: true,
-      password_updated_at: new Date().toISOString()
+      password_updated_at: new Date().toISOString(),
+      last_reset_by_id: req.user.id,
+      last_reset_by_name: req.user.name,
+      last_reset_by_role: req.user.role,
+      last_reset_at: new Date().toISOString(),
+      last_reset_mode: 'Forced Password Change'
     });
 
-    db.logAudit(req.user.id, 'FORCE_PASSWORD_CHANGE', 'users', target.id, `Forced password change on next login for ${target.name} (${target.role})`);
+    db.logAudit(req.user.id, 'FORCE_PASSWORD_CHANGE', 'users', target.id, `Forced password change on next login for ${target.name} (${target.role}) by ${req.user.name}`);
 
     return res.json({
       message: `User ${target.name} will be required to change password on next login.`,
@@ -546,10 +535,15 @@ app.post('/api/users/:id/reset-password', (req, res) => {
       must_change_password: false,
       temp_password_active: false,
       temp_password_expires_at: null,
-      password_updated_at: new Date().toISOString()
+      password_updated_at: new Date().toISOString(),
+      last_reset_by_id: req.user.id,
+      last_reset_by_name: req.user.name,
+      last_reset_by_role: req.user.role,
+      last_reset_at: new Date().toISOString(),
+      last_reset_mode: 'Direct Password Set'
     });
 
-    db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password manually set for ${target.name} (${target.role})`);
+    db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password manually set for ${target.name} (${target.role}) by ${req.user.name}`);
 
     return res.json({
       message: `Password for ${target.name} updated successfully.`,
@@ -563,16 +557,6 @@ app.post('/api/users/:id/reset-password', (req, res) => {
 app.delete('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
   const existing = db.getById('users', req.params.id);
   if (!existing) return res.status(404).json({ error: 'User not found' });
-
-  // Engineer and Supervisor can only delete Technician and Sales accounts
-  if (['Engineer', 'Supervisor'].includes(req.user.role)) {
-    if (!['Technician', 'Sales'].includes(existing.role)) {
-      return res.status(403).json({ 
-        error: 'Access Denied', 
-        message: 'Engineers and Supervisors can only delete Technician and Sales accounts.' 
-      });
-    }
-  }
 
   if (existing.id === req.user.id) {
     return res.status(400).json({ error: 'Cannot delete your own active account.', message: 'You cannot delete your own active account.' });
@@ -3861,6 +3845,10 @@ if (require('fs').existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Fire & Safety Management API running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Fire & Safety Management API running on port ${PORT}`);
+  });
+}
+
+module.exports = { app };

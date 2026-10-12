@@ -51,7 +51,7 @@ async function runTests() {
   assert(permissions.CEO.canViewReports === true, 'CEO can view reports');
   assert(permissions.CEO.canViewAccounts === true, 'CEO can view accounts');
   assert(permissions.CEO.canViewAuditLogs === true, 'CEO can view audit logs');
-  assert(permissions.CEO.canManageUsers === false, 'CEO cannot manage user credentials');
+  assert(permissions.CEO.canManageUsers === true, 'CEO can manage users');
   assert(permissions.CEO.canViewAttendance === false, 'CEO cannot view attendance');
   assert(normalizeRole('CEO') === 'CEO', 'normalizeRole preserves CEO without converting to MD');
 

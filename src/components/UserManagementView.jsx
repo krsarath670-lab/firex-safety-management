@@ -43,15 +43,13 @@ export default function UserManagementView() {
     notes: ''
   });
 
-  // Access control
+  // Access control: Exactly 5 management roles have staff-management permissions
   const isGM = currentUser?.role === 'GM';
-  const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
+  const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role);
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
   const isCEO = currentUser?.role === 'CEO';
-  const isExecutive = isGM || isMD || isAdmin;
-  const isEngineer = currentUser?.role === 'Engineer';
-  const isSupervisor = currentUser?.role === 'Supervisor';
-  const canManageStaff = (isExecutive || isEngineer || isSupervisor) && !isCEO;
+  const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
+  const canManageStaff = isAdmin || isCEO || isMD || isGM || isProjectsManager;
 
   // Load all users from backend
   const loadUsers = async () => {
@@ -202,11 +200,6 @@ export default function UserManagementView() {
 
   // Quick toggle active / inactive
   const handleToggleStatus = async (user) => {
-    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
-      showToast('Restricted: You can only toggle status for Technician and Sales staff.', 'error');
-      return;
-    }
-
     const newStatus = user.status === 'Inactive' ? 'Active' : 'Inactive';
     try {
       const res = await fetch(`/api/users/${user.id}`, {
@@ -257,10 +250,6 @@ export default function UserManagementView() {
 
   // Open Password Modal
   const handleOpenPasswordModal = (user) => {
-    if (!isExecutive && !['Technician', 'Sales'].includes(user.role)) {
-      showToast('Engineers and Supervisors can only manage passwords for Technicians and Sales staff.', 'error');
-      return;
-    }
     setPasswordModalUser(user);
     setNewPasswordInput('');
     setTempPasswordResult(null);
@@ -380,7 +369,7 @@ export default function UserManagementView() {
     setFormData(p => ({ ...p, designation: title }));
   };
 
-  // Gatekeeper: If Technician or Sales tries to open
+  // Gatekeeper: If unauthorized role tries to open
   if (!canManageStaff) {
     return (
       <div className="p-6 text-center max-w-md mx-auto my-12 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
@@ -390,7 +379,7 @@ export default function UserManagementView() {
         <div>
           <h2 className="text-base font-black text-slate-900">Restricted Access</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Staff Directory and App Access provisioning is strictly reserved for <strong>General Managers (GM)</strong>, <strong>Engineers</strong>, and <strong>Supervisors</strong>.
+            Staff Directory &amp; User Provisioning is restricted to authorized Management roles: <strong>Admin</strong>, <strong>CEO</strong>, <strong>MD</strong>, <strong>GM</strong>, and <strong>Projects Manager</strong>.
           </p>
         </div>
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 text-left">
@@ -439,16 +428,6 @@ export default function UserManagementView() {
     return true;
   });
 
-  if (!canManageStaff) {
-    return (
-      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
-        <Shield className="w-10 h-10 text-amber-500 mx-auto" />
-        <h3 className="text-base font-bold text-slate-800">Restricted Administration Module</h3>
-        <p className="text-xs text-slate-500">Only Executive Management and authorized supervisors have permission to manage staff credentials.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 pb-28 max-w-5xl mx-auto">
       
@@ -464,9 +443,7 @@ export default function UserManagementView() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            {isExecutive 
-              ? 'Provision and control mobile app access for Accounts, Projects Manager, Technicians, Sales, Engineers, and Management.'
-              : 'Provision and control mobile app access for Technicians and Sales Personnel.'}
+            Provision staff profiles, assign roles, and control app credentials across all departments.
           </p>
         </div>
 
@@ -476,7 +453,7 @@ export default function UserManagementView() {
           className="h-11 px-4 bg-navy-900 hover:bg-navy-800 active:bg-black text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 border border-navy-800"
         >
           <UserPlus className="w-4 h-4 text-emerald-400" />
-          <span>{isExecutive ? '+ ADD STAFF MEMBER' : '+ ADD TECHNICIAN / SALES'}</span>
+          <span>+ ADD STAFF MEMBER</span>
         </button>
       </div>
 
@@ -619,7 +596,7 @@ export default function UserManagementView() {
             const isInactive = u.status === 'Inactive';
             const isTech = u.role === 'Technician';
             const isSalesRole = u.role === 'Sales';
-            const canModifyThisUser = isExecutive || (['Engineer', 'Supervisor'].includes(currentUser?.role) && ['Technician', 'Sales'].includes(u.role));
+            const canModifyThisUser = canManageStaff;
 
             return (
               <div 
@@ -730,6 +707,20 @@ export default function UserManagementView() {
                         <strong>Note:</strong> {u.notes}
                       </div>
                     )}
+
+                    {/* Account History: Created by & Last Reset by */}
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-500">
+                      <span>
+                        Created by: <strong className="text-slate-800 font-bold">{u.created_by_name || 'System'}</strong>
+                      </span>
+                      {u.last_reset_by_name ? (
+                        <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 font-medium">
+                          Reset by <strong className="font-bold">{u.last_reset_by_name}</strong> {u.last_reset_at ? `(${new Date(u.last_reset_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })})` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">Password not reset</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -867,31 +858,17 @@ export default function UserManagementView() {
                   }}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
                 >
-                  {isExecutive ? (
-                    <>
-                      <option value="Admin">Admin</option>
-                      <option value="CEO">CEO</option>
-                      <option value="Managing Director (MD)">Managing Director (MD)</option>
-                      <option value="GM">GM</option>
-                      <option value="Engineer">Engineer</option>
-                      <option value="Supervisor">Supervisor</option>
-                      <option value="Technician">Technician</option>
-                      <option value="Sales">Sales</option>
-                      <option value="Accounts">Accounts</option>
-                      <option value="Projects Manager">Projects Manager</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="Technician">Technician</option>
-                      <option value="Sales">Sales</option>
-                    </>
-                  )}
+                  <option value="Admin">Admin</option>
+                  <option value="CEO">CEO</option>
+                  <option value="Managing Director (MD)">Managing Director (MD)</option>
+                  <option value="GM">GM</option>
+                  <option value="Engineer">Engineer</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Technician">Technician</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Accounts">Accounts</option>
+                  <option value="Projects Manager">Projects Manager</option>
                 </select>
-                {!isExecutive && (
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    Engineers and Supervisors are authorized to provision <strong>Technicians</strong> and <strong>Sales</strong> personnel.
-                  </p>
-                )}
               </div>
 
               {/* Full Name */}

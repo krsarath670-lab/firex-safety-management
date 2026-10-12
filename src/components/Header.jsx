@@ -311,8 +311,8 @@ export default function Header() {
                     <ChevronDown className="w-3 h-3 text-slate-400 -rotate-90" />
                   </button>
 
-                  {/* If Admin, GM, Managing Director, Engineer, or Supervisor: Quick Link to Staff Passwords */}
-                  {['Admin', 'GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
+                  {/* If 5 Management Roles (Admin, CEO, MD, GM, Projects Manager): Quick Link to Staff Passwords */}
+                  {['Admin', 'admin', 'CEO', 'ceo', 'GM', 'Managing Director (MD)', 'Managing Director', 'MD', 'md', 'managing_director', 'Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role) && (
                     <button
                       onClick={() => {
                         setRoleMenuOpen(false);

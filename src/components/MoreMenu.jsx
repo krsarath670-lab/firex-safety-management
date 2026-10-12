@@ -17,7 +17,7 @@ export default function MoreMenu({ onSelectView }) {
   const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role);
   const isCEO = currentUser?.role === 'CEO';
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
-  const isManagement = (isAdmin || isGM || isMD || ['Engineer', 'Supervisor'].includes(currentUser?.role)) && !isProjectsManager;
+  const canManageStaff = isAdmin || isGM || isMD || isCEO || isProjectsManager;
   const canAccessFinance = isGM || isMD || isCEO || isAdmin || isAccounts || currentUser?.role === 'Engineer';
   const canAccessAudit = isMD || isGM || isCEO || isAdmin;
 
@@ -133,9 +133,9 @@ export default function MoreMenu({ onSelectView }) {
           description: 'Add & manage staff credentials for app access',
           icon: Users,
           iconColor: 'text-purple-600 bg-purple-50',
-          badge: isManagement && !isCEO ? (isAdmin ? 'Admin' : 'Manage') : null,
+          badge: canManageStaff ? (isAdmin ? 'Admin' : 'Manage') : null,
           badgeColor: 'bg-purple-100 text-purple-800',
-          hide: !isManagement || isProjectsManager || isCEO
+          hide: !canManageStaff
         },
         {
           id: 'audit_logs',

@@ -2469,8 +2469,8 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
             <span className="text-xs font-bold text-slate-900 tracking-tight">Job History</span>
           </button>
 
-          {/* Staff Access (GM, Engineer, Supervisor) */}
-          {['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role) && (
+          {/* Staff Access (Admin, CEO, MD, GM, Projects Manager) */}
+          {['Admin', 'admin', 'CEO', 'ceo', 'GM', 'Managing Director (MD)', 'Managing Director', 'MD', 'md', 'managing_director', 'Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role) && (
             <button
               onClick={() => setActiveTab('users')}
               className="h-16 rounded-xl bg-purple-50 hover:bg-purple-100 active:bg-purple-200 text-purple-950 p-2.5 border border-purple-200 flex flex-col justify-between transition-all text-left"
