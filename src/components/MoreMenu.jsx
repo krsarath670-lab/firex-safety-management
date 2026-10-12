@@ -15,8 +15,11 @@ export default function MoreMenu({ onSelectView }) {
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
   const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role);
-  const isManagement = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(currentUser?.role) && !isProjectsManager;
-  const canAccessFinance = isGM || isMD || isAccounts || currentUser?.role === 'Engineer';
+  const isCEO = currentUser?.role === 'CEO';
+  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
+  const isManagement = (isAdmin || isGM || isMD || ['Engineer', 'Supervisor'].includes(currentUser?.role)) && !isProjectsManager;
+  const canAccessFinance = isGM || isMD || isCEO || isAdmin || isAccounts || currentUser?.role === 'Engineer';
+  const canAccessAudit = isMD || isGM || isCEO || isAdmin;
 
   const menuSections = [
     {
@@ -127,12 +130,12 @@ export default function MoreMenu({ onSelectView }) {
         {
           id: 'users',
           label: 'Staff Directory & App Access',
-          description: 'Add & manage Technicians and Sales personnel for app access',
+          description: 'Add & manage staff credentials for app access',
           icon: Users,
           iconColor: 'text-purple-600 bg-purple-50',
-          badge: isManagement ? 'Manage' : null,
+          badge: isManagement && !isCEO ? (isAdmin ? 'Admin' : 'Manage') : null,
           badgeColor: 'bg-purple-100 text-purple-800',
-          hide: !isManagement || isProjectsManager
+          hide: !isManagement || isProjectsManager || isCEO
         },
         {
           id: 'audit_logs',
@@ -140,9 +143,9 @@ export default function MoreMenu({ onSelectView }) {
           description: 'Security & activity audit trail of all transactions and changes',
           icon: ShieldAlert,
           iconColor: 'text-amber-700 bg-amber-50',
-          badge: (isMD || isGM) ? 'Executive' : null,
+          badge: canAccessAudit ? (isAdmin ? 'Admin' : 'Executive') : null,
           badgeColor: 'bg-amber-100 text-amber-800 font-bold',
-          hide: !(isMD || isGM)
+          hide: !canAccessAudit
         },
         {
           id: 'settings',

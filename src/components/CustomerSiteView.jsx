@@ -1387,14 +1387,21 @@ export default function CustomerSiteView() {
                           {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey, qIdx) => {
                             const visitNumber = qIdx + 1;
                             const v = (contract.visits || []).find(vis => vis.quarter === qKey || vis.visit_number === visitNumber);
-                            const hasReport = !!v?.report_id || !!(selectedCustomerDetails.reports || []).find(r => r.amc_id === contract.id && r.quarter === qKey);
-                            const isCompleted = v?.status === 'Completed' || v?.checklist?.checklist_status === 'Submitted' || hasReport;
-                            const isInProgress = !isCompleted && (v?.status === 'In Progress' || v?.checklist || (selectedCustomerDetails.reports || []).find(r => r.amc_id === contract.id && r.quarter === qKey && r.status === 'Draft'));
+                            const matchedReport = (selectedCustomerDetails.reports || []).find(r => 
+                              (v?.report_id && r.id === v.report_id) ||
+                              ((r.amc_id === contract.id || r.amc_contract_id === contract.id || r.contract_id === contract.id) && (r.quarter === qKey || r.visit_number === visitNumber))
+                            );
+                            const hasReport = !!v?.report_id || !!matchedReport;
+                            const isCompleted = v?.status === 'Completed' || v?.status === 'Approved' || v?.checklist?.checklist_status === 'Submitted' || hasReport;
+                            const isInProgress = !isCompleted && (v?.status === 'In Progress' || v?.checklist || (matchedReport && matchedReport.status === 'Draft'));
                             const statusLabel = isCompleted ? 'Completed' : (isInProgress ? 'Draft / In Progress' : 'Pending');
 
-                            const fallbackVisit = v || {
-                              id: `visit-${contract.id}-${qKey}`,
+                            const fallbackVisit = {
+                              ...(v || {}),
+                              id: v?.id || matchedReport?.visit_id || `visit-${contract.id}-${qKey}`,
                               amc_id: contract.id,
+                              amc_contract_id: contract.id,
+                              contract_id: contract.id,
                               amc_contract_number: contract.contract_number,
                               customer_id: selectedCustomerDetails.customer.id,
                               customer_name: selectedCustomerDetails.customer.name,
@@ -1402,11 +1409,15 @@ export default function CustomerSiteView() {
                               site_name: contract.site_name,
                               visit_number: visitNumber,
                               quarter: qKey,
-                              scheduled_date: contract.start_date || '',
+                              scheduled_date: v?.scheduled_date || contract.start_date || '',
+                              actual_service_date: v?.actual_service_date || matchedReport?.actual_service_date || matchedReport?.service_date || '',
                               service_type: 'Quarterly Routine Maintenance',
                               systems_covered: contract.systems_covered || ['Fire Alarm', 'Fire Fighting'],
-                              supervisor_name: contract.assigned_supervisor || '',
-                              technician_name: contract.assigned_technician || ''
+                              supervisor_name: v?.supervisor_name || contract.assigned_supervisor || '',
+                              technician_name: v?.technician_name || contract.assigned_technician || '',
+                              report_id: v?.report_id || matchedReport?.id || null,
+                              report_number: v?.report_number || matchedReport?.document_number || matchedReport?.report_number || null,
+                              status: isCompleted ? 'Completed' : (v?.status || 'Scheduled')
                             };
 
                             return (

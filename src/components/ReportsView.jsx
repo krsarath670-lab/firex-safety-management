@@ -24,13 +24,16 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
 
   const role = currentUser?.role || 'Technician';
   const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(role);
-  const canPrepareReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
-  const canReviewReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
-  const canCompleteReports = isMD || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
+  const isAdmin = ['Admin', 'admin'].includes(role);
+  const isGM = role === 'GM';
+  const isCEO = role === 'CEO';
+  const isExec = isMD || isGM || isAdmin;
+  const canPrepareReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
+  const canReviewReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
+  const canCompleteReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const isTechnician = role === 'Technician';
   const isSales = role === 'Sales';
   const isAccounts = role === 'Accounts';
-  const isGM = role === 'GM';
 
   const loadReports = async () => {
     try {

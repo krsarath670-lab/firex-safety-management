@@ -214,7 +214,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     ...extinguisherItems.filter(i => i.status === 'NOT OK').map(i => ({ ...i, category: 'Fire Extinguishers', item: `${i.type} (${i.capacity})` }))
   ];
 
-  const canPrepareReports = ['GM', 'Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'CEO', 'Admin', 'Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Directly generate report: saves checklist progress and opens official A4 AMC Service Report
   const handleMakeReport = async () => {
@@ -246,11 +246,17 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       });
 
       if (res.ok) {
+        const savedData = await res.json().catch(() => null);
         showToast('Checklist saved! Opening AMC Service Report...', 'success');
         if (onRefresh) onRefresh();
         if (onViewReport) {
+          const reportId = savedData?.report_id || visit.report_id;
+          const reportNumber = savedData?.report_number || visit.report_number;
           onViewReport({
             ...visit,
+            ...(savedData || {}),
+            report_id: reportId,
+            report_number: reportNumber,
             actual_service_date: actualServiceDate,
             supervisor_id: assignedSupervisorId,
             supervisor_name: assignedSupervisorName,

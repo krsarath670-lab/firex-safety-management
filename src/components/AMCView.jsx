@@ -4193,9 +4193,11 @@ export default function AMCView({ onStartInspectionForVisit }) {
                               {/* MAKE REPORT / Service Report (PDF) Button */}
                               <button
                                 onClick={() => {
-                                  const matched = (viewingContractDetail.visits || []).find(v => (v.quarter === activeQuarterTab || v.visit_number === (qTabIdx + 1))) || {
-                                    id: `vis-${viewingContractDetail.id}-${activeQuarterTab}`,
+                                  const foundVisit = (viewingContractDetail.visits || []).find(v => (v.quarter === activeQuarterTab || v.visit_number === (qTabIdx + 1)));
+                                  const matched = {
+                                    id: foundVisit?.id || qRec.visit_id || `vis-${viewingContractDetail.id}-${activeQuarterTab}`,
                                     contract_id: viewingContractDetail.id,
+                                    amc_contract_id: viewingContractDetail.id,
                                     contract_number: viewingContractDetail.contract_number,
                                     customer_id: viewingContractDetail.customer_id,
                                     customer_name: viewingContractDetail.customer_name,
@@ -4203,18 +4205,24 @@ export default function AMCView({ onStartInspectionForVisit }) {
                                     site_name: viewingContractDetail.site_name,
                                     quarter: activeQuarterTab,
                                     visit_number: qTabIdx + 1,
-                                    scheduled_date: qRec.scheduled_date || defaultQuarterDate,
-                                    technician_name: qRec.technician_name || viewingContractDetail.assigned_technician || 'Unassigned Technician',
-                                    supervisor_name: qRec.supervisor_name || viewingContractDetail.assigned_supervisor || 'Unassigned Supervisor',
+                                    scheduled_date: foundVisit?.scheduled_date || qRec.scheduled_date || defaultQuarterDate,
+                                    technician_name: foundVisit?.technician_name || qRec.technician_name || viewingContractDetail.assigned_technician || 'Unassigned Technician',
+                                    supervisor_name: foundVisit?.supervisor_name || qRec.supervisor_name || viewingContractDetail.assigned_supervisor || 'Unassigned Supervisor',
                                     systems: viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
-                                    status: qRec.status || 'Completed'
+                                    status: foundVisit?.status || qRec.status || 'Completed',
+                                    report_id: foundVisit?.report_id || qRec.report_id || null,
+                                    report_number: foundVisit?.report_number || qRec.report_number || null,
+                                    report_status: foundVisit?.report_status || qRec.report_status || 'Approved',
+                                    ...(foundVisit || {})
                                   };
+                                  if (qRec.report_id && !matched.report_id) matched.report_id = qRec.report_id;
+                                  if (qRec.report_number && !matched.report_number) matched.report_number = qRec.report_number;
                                   setPreviewingReportVisit(matched);
                                 }}
                                 className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-lg text-xs shadow-sm flex items-center gap-1 transition-all"
                               >
                                 <FileText className="w-3.5 h-3.5 text-emerald-100" />
-                                <span>MAKE REPORT</span>
+                                <span>{qRec.report_id || qRec.status === 'Completed' ? 'VIEW REPORT (PDF)' : 'MAKE REPORT'}</span>
                               </button>
                             </div>
                           </div>
@@ -4446,7 +4454,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
                     {['Q1', 'Q2', 'Q3', 'Q4'].map((qKey, qIdx) => {
                       const visits = viewingContractDetail.visits || [];
                       const matchedVisit = visits.find(v => v.quarter === qKey || v.visit_number === (qIdx + 1));
-                      const isCompleted = matchedVisit?.status === 'Completed' || matchedVisit?.status === 'Approved' || matchedVisit?.report_id;
+                      const qRec = viewingContractDetail.quarters?.[qKey];
+                      const isCompleted = matchedVisit?.status === 'Completed' || matchedVisit?.status === 'Approved' || matchedVisit?.report_id || qRec?.report_id || qRec?.status === 'Completed';
                       const isInProgress = matchedVisit?.checklist_status === 'In Progress' || matchedVisit?.checklist_status === 'Submitted';
 
                       // Scheduled Date
@@ -4454,10 +4463,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
                       const baseDate = new Date(baseDateStr);
                       const offsetMonths = qIdx * 3;
                       const calcDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + offsetMonths, baseDate.getDate());
-                      const schedDateStr = matchedVisit?.scheduled_date || calcDate.toISOString().slice(0, 10);
+                      const schedDateStr = matchedVisit?.scheduled_date || qRec?.scheduled_date || calcDate.toISOString().slice(0, 10);
 
-                      const visitForReport = matchedVisit || {
-                        id: `vis-${viewingContractDetail.id}-${qKey}`,
+                      const visitForReport = {
+                        id: matchedVisit?.id || qRec?.visit_id || `vis-${viewingContractDetail.id}-${qKey}`,
                         contract_id: viewingContractDetail.id,
                         amc_contract_id: viewingContractDetail.id,
                         contract_number: viewingContractDetail.contract_number,
@@ -4468,12 +4477,18 @@ export default function AMCView({ onStartInspectionForVisit }) {
                         quarter: qKey,
                         visit_number: qIdx + 1,
                         scheduled_date: schedDateStr,
-                        actual_service_date: new Date().toISOString().slice(0, 10),
-                        supervisor_name: viewingContractDetail.assigned_supervisor || 'Supervisor',
-                        technician_name: viewingContractDetail.assigned_technician || 'Technician',
+                        actual_service_date: matchedVisit?.actual_service_date || qRec?.visit_date || new Date().toISOString().slice(0, 10),
+                        supervisor_name: matchedVisit?.supervisor_name || qRec?.supervisor_name || viewingContractDetail.assigned_supervisor || 'Supervisor',
+                        technician_name: matchedVisit?.technician_name || qRec?.technician_name || viewingContractDetail.assigned_technician || 'Technician',
                         systems: viewingContractDetail.systems_covered || viewingContractDetail.systems || ['Fire Alarm', 'Fire Fighting'],
-                        status: 'Scheduled'
+                        status: isCompleted ? 'Completed' : (matchedVisit?.status || 'Scheduled'),
+                        report_id: matchedVisit?.report_id || qRec?.report_id || null,
+                        report_number: matchedVisit?.report_number || qRec?.report_number || null,
+                        report_status: matchedVisit?.report_status || qRec?.report_status || (isCompleted ? 'Approved' : 'Pending'),
+                        ...(matchedVisit || {})
                       };
+                      if (qRec?.report_id && !visitForReport.report_id) visitForReport.report_id = qRec.report_id;
+                      if (qRec?.report_number && !visitForReport.report_number) visitForReport.report_number = qRec.report_number;
 
                       return (
                         <div 

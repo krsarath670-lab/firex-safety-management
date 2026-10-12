@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
-const { authMiddleware, requirePermission, requireRole, ROLE_PERMISSIONS, normalizeRole, sanitizeJobForRole, sanitizeContractForRole } = require('./auth');
+const { authMiddleware, requirePermission, requireRole, ROLE_PERMISSIONS, normalizeRole, sanitizeJobForRole, sanitizeContractForRole, hashPassword, verifyPassword, sanitizeUser } = require('./auth');
 const ai = require('./ai');
 
 const app = express();
@@ -170,30 +170,29 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const expectedSecret = (user.password || user.pin || '1234').toString().trim();
-  if (inputSecret !== expectedSecret) {
+  if (!verifyPassword(inputSecret, expectedSecret)) {
+    db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Failed login attempt for user ${user.name}`, { status: 'FAILED' });
     return res.status(401).json({ error: 'Incorrect Password', message: 'Invalid password or PIN entered. Please try again.' });
   }
 
   const userRole = normalizeRole(user.role);
 
   // Audit login
-  db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully (${userRole})`);
+  db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully (${userRole})`, { status: 'SUCCESS' });
 
   res.json({
     message: `Welcome back, ${user.name}!`,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: userRole,
-      phone: user.phone,
-      designation: user.designation,
-      avatar: user.avatar,
-      pin: user.pin
-    },
+    user: sanitizeUser({ ...user, role: userRole }),
     permissions: ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.Technician,
     token: `token-${user.id}-${Date.now()}`
   });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const userId = req.user?.id || 'sys';
+  const userName = req.user?.name || 'User';
+  db.logAudit(userId, 'LOGOUT', 'users', userId, `User ${userName} logged out`);
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 app.post('/api/auth/switch-role', (req, res) => {
@@ -231,8 +230,8 @@ app.get('/api/users', (req, res) => {
   if (req.user.role === 'Technician' || req.user.role === 'Sales') {
     return res.status(403).json({ error: 'Access Denied', message: 'You do not have permission to browse the user directory.' });
   }
-  const users = db.get('users');
-  res.json(users);
+  const users = db.get('users') || [];
+  res.json(users.map(u => sanitizeUser(u)));
 });
 
 app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
@@ -264,6 +263,7 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     }
   }
 
+  const hashedPass = hashPassword(cleanPass);
   const initials = (name.trim().split(' ').map(n => n[0]).join('')).toUpperCase().slice(0, 2);
   const newUser = db.insert('users', {
     name: name.trim(),
@@ -277,16 +277,16 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     phone: phone ? phone.trim() : '',
     designation: designation ? designation.trim() : role,
     status: status || 'Active',
-    pin: cleanPass,
-    password: cleanPass,
+    pin: hashedPass,
+    password: hashedPass,
     notes: notes || '',
     avatar: initials || 'FS',
     created_by: req.user.id,
     created_at: new Date().toISOString()
   });
 
-  db.logAudit(req.user.id, 'CREATE_USER', 'users', newUser.id, `Created user ${name} with role ${role} (password/PIN configured)`);
-  res.status(201).json(newUser);
+  db.logAudit(req.user.id, 'CREATE_USER', 'users', newUser.id, `Created user ${name} with role ${role}`);
+  res.status(201).json(sanitizeUser(newUser));
 });
 
 app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
@@ -321,16 +321,19 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
   }
   if (updates.password || updates.pin) {
     const cleanPass = (updates.password || updates.pin).toString().trim();
-    updates.password = cleanPass;
-    updates.pin = cleanPass;
+    if (cleanPass && !cleanPass.startsWith('pbkdf2:')) {
+      const hashedPass = hashPassword(cleanPass);
+      updates.password = hashedPass;
+      updates.pin = hashedPass;
+    }
   }
 
   const updated = db.update('users', req.params.id, updates);
   db.logAudit(req.user.id, 'UPDATE_USER', 'users', req.params.id, `Updated user details for ${existing.name}`);
-  res.json(updated);
+  res.json(sanitizeUser(updated));
 });
 
-// Dedicated Password Management: GM, Engineer, Supervisor can set password
+// Dedicated Password Management: GM, Admin, Engineer, Supervisor can set password
 app.post('/api/users/:id/password', (req, res) => {
   const { newPassword, pin } = req.body;
   const cleanPass = (newPassword || pin || '').toString().trim();
@@ -341,13 +344,13 @@ app.post('/api/users/:id/password', (req, res) => {
   const target = db.getById('users', req.params.id);
   if (!target) return res.status(404).json({ error: 'User not found' });
 
-  const isExecutive = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin'].includes(req.user.role);
+  const isExecutive = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role);
   const isEngineerOrSupervisor = ['Engineer', 'Supervisor'].includes(req.user.role);
   const isSelf = req.user.id === target.id;
   const isTargetTechOrSales = ['Technician', 'Sales'].includes(target.role);
 
   if (isExecutive) {
-    // Executive (Managing Director, GM) can set password for anyone
+    // Executive (Managing Director, GM, Admin) can set password for anyone
   } else if (isEngineerOrSupervisor && isTargetTechOrSales) {
     // Engineer & Supervisor can set password for Tech and Sales
   } else if (isSelf) {
@@ -359,13 +362,14 @@ app.post('/api/users/:id/password', (req, res) => {
     });
   }
 
+  const hashed = hashPassword(cleanPass);
   const updated = db.update('users', target.id, {
-    password: cleanPass,
-    pin: cleanPass
+    password: hashed,
+    pin: hashed
   });
 
   db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role})`);
-  res.json({ message: `Password for ${target.name} successfully updated to: ${cleanPass}`, user: updated });
+  res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated) });
 });
 
 app.delete('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
@@ -582,8 +586,8 @@ app.get('/api/dashboard/stats', (req, res) => {
 
 // --- SYSTEM AUDIT TRAIL LOGS (Accessible to Managing Director, GM, Admin) ---
 app.get('/api/audit-logs', (req, res) => {
-  if (!['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Admin'].includes(req.user.role) && !req.permissions?.canViewAuditLogs) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Executive management can access system audit logs.' });
+  if (!['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Admin', 'admin', 'CEO', 'ceo'].includes(req.user.role) && !req.permissions?.canViewAuditLogs) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Executive management and Admin can access system audit logs.' });
   }
   const logs = db.getAuditLogs();
   res.json(logs);
@@ -758,6 +762,7 @@ app.get('/api/customers/:id/details', (req, res) => {
   const allVisits = db.get('amc_visits') || [];
   let amcContracts = (db.get('amc_contracts') || []).filter(a => a.customer_id === custId || siteIds.has(a.site_id)).map(c => ({
     ...c,
+    quarters: typeof db.getContractQuarters === 'function' ? db.getContractQuarters(c.id) : (c.quarters || {}),
     visits: allVisits.filter(v => v.contract_id === c.id || v.amc_contract_id === c.id || v.amc_id === c.id)
   }));
   let jobs = (db.get('jobs') || []).filter(j => j.customer_id === custId || siteIds.has(j.site_id));
@@ -2773,7 +2778,7 @@ app.get('/api/reports/:id', (req, res) => {
 app.post('/api/reports', (req, res) => {
   // STRICT PERMISSION CHECK (Requirement 1 & 14):
   // Only Projects Manager, Engineer, Supervisor, Technician, and Managing Director can prepare reports
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director (MD)', 'Managing Director', 'managing_director'];
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({
       error: 'Permission Denied',
@@ -2789,13 +2794,19 @@ app.post('/api/reports', (req, res) => {
   const authUser = users.find(u => u.id === req.user.id) || req.user;
   const nowAudit = getAuditDateTime();
 
-  const amc = amcs.find(c => c.id === body.amc_id || c.id === body.amc_contract_id || c.contract_number === body.amc_number);
+  let amc = amcs.find(c => c.id === body.amc_id || c.id === body.amc_contract_id || c.id === body.contract_id || c.contract_number === body.amc_number || c.contract_number === body.contract_number);
+  if (!amc && body.customer_id) {
+    amc = amcs.find(c => c.customer_id === body.customer_id && (c.site_id === body.site_id || !body.site_id));
+  }
   const job = jobs.find(j => j.id === body.job_id || j.job_number === body.job_number);
 
   // Automatically pull: AMC number, Customer, Site, Sales Person, Contract start date, Contract end date, Visit number, Visit date, System, Technician, Supervisor (Requirements 25 & 26)
   if (amc) {
     body.amc_id = amc.id;
+    body.amc_contract_id = amc.id;
+    body.contract_id = amc.id;
     body.amc_number = amc.contract_number;
+    body.contract_number = amc.contract_number;
     body.customer_id = body.customer_id || amc.customer_id;
     body.site_id = body.site_id || amc.site_id;
     body.sales_person_id = body.sales_person_id || amc.sales_person_id;
@@ -2883,19 +2894,42 @@ app.post('/api/reports', (req, res) => {
     db.update('jobs', body.job_id, { report_id: newReport.id });
   }
 
-  // Link to AMC visit if provided
-  if (body.visit_id || body.amc_visit_id) {
-    const targetVisitId = body.visit_id || body.amc_visit_id;
-    const visits = db.get('amc_visits') || [];
+  // Link to AMC visit if provided or infer from contract
+  let targetVisitId = body.visit_id || body.amc_visit_id;
+  const visits = db.get('amc_visits') || [];
+  if (!targetVisitId && amc) {
+    const vMatch = visits.find(v => (v.amc_contract_id === amc.id || v.contract_id === amc.id) && (v.quarter === newReport.quarter || v.report_id === newReport.id));
+    if (vMatch) targetVisitId = vMatch.id;
+  }
+  if (targetVisitId) {
     const targetVisit = visits.find(v => v.id === targetVisitId);
     if (targetVisit) {
       db.update('amc_visits', targetVisit.id, {
         report_id: newReport.id,
         report_number: newReport.report_number,
+        document_number: newReport.document_number || newReport.report_number,
         actual_service_date: body.actual_service_date || body.date || targetVisit.actual_service_date || targetVisit.scheduled_date,
         status: newReport.status === 'Completed' || newReport.status === 'Approved' ? 'Completed' : (targetVisit.status === 'Completed' ? 'Completed' : 'In Progress'),
         checklist_status: newReport.status === 'Completed' || newReport.status === 'Approved' ? 'Approved' : (targetVisit.checklist_status || 'Submitted')
       });
+    }
+  }
+
+  // Update AMC contract quarters if contract exists
+  if (amc) {
+    const contract = db.getById('amc_contracts', amc.id);
+    if (contract && contract.quarters) {
+      const qKey = newReport.quarter || 'Q1';
+      if (contract.quarters[qKey]) {
+        contract.quarters[qKey].report_id = newReport.id;
+        contract.quarters[qKey].report_number = newReport.report_number;
+        if (newReport.status === 'Completed' || newReport.status === 'Approved') {
+          contract.quarters[qKey].status = 'Completed';
+          contract.quarters[qKey].report_status = 'Approved';
+          contract.quarters[qKey].actual_visit_date = body.actual_service_date || body.date || contract.quarters[qKey].scheduled_date;
+        }
+        db.update('amc_contracts', amc.id, { quarters: contract.quarters });
+      }
     }
   }
 
@@ -2986,8 +3020,8 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if (updates.status === 'Reviewed' && existing.status !== 'Reviewed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or Managing Director can review reports.' });
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, Admin, or Managing Director can review reports.' });
     }
     updates.reviewed_by_user_id = authUser.id;
     updates.reviewed_by_name = authUser.name;
@@ -2999,8 +3033,8 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if ((updates.status === 'Completed' || updates.status === 'Approved') && existing.status !== 'Completed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director'].includes(req.user.role)) {
-      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or Managing Director can complete reports.' });
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, Admin, or Managing Director can complete reports.' });
     }
     // Standardize to Completed
     updates.status = 'Completed';
@@ -3035,6 +3069,35 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   const updated = db.update('reports', req.params.id, updates);
+
+  // Sync to AMC visit and contract quarter if completed
+  if (updated.status === 'Completed' || updated.status === 'Approved') {
+    const targetVisitId = updated.visit_id || updated.amc_visit_id || existing.visit_id || existing.amc_visit_id;
+    if (targetVisitId) {
+      db.update('amc_visits', targetVisitId, {
+        report_id: updated.id,
+        report_number: updated.report_number,
+        document_number: updated.document_number || updated.report_number,
+        status: 'Completed',
+        visit_status: 'Completed',
+        report_status: 'Approved',
+        checklist_status: 'Approved'
+      });
+    }
+    const amcId = updated.amc_id || updated.amc_contract_id || updated.contract_id || existing.amc_id || existing.amc_contract_id || existing.contract_id;
+    if (amcId) {
+      const contract = db.getById('amc_contracts', amcId);
+      const qKey = updated.quarter || existing.quarter || 'Q1';
+      if (contract && contract.quarters && contract.quarters[qKey]) {
+        contract.quarters[qKey].report_id = updated.id;
+        contract.quarters[qKey].report_number = updated.report_number;
+        contract.quarters[qKey].status = 'Completed';
+        contract.quarters[qKey].report_status = 'Approved';
+        db.update('amc_contracts', amcId, { quarters: contract.quarters });
+      }
+    }
+  }
+
   db.logAudit(req.user.id, 'UPDATE_REPORT', 'reports', req.params.id, `Updated report to ${updates.status || existing.status} (Last modified by: ${authUser.name})`);
   res.json(updated);
 });

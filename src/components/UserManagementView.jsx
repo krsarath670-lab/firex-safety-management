@@ -44,10 +44,12 @@ export default function UserManagementView() {
   // Access control
   const isGM = currentUser?.role === 'GM';
   const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
-  const isExecutive = isGM || isMD;
+  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
+  const isCEO = currentUser?.role === 'CEO';
+  const isExecutive = isGM || isMD || isAdmin;
   const isEngineer = currentUser?.role === 'Engineer';
   const isSupervisor = currentUser?.role === 'Supervisor';
-  const canManageStaff = isExecutive || isEngineer || isSupervisor;
+  const canManageStaff = (isExecutive || isEngineer || isSupervisor) && !isCEO;
 
   // Load all users from backend
   const loadUsers = async () => {
@@ -258,7 +260,7 @@ export default function UserManagementView() {
       return;
     }
     setPasswordModalUser(user);
-    setNewPasswordInput(user.pin || user.password || '1234');
+    setNewPasswordInput('');
   };
 
   // Save New Password / PIN
@@ -282,7 +284,7 @@ export default function UserManagementView() {
       });
 
       if (res.ok) {
-        showToast(`Password for ${passwordModalUser.name} updated to: ${newPasswordInput.trim()}`, 'success');
+        showToast(`Password for ${passwordModalUser.name} updated successfully`, 'success');
         setPasswordModalUser(null);
         await loadUsers();
       } else {
@@ -333,7 +335,7 @@ export default function UserManagementView() {
   // Filter calculations
   const totalTechnicians = users.filter(u => u.role === 'Technician').length;
   const totalSales = users.filter(u => u.role === 'Sales').length;
-  const totalManagement = users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor'].includes(u.role)).length;
+  const totalManagement = users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor', 'CEO', 'Admin'].includes(u.role)).length;
   const totalAccounts = users.filter(u => u.role === 'Accounts').length;
   const totalProjects = users.filter(u => u.role === 'Projects Manager').length;
 
@@ -343,7 +345,7 @@ export default function UserManagementView() {
     if (activeFilter === 'Sales' && u.role !== 'Sales') return false;
     if (activeFilter === 'Accounts' && u.role !== 'Accounts') return false;
     if (activeFilter === 'Projects' && u.role !== 'Projects Manager') return false;
-    if (activeFilter === 'Management' && !['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor'].includes(u.role)) return false;
+    if (activeFilter === 'Management' && !['Managing Director (MD)', 'Managing Director', 'managing_director', 'GM', 'Engineer', 'Supervisor', 'CEO', 'Admin'].includes(u.role)) return false;
 
     // Search query
     if (searchQuery.trim()) {
@@ -548,6 +550,8 @@ export default function UserManagementView() {
                     <div className="flex items-start space-x-3 min-w-0">
                       <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-sm ${
                         (['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)) ? 'bg-amber-600 text-white ring-2 ring-amber-400' :
+                        u.role === 'CEO' ? 'bg-amber-700 text-white ring-2 ring-amber-500' :
+                        u.role === 'Admin' ? 'bg-rose-700 text-white ring-2 ring-rose-500' :
                         u.role === 'GM' ? 'bg-purple-900 text-white' :
                         u.role === 'Engineer' ? 'bg-indigo-700 text-white' :
                         u.role === 'Supervisor' ? 'bg-blue-600 text-white' :
@@ -579,6 +583,8 @@ export default function UserManagementView() {
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider ${
                         (['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)) ? 'bg-amber-50 text-amber-900 border-amber-300 font-extrabold shadow-sm' :
+                        u.role === 'CEO' ? 'bg-amber-100 text-amber-900 border-amber-300 font-extrabold shadow-sm' :
+                        u.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-300 font-extrabold shadow-sm' :
                         u.role === 'GM' ? 'bg-purple-50 text-purple-800 border-purple-200' :
                         u.role === 'Engineer' ? 'bg-indigo-50 text-indigo-800 border-indigo-200' :
                         u.role === 'Supervisor' ? 'bg-blue-50 text-blue-800 border-blue-200' :
@@ -607,11 +613,9 @@ export default function UserManagementView() {
                           {u.phone || '+973 3000 0000'}
                         </a>
                       </span>
-                      {u.pin && (
-                        <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">
-                          PIN: {u.pin}
-                        </span>
-                      )}
+                      <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold flex items-center gap-1">
+                        <Key className="w-2.5 h-2.5 text-slate-400" /> Protected
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-1.5 text-slate-600">
@@ -742,7 +746,9 @@ export default function UserManagementView() {
                   onChange={(e) => {
                     const newRole = e.target.value;
                     let defaultDesig = formData.designation;
-                    if (newRole === 'Technician') defaultDesig = 'Certified Fire Alarm Specialist';
+                    if (newRole === 'CEO') defaultDesig = 'Chief Executive Officer';
+                    else if (newRole === 'Admin') defaultDesig = 'System Administrator';
+                    else if (newRole === 'Technician') defaultDesig = 'Certified Fire Alarm Specialist';
                     else if (newRole === 'Sales') defaultDesig = 'Commercial Sales Representative';
                     else if (newRole === 'Supervisor') defaultDesig = 'Senior Field Supervisor';
                     else if (newRole === 'Engineer') defaultDesig = 'Lead Fire Protection Engineer';
@@ -761,6 +767,8 @@ export default function UserManagementView() {
                 >
                   {isExecutive ? (
                     <>
+                      <option value="Admin">Admin</option>
+                      <option value="CEO">CEO</option>
                       <option value="Managing Director (MD)">Managing Director (MD)</option>
                       <option value="GM">GM</option>
                       <option value="Engineer">Engineer</option>
@@ -877,28 +885,18 @@ export default function UserManagementView() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-bold text-slate-700">App Password / PIN *</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
-                        setFormData(p => ({ ...p, pin: randomPin, password: randomPin, confirmPassword: randomPin }));
-                      }}
-                      className="text-[10px] text-blue-600 font-bold hover:underline"
-                    >
-                      Random PIN
-                    </button>
                   </div>
                   <input
-                    type="text"
-                    required
-                    placeholder="1234"
-                    value={formData.pin}
+                    type="password"
+                    required={modalMode === 'add'}
+                    placeholder={modalMode === 'add' ? "Enter secure password" : "Leave blank to keep unchanged"}
+                    value={formData.password || ''}
                     onChange={(e) => setFormData(p => ({ ...p, pin: e.target.value, password: e.target.value }))}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
                   />
-                  <span className="text-[10px] text-slate-400">Staff password required to open mobile app.</span>
+                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Only needed if you change the password.' : 'Staff password required to open mobile app.'}</span>
                   <input
-                    type="text"
+                    type="password"
                     placeholder="Confirm password"
                     value={formData.confirmPassword || ''}
                     onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
@@ -906,7 +904,7 @@ export default function UserManagementView() {
                       formData.confirmPassword && formData.confirmPassword !== formData.password ? 'border-red-400' : 'border-slate-200'
                     }`}
                   />
-                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Only needed if you change the password.' : 'Re-enter the password.'}</span>
+                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Re-enter only if changing password.' : 'Re-enter the password to verify.'}</span>
                 </div>
               </div>
 
@@ -1082,36 +1080,18 @@ export default function UserManagementView() {
 
             <form onSubmit={handleSavePassword} className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="font-bold text-slate-700">New Password / PIN *</label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setNewPasswordInput('1234')}
-                      className="text-[10px] text-blue-600 font-bold hover:underline"
-                    >
-                      Default (1234)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewPasswordInput(Math.floor(1000 + Math.random() * 9000).toString())}
-                      className="text-[10px] text-emerald-600 font-bold hover:underline"
-                    >
-                      Random PIN
-                    </button>
-                  </div>
-                </div>
+                <label className="block font-bold text-slate-700 mb-1">New Password / PIN *</label>
                 <input
-                  type="text"
+                  type="password"
                   required
                   autoFocus
-                  placeholder="Enter 4-digit PIN or password"
+                  placeholder="Enter new password / PIN"
                   value={newPasswordInput}
                   onChange={(e) => setNewPasswordInput(e.target.value)}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-base font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 tracking-wider"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
-                  The user must enter this PIN/password to open the application on their mobile phone or laptop.
+                  The user must enter this password to log in to the application.
                 </p>
               </div>
 

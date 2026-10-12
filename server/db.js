@@ -797,22 +797,17 @@ class Database {
         modified = true;
       }
 
-      // Automatically migrate any legacy role users to Managing Director (MD)
-      const legacyKey = ['c', 'e', 'o'].join('');
+      // Maintain Managing Director (MD) user identity without touching new CEO or other roles
       (data.users || []).forEach(u => {
         const rLower = String(u.role || '').toLowerCase();
-        if (rLower === 'managing director' || rLower === 'managing_director' || rLower === 'managing director (md)' || rLower === 'md' || rLower === legacyKey) {
+        if (rLower === 'managing director' || rLower === 'managing_director' || rLower === 'managing director (md)' || rLower === 'md') {
           u.role = 'Managing Director (MD)';
-          if (u.id === 'usr-' + legacyKey + '-1') u.id = 'usr-md-1';
-          if (u.username === legacyKey) u.username = 'md';
-          if (u.email === legacyKey + '@firexbahrain.com') u.email = 'md@firexbahrain.com';
-          if (!u.designation || u.designation.toLowerCase().includes(legacyKey)) {
+          if (u.id === 'usr-md-1' || u.username === 'md') {
+            u.id = 'usr-md-1';
+            u.username = 'md';
+            u.email = 'md@firexbahrain.com';
             u.designation = 'Managing Director';
-          }
-          if (u.notes && u.notes.toLowerCase().includes(legacyKey)) {
             u.notes = 'Managing Director (MD) - Full system access';
-          }
-          if (u.employee_id === 'FX-' + legacyKey.toUpperCase() + '-01') {
             u.employee_id = 'FX-MD-01';
           }
           modified = true;
@@ -849,22 +844,14 @@ class Database {
 
       if (data.reports && Array.isArray(data.reports)) {
         data.reports.forEach(r => {
-          if (r.created_by_user_id === 'usr-' + legacyKey + '-1') { r.created_by_user_id = 'usr-md-1'; modified = true; }
-          if (r.prepared_by_user_id === 'usr-' + legacyKey + '-1') { r.prepared_by_user_id = 'usr-md-1'; modified = true; }
-          if (r.reviewed_by_user_id === 'usr-' + legacyKey + '-1') { r.reviewed_by_user_id = 'usr-md-1'; modified = true; }
-          if (r.completed_by_user_id === 'usr-' + legacyKey + '-1') { r.completed_by_user_id = 'usr-md-1'; modified = true; }
-          if (r.last_modified_by_user_id === 'usr-' + legacyKey + '-1') { r.last_modified_by_user_id = 'usr-md-1'; modified = true; }
-          if (r.created_by === 'usr-' + legacyKey + '-1') { r.created_by = 'usr-md-1'; modified = true; }
-          if (r.reviewed_by === 'usr-' + legacyKey + '-1') { r.reviewed_by = 'usr-md-1'; modified = true; }
-          if (r.completed_by === 'usr-' + legacyKey + '-1') { r.completed_by = 'usr-md-1'; modified = true; }
-          if (r.prepared_by_role === legacyKey.toUpperCase()) { r.prepared_by_role = 'Managing Director (MD)'; modified = true; }
-          if (r.reviewed_by_role === legacyKey.toUpperCase()) { r.reviewed_by_role = 'Managing Director (MD)'; modified = true; }
-          if (r.completed_by_role === legacyKey.toUpperCase()) { r.completed_by_role = 'Managing Director (MD)'; modified = true; }
-          if (r.last_modified_by_role === legacyKey.toUpperCase()) { r.last_modified_by_role = 'Managing Director (MD)'; modified = true; }
-          if (r.work_description && r.work_description.includes(legacyKey.toUpperCase())) {
-            r.work_description = r.work_description.replace(new RegExp(legacyKey.toUpperCase(), 'g'), 'Managing Director (MD)');
-            modified = true;
-          }
+          if (r.created_by_user_id === 'usr-ceo-1') { r.created_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.prepared_by_user_id === 'usr-ceo-1') { r.prepared_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.reviewed_by_user_id === 'usr-ceo-1') { r.reviewed_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.completed_by_user_id === 'usr-ceo-1') { r.completed_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.last_modified_by_user_id === 'usr-ceo-1') { r.last_modified_by_user_id = 'usr-md-1'; modified = true; }
+          if (r.created_by === 'usr-ceo-1') { r.created_by = 'usr-md-1'; modified = true; }
+          if (r.reviewed_by === 'usr-ceo-1') { r.reviewed_by = 'usr-md-1'; modified = true; }
+          if (r.completed_by === 'usr-ceo-1') { r.completed_by = 'usr-md-1'; modified = true; }
           if (r.created_by_user_id === 'usr-md-1' || r.prepared_by_user_id === 'usr-md-1') {
             if (r.prepared_by_name === 'Eng. Mohamed Hweidi' || r.prepared_by_name === 'Mohamed Huwaidi') {
               r.prepared_by_name = 'Wissam Jamal Hussein';
@@ -887,12 +874,8 @@ class Database {
       }
       if (data.audit_logs && Array.isArray(data.audit_logs)) {
         data.audit_logs.forEach(a => {
-          if (a.user_id === 'usr-' + legacyKey + '-1') { a.user_id = 'usr-md-1'; modified = true; }
-          if (a.entity_id === 'usr-' + legacyKey + '-1') { a.entity_id = 'usr-md-1'; modified = true; }
-          if (a.details && a.details.includes(legacyKey.toUpperCase())) {
-            a.details = a.details.replace(new RegExp('\\b' + legacyKey.toUpperCase() + '\\b', 'g'), 'Managing Director (MD)');
-            modified = true;
-          }
+          if (a.user_id === 'usr-ceo-1') { a.user_id = 'usr-md-1'; modified = true; }
+          if (a.entity_id === 'usr-ceo-1') { a.entity_id = 'usr-md-1'; modified = true; }
           if (a.user_id === 'usr-md-1' && a.details) {
             if (a.details.includes('Eng. Mohamed Hweidi') || a.details.includes('Mohamed Huwaidi')) {
               a.details = a.details.replace(/Eng\. Mohamed Hweidi/g, 'Wissam Jamal Hussein').replace(/Mohamed Huwaidi/g, 'Wissam Jamal Hussein');
@@ -925,6 +908,60 @@ class Database {
           r.created_date = r.prepared_date;
           r.created_time = r.prepared_time;
           modified = true;
+        }
+      });
+    }
+
+    // Ensure AMC Reports linkage across contracts and visits (Part 1 requirement)
+    if (data.reports && Array.isArray(data.reports) && data.amc_contracts && Array.isArray(data.amc_contracts)) {
+      data.reports.forEach(r => {
+        if (r.report_type === 'AMC Service Report' || (r.document_number && r.document_number.includes('AMC')) || (r.report_number && r.report_number.includes('AMC'))) {
+          let contract = (data.amc_contracts || []).find(c => c.id === r.amc_id || c.id === r.amc_contract_id || c.id === r.contract_id || c.contract_number === r.amc_number || c.contract_number === r.contract_number);
+          if (!contract && r.customer_id) {
+            contract = (data.amc_contracts || []).find(c => c.customer_id === r.customer_id && (c.site_id === r.site_id || !r.site_id));
+          }
+          if (contract) {
+            r.amc_id = contract.id;
+            r.amc_contract_id = contract.id;
+            r.contract_id = contract.id;
+            r.contract_number = contract.contract_number;
+            r.amc_number = contract.contract_number;
+            r.customer_name = r.customer_name || contract.customer_name;
+            r.site_name = r.site_name || contract.site_name;
+
+            const visits = (data.amc_visits || []).filter(v => v.amc_contract_id === contract.id || v.amc_id === contract.id || v.contract_id === contract.id);
+            let matchedVisit = visits.find(v => v.id === r.visit_id || v.id === r.amc_visit_id || v.report_id === r.id);
+            if (!matchedVisit) {
+              matchedVisit = visits.find(v => v.quarter === r.quarter) || visits[0];
+            }
+            if (matchedVisit) {
+              r.visit_id = matchedVisit.id;
+              r.amc_visit_id = matchedVisit.id;
+              r.quarter = r.quarter || matchedVisit.quarter || 'Q1';
+              r.visit_number = matchedVisit.visit_number || 1;
+              matchedVisit.report_id = r.id;
+              matchedVisit.report_number = r.report_number || r.document_number;
+              matchedVisit.document_number = r.document_number || r.report_number;
+              if (r.status === 'Completed' || r.status === 'Approved') {
+                matchedVisit.status = 'Completed';
+                matchedVisit.visit_status = 'Completed';
+                matchedVisit.report_status = 'Approved';
+                matchedVisit.checklist_status = 'Approved';
+                matchedVisit.actual_service_date = r.actual_service_date || r.service_date || r.date || matchedVisit.actual_service_date || matchedVisit.scheduled_date;
+              }
+            }
+
+            if (contract.quarters && r.quarter && contract.quarters[r.quarter]) {
+              contract.quarters[r.quarter].report_id = r.id;
+              contract.quarters[r.quarter].report_number = r.report_number || r.document_number;
+              if (r.status === 'Completed' || r.status === 'Approved') {
+                contract.quarters[r.quarter].status = 'Completed';
+                contract.quarters[r.quarter].report_status = 'Approved';
+                contract.quarters[r.quarter].actual_visit_date = r.actual_service_date || r.service_date || r.date || contract.quarters[r.quarter].scheduled_date;
+              }
+            }
+            modified = true;
+          }
         }
       });
     }
@@ -1651,23 +1688,46 @@ class Database {
     return db.company_settings;
   }
 
-  logAudit(userId, action, entity, entityId, details) {
+  logAudit(userId, action, entity, entityId, details, extra = {}) {
     const db = this.read();
     if (!db.audit_logs) db.audit_logs = [];
-    db.audit_logs.unshift({
-      id: `aud-${Date.now()}`,
+    const users = db.users || [];
+    const user = users.find(u => u.id === userId);
+    const now = new Date();
+    
+    // Bahrain Time (UTC+3)
+    const bahrainDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Bahrain', day: '2-digit', month: 'short', year: 'numeric' });
+    const bahrainTime = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Bahrain', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const bahrainFull = `${bahrainDate} ${bahrainTime}`;
+
+    const newLog = {
+      id: `aud-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       user_id: userId,
+      user_name: user?.name || extra.user_name || (userId === 'system' ? 'System' : userId),
+      user_role: user?.role || extra.user_role || (userId === 'system' ? 'System' : 'Unknown'),
       action,
+      module: entity,
+      resource: entity,
       entity,
       entity_id: entityId,
+      record_id: entityId,
       details,
-      timestamp: new Date().toISOString()
-    });
-    // Keep max 500 audit logs
-    if (db.audit_logs.length > 500) {
-      db.audit_logs = db.audit_logs.slice(0, 500);
+      status: extra.status || 'SUCCESS',
+      before_values: extra.before_values || null,
+      after_values: extra.after_values || null,
+      timestamp: now.toISOString(),
+      formatted_date: bahrainDate,
+      formatted_time: bahrainTime,
+      bahrain_time: bahrainFull
+    };
+
+    db.audit_logs.unshift(newLog);
+    // Keep max 2000 audit logs
+    if (db.audit_logs.length > 2000) {
+      db.audit_logs = db.audit_logs.slice(0, 2000);
     }
     this.write(db);
+    return newLog;
   }
 
   // Job type code mapper for FIREX job numbering: FX-[JOB TYPE]-[YEAR]-[SEQUENCE]
@@ -2262,15 +2322,15 @@ class Database {
     // Helper to get period names relative to contract service starting date
     const anchorDate = contract.service_start_date || contract.start_date;
     const cycleNames = this.getCyclePeriodNames(anchorDate);
-    const visits = (db.amc_visits || []).filter(v => v.amc_contract_id === contractId || v.amc_id === contractId);
-    const reports = (db.reports || []).filter(r => r.amc_id === contractId || r.amc_contract_id === contractId);
+    const visits = (db.amc_visits || []).filter(v => v.amc_contract_id === contractId || v.amc_id === contractId || v.contract_id === contractId);
+    const reports = (db.reports || []).filter(r => r.amc_id === contractId || r.amc_contract_id === contractId || r.contract_id === contractId || (r.customer_id === contract.customer_id && (r.site_id === contract.site_id || !r.site_id)));
     const todayStr = new Date().toISOString().split('T')[0];
 
     const quarters = {};
 
     ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q, idx) => {
       const qVisits = visits.filter(v => v.quarter === q || v.service_cycle === q || v.service_sequence === (idx + 1) || v.visit_number === (idx + 1));
-      const qReports = reports.filter(r => r.quarter === q || (r.report_number && r.report_number.includes(q)) || r.service_cycle === q);
+      const qReports = reports.filter(r => r.quarter === q || (r.report_number && r.report_number.includes(q)) || r.service_cycle === q || qVisits.some(v => v.id === r.visit_id || v.id === r.amc_visit_id || v.report_id === r.id));
       const approvedRpt = qReports.find(r => r.status === 'Approved' || r.status === 'Completed');
       const submittedRpt = qReports.find(r => r.status === 'Submitted' || r.status === 'Reviewed');
 
@@ -2298,6 +2358,10 @@ class Database {
       const systemsInspected = firstVisit?.systems || contract.systems || contract.systems_covered || ['Fire Alarm', 'Fire Fighting'];
       const systemsLabel = firstVisit?.systems_label || (Array.isArray(systemsInspected) ? systemsInspected.join(' + ') : systemsInspected);
 
+      const reportId = savedQuarter?.report_id || (approvedRpt ? approvedRpt.id : (submittedRpt ? submittedRpt.id : null));
+      const reportNumber = savedQuarter?.report_number || (approvedRpt ? approvedRpt.report_number : (submittedRpt ? submittedRpt.report_number : null));
+      const reportStatus = savedQuarter?.report_status || (approvedRpt ? 'Approved' : (submittedRpt ? 'Submitted' : 'Not Started'));
+
       if (isManualUpdate) {
         quarters[q] = {
           ...savedQuarter,
@@ -2311,7 +2375,10 @@ class Database {
             : scheduledDate,
           actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (savedQuarter.status === 'Completed' ? scheduledDate : null),
           systems_inspected: systemsInspected,
-          systems_label: systemsLabel
+          systems_label: systemsLabel,
+          report_id: reportId,
+          report_number: reportNumber,
+          report_status: reportStatus
         };
       } else {
         quarters[q] = {
@@ -2336,9 +2403,9 @@ class Database {
           customer_rep_name: '',
           customer_rep_designation: '',
           customer_signature: null,
-          report_id: approvedRpt ? approvedRpt.id : (submittedRpt ? submittedRpt.id : null),
-          report_number: approvedRpt ? approvedRpt.report_number : (submittedRpt ? submittedRpt.report_number : null),
-          report_status: approvedRpt ? 'Approved' : (submittedRpt ? 'Submitted' : 'Not Started')
+          report_id: reportId,
+          report_number: reportNumber,
+          report_status: reportStatus
         };
       }
     });
@@ -4919,14 +4986,20 @@ class Database {
     const users = db.users || [];
     return logs.map(l => {
       const user = users.find(u => u.id === l.user_id);
-      const d = l.timestamp ? new Date(l.timestamp) : null;
+      const d = l.timestamp ? new Date(l.timestamp) : new Date();
+      const bDate = d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { timeZone: 'Asia/Bahrain', day: '2-digit', month: 'short', year: 'numeric' }) : '';
+      const bTime = d && !isNaN(d.getTime()) ? d.toLocaleTimeString('en-US', { timeZone: 'Asia/Bahrain', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
       return {
         ...l,
-        user_name: user ? user.name : (l.user_id === 'sys' || l.user_id === 'system' ? 'System' : l.user_id),
-        user_role: user ? user.role : 'System',
+        user_name: l.user_name || (user ? user.name : (l.user_id === 'sys' || l.user_id === 'system' ? 'System' : l.user_id)),
+        user_role: l.user_role || (user ? user.role : 'System'),
         user_email: user?.email || '',
-        formatted_date: d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-        formatted_time: d && !isNaN(d.getTime()) ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''
+        module: l.module || l.resource || l.entity || 'System',
+        resource: l.resource || l.module || l.entity || 'System',
+        status: l.status || 'SUCCESS',
+        formatted_date: l.formatted_date || bDate,
+        formatted_time: l.formatted_time || bTime,
+        bahrain_time: l.bahrain_time || `${bDate} ${bTime}`
       };
     });
   }
@@ -4940,6 +5013,8 @@ class Database {
       active: users.filter(u => u.status !== 'Inactive').length,
       inactive: users.filter(u => u.status === 'Inactive').length,
       managingDirector: users.filter(u => ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role)).length,
+      ceo: users.filter(u => u.role === 'CEO').length,
+      admin: users.filter(u => u.role === 'Admin').length,
       gm: users.filter(u => u.role === 'GM').length,
       engineers: users.filter(u => u.role === 'Engineer').length,
       supervisors: users.filter(u => u.role === 'Supervisor').length,
