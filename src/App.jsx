@@ -245,7 +245,7 @@ function AppContent() {
 
           {activeTab === 'settings' && !['Projects Manager', 'projects_manager', 'Project Manager', 'PM', 'Technician'].includes(currentUser?.role) && <CompanySettingsView />}
 
-          {activeTab === 'users' && (currentUser?.permissions?.canManageUsers || ['Admin', 'admin', 'CEO', 'ceo', 'Managing Director (MD)', 'Managing Director', 'MD', 'md', 'managing_director', 'GM', 'gm', 'Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role)) && <UserManagementView />}
+          {activeTab === 'users' && <UserManagementView />}
 
           {activeTab === 'accounts' && <AccountsView />}
 

@@ -400,6 +400,9 @@ export default function UserManagementView() {
   const countSales = users.filter(u => u.role === 'Sales').length;
   const countAccounts = users.filter(u => u.role === 'Accounts').length;
   const countProjects = users.filter(u => ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(u.role)).length;
+  const totalTechnicians = countTechnician;
+  const totalSales = countSales;
+  const totalManagement = countMD + countCEO + countAdmin + countGM + countProjects;
 
   const filteredUsers = users.filter(u => {
     // Role filter
