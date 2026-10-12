@@ -4,7 +4,7 @@ import {
   Users, UserPlus, Shield, UserCheck, AlertTriangle, Search, 
   Phone, Mail, Key, CheckCircle, XCircle, Edit2, Trash2, 
   ArrowRightLeft, Sparkles, Filter, Wrench, Briefcase, Lock, 
-  Check, X, AlertCircle, Eye
+  Check, X, AlertCircle, Eye, EyeOff, Copy
 } from 'lucide-react';
 
 export default function UserManagementView() {
@@ -23,6 +23,8 @@ export default function UserManagementView() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [tempPasswordResult, setTempPasswordResult] = useState(null); // { tempPassword, expiresAt }
   const [copiedTemp, setCopiedTemp] = useState(false);
+  const [showModalPassword, setShowModalPassword] = useState(true);
+  const [showDirectPassword, setShowDirectPassword] = useState(true);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -103,12 +105,13 @@ export default function UserManagementView() {
       role: 'Technician',
       phone: '+973 ',
       designation: 'Certified Fire Alarm Specialist',
-      pin: '',
-      password: '',
-      confirmPassword: '',
+      pin: '1234',
+      password: '1234',
+      confirmPassword: '1234',
       status: 'Active',
       notes: ''
     });
+    setShowModalPassword(true);
     setModalMode('add');
   };
 
@@ -118,6 +121,7 @@ export default function UserManagementView() {
       showToast('Staff editing is restricted to Management roles (Admin, CEO, MD, GM, Projects Manager).', 'error');
       return;
     }
+    const currentPass = user.pin || user.password || '1234';
     setSelectedUser(user);
     setFormData({
       name: user.name || '',
@@ -130,12 +134,13 @@ export default function UserManagementView() {
       role: user.role || 'Technician',
       phone: user.phone || '+973 ',
       designation: user.designation || '',
-      pin: user.password || user.pin || '',
-      password: user.password || user.pin || '',
-      confirmPassword: '',
+      pin: currentPass,
+      password: currentPass,
+      confirmPassword: currentPass,
       status: user.status || 'Active',
       notes: user.notes || ''
     });
+    setShowModalPassword(true);
     setModalMode('edit');
   };
 
@@ -688,6 +693,31 @@ export default function UserManagementView() {
                       </span>
                     </div>
 
+                    {/* Staff Password / PIN Badge (Visible to Admin & Management) */}
+                    {canManageStaff && (
+                      <div className="flex items-center justify-between bg-amber-50/90 border border-amber-200/90 rounded-xl px-2.5 py-1.5 text-xs">
+                        <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+                          <Key className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span className="text-[11px]">Password / PIN:</span>
+                          <span className="font-mono font-black text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider text-[11px] select-all shadow-2xs">
+                            {u.pin || u.password || '1234'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(u.pin || u.password || '1234');
+                            showToast(`Copied password for ${u.name}!`, 'success');
+                          }}
+                          className="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold border border-amber-200 transition-colors flex items-center gap-1 shadow-2xs"
+                          title="Copy staff password to clipboard"
+                        >
+                          <Copy className="w-2.5 h-2.5" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-slate-600">
                       <span className="flex items-center gap-1.5 font-medium truncate">
                         <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -967,26 +997,58 @@ export default function UserManagementView() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-bold text-slate-700">App Password / PIN *</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(p => ({ ...p, pin: '1234', password: '1234', confirmPassword: '1234' }))}
+                        className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Default (1234)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rnd = Math.floor(1000 + Math.random() * 9000).toString();
+                          setFormData(p => ({ ...p, pin: rnd, password: rnd, confirmPassword: rnd }));
+                        }}
+                        className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Random PIN
+                      </button>
+                    </div>
                   </div>
-                  <input
-                    type="password"
-                    required={modalMode === 'add'}
-                    placeholder={modalMode === 'add' ? "Enter secure password" : "Leave blank to keep unchanged"}
-                    value={formData.password || ''}
-                    onChange={(e) => setFormData(p => ({ ...p, pin: e.target.value, password: e.target.value }))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
-                  />
-                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Only needed if you change the password.' : 'Staff password required to open mobile app.'}</span>
-                  <input
-                    type="password"
-                    placeholder="Confirm password"
-                    value={formData.confirmPassword || ''}
-                    onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
-                    className={`mt-1.5 w-full p-2.5 bg-slate-50 border rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm ${
-                      formData.confirmPassword && formData.confirmPassword !== formData.password ? 'border-red-400' : 'border-slate-200'
-                    }`}
-                  />
-                  <span className="text-[10px] text-slate-400">{modalMode === 'edit' ? 'Re-enter only if changing password.' : 'Re-enter the password to verify.'}</span>
+                  <div className="relative">
+                    <input
+                      type={showModalPassword ? "text" : "password"}
+                      required
+                      placeholder="Enter password or PIN"
+                      value={formData.password || ''}
+                      onChange={(e) => setFormData(p => ({ ...p, pin: e.target.value, password: e.target.value }))}
+                      className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowModalPassword(!showModalPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showModalPassword ? "Hide password" : "Show password"}
+                    >
+                      {showModalPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Staff password required to open mobile app or web portal.</span>
+                  
+                  <div className="relative mt-1.5">
+                    <input
+                      type={showModalPassword ? "text" : "password"}
+                      placeholder="Confirm password"
+                      value={formData.confirmPassword || ''}
+                      onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
+                      className={`w-full p-2.5 pr-10 bg-slate-50 border rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm ${
+                        formData.confirmPassword && formData.confirmPassword !== formData.password ? 'border-red-400' : 'border-slate-200'
+                      }`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-400">Re-enter to verify.</span>
                 </div>
               </div>
 
@@ -1168,6 +1230,27 @@ export default function UserManagementView() {
               </button>
             </div>
 
+            {/* Current Password / PIN Banner */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-600" />
+                <span className="text-slate-600 font-bold">Current Password / PIN:</span>
+                <span className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300 tracking-wider">
+                  {passwordModalUser.pin || passwordModalUser.password || '1234'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(passwordModalUser.pin || passwordModalUser.password || '1234');
+                  showToast('Password copied to clipboard', 'success');
+                }}
+                className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
+              >
+                Copy
+              </button>
+            </div>
+
             {/* Generated Temporary Password Display (Shown once to Admin) */}
             {tempPasswordResult && (
               <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2.5 animate-in slide-in-from-top-2">
@@ -1242,16 +1325,44 @@ export default function UserManagementView() {
             {/* Option C: Direct Manual Password Assignment */}
             <form onSubmit={handleSavePassword} className="pt-2 border-t border-slate-100 space-y-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Option C: Set Specific Password / PIN Directly
-                </label>
-                <input
-                  type="password"
-                  placeholder="Enter new password / PIN (min 3 chars)"
-                  value={newPasswordInput}
-                  onChange={(e) => setNewPasswordInput(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">
+                    Option C: Set Specific Password / PIN Directly
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewPasswordInput('1234')}
+                      className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer"
+                    >
+                      Default (1234)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewPasswordInput(Math.floor(1000 + Math.random() * 9000).toString())}
+                      className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer"
+                    >
+                      Random PIN
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showDirectPassword ? "text" : "password"}
+                    placeholder="Enter new password / PIN (min 3 chars)"
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 tracking-wider"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDirectPassword(!showDirectPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showDirectPassword ? "Hide password" : "Show password"}
+                  >
+                    {showDirectPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="pt-1 flex gap-2">

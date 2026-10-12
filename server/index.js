@@ -196,10 +196,12 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const expectedSecret = (user.password || user.pin || '').toString().trim();
+  const pinSecret = (user.pin || '').toString().trim();
   if (!expectedSecret) {
     return res.status(401).json({ error: 'Password Not Set', message: 'No password has been configured for this account. Please contact an Administrator.' });
   }
-  if (!verifyPassword(inputSecret, expectedSecret)) {
+  const isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+  if (!isMatch) {
     db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Failed login attempt for user ${user.name}`, { status: 'FAILED' });
     return res.status(401).json({ error: 'Incorrect Password', message: 'Invalid password or PIN entered. Please try again.' });
   }
@@ -338,7 +340,7 @@ app.get('/api/users', (req, res) => {
       status: u.status
     })));
   }
-  res.json(users.map(u => sanitizeUser(u)));
+  res.json(users.map(u => sanitizeUser(u, req.user?.role)));
 });
 
 app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
@@ -374,7 +376,7 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     phone: phone ? phone.trim() : '',
     designation: designation ? designation.trim() : role,
     status: status || 'Active',
-    pin: hashedPass,
+    pin: cleanPass,
     password: hashedPass,
     notes: notes || '',
     avatar: initials || 'FS',
@@ -385,7 +387,7 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
   });
 
   db.logAudit(req.user.id, 'CREATE_USER', 'users', newUser.id, `Created user ${name} with role ${role} by ${req.user.name}`);
-  res.status(201).json(sanitizeUser(newUser));
+  res.status(201).json(sanitizeUser(newUser, req.user?.role));
 });
 
 app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
@@ -413,7 +415,7 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
     if (cleanPass && !cleanPass.startsWith('pbkdf2:')) {
       const hashedPass = hashPassword(cleanPass);
       updates.password = hashedPass;
-      updates.pin = hashedPass;
+      updates.pin = cleanPass;
       updates.last_reset_by_id = req.user.id;
       updates.last_reset_by_name = req.user.name;
       updates.last_reset_by_role = req.user.role;
@@ -424,7 +426,7 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
 
   const updated = db.update('users', req.params.id, updates);
   db.logAudit(req.user.id, 'UPDATE_USER', 'users', req.params.id, `Updated user details for ${existing.name} by ${req.user.name}`);
-  res.json(sanitizeUser(updated));
+  res.json(sanitizeUser(updated, req.user?.role));
 });
 
 // Dedicated Password Management: Admin, CEO, MD, GM, Projects Manager can set password
@@ -441,7 +443,7 @@ app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, r
   const hashed = hashPassword(cleanPass);
   const updated = db.update('users', target.id, {
     password: hashed,
-    pin: hashed,
+    pin: cleanPass,
     must_change_password: false,
     temp_password_active: false,
     temp_password_expires_at: null,
@@ -454,7 +456,7 @@ app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, r
   });
 
   db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role}) by ${req.user.name}`);
-  res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated) });
+  res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated, req.user?.role) });
 });
 
 // Management Advanced Password Reset (Admin, CEO, MD, GM, Projects Manager):
@@ -478,7 +480,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
     db.logAudit(req.user.id, 'STATUS_CHANGE', 'users', target.id, `Account status for ${target.name} changed to ${newStatus} by ${req.user.name}`);
     return res.json({
       message: `Account status updated to ${newStatus}`,
-      user: sanitizeUser(updated)
+      user: sanitizeUser(updated, req.user?.role)
     });
   }
 
@@ -491,7 +493,8 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
 
     const updated = db.update('users', target.id, {
       password: hashedTemp,
-      pin: hashedTemp,
+      pin: plainTemp,
+      temp_password: plainTemp,
       temp_password_active: true,
       temp_password_expires_at: expiresAt,
       must_change_password: true,
@@ -509,7 +512,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
       message: `Temporary password generated for ${target.name}. It will expire in 24 hours.`,
       tempPassword: plainTemp,
       expiresAt,
-      user: sanitizeUser(updated)
+      user: sanitizeUser(updated, req.user?.role)
     });
   }
 
@@ -528,7 +531,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
 
     return res.json({
       message: `User ${target.name} will be required to change password on next login.`,
-      user: sanitizeUser(updated)
+      user: sanitizeUser(updated, req.user?.role)
     });
   }
 
@@ -541,7 +544,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
     const hashed = hashPassword(cleanPass);
     const updated = db.update('users', target.id, {
       password: hashed,
-      pin: hashed,
+      pin: cleanPass,
       must_change_password: false,
       temp_password_active: false,
       temp_password_expires_at: null,
@@ -557,7 +560,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
 
     return res.json({
       message: `Password for ${target.name} updated successfully.`,
-      user: sanitizeUser(updated)
+      user: sanitizeUser(updated, req.user?.role)
     });
   }
 

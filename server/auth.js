@@ -614,7 +614,7 @@ function verifyPassword(inputPassword, storedPassword) {
   return strInput === strStored;
 }
 
-function sanitizeUser(user) {
+function sanitizeUser(user, viewerRole) {
   if (!user) return null;
   const { password, pin, ...safe } = user;
   
@@ -639,8 +639,33 @@ function sanitizeUser(user) {
     }
   }
 
+  // If viewer is Admin or authorized Management, expose readable password/PIN
+  const normViewer = viewerRole ? normalizeRole(viewerRole) : null;
+  const canViewCredentials = normViewer && [
+    'Admin',
+    'CEO',
+    'Managing Director (MD)',
+    'GM',
+    'Projects Manager'
+  ].includes(normViewer);
+
+  let displayPass = null;
+  if (user.pin && !String(user.pin).startsWith('pbkdf2:')) {
+    displayPass = user.pin;
+  } else if (user.password && !String(user.password).startsWith('pbkdf2:')) {
+    displayPass = user.password;
+  } else if (user.temp_password) {
+    displayPass = user.temp_password;
+  } else {
+    displayPass = '1234';
+  }
+
   return {
     ...safe,
+    ...(canViewCredentials ? {
+      pin: displayPass,
+      password: displayPass
+    } : {}),
     has_password: Boolean(password || pin),
     password_reset_status: resetStatus,
     created_by_name: createdByName || user.created_by || 'System',
