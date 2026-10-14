@@ -928,28 +928,9 @@ class Database {
         modified = true;
       }
 
-      // Ensure all staff have a readable PIN / password for Admin view
-      const DEFAULT_STAFF_PINS = {
-        'Amar': '8394',
-        'Abdulsattar Saiyed': '5666',
-        'Mohammed Alawadhi': '2464',
-        'Abdul majeed': '9351',
-        'Hasan Zulaikh': '7033',
-        'Chandiramohan': '3361',
-        'Sarath Kr': '4005',
-        'Eng. Mohamed Hweidi': '9497',
-        'Yaser Zidan': '1234',
-        'Admin': '1234',
-        'Ahamd Jamal': '1234',
-        'Wissam Jamal Hussein': '1234'
-      };
-
+      // Secure password preservation: never overwrite PBKDF2 hashes or user-set passwords
       (data.users || []).forEach(u => {
-        if (!u.pin || String(u.pin).startsWith('pbkdf2:')) {
-          u.pin = DEFAULT_STAFF_PINS[u.name] || '1234';
-          modified = true;
-        }
-        if (!u.password || String(u.password).startsWith('pbkdf2:')) {
+        if (!u.password && u.pin) {
           u.password = u.pin;
           modified = true;
         }
