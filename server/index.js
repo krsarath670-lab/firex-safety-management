@@ -1224,7 +1224,7 @@ app.get('/api/sites', (req, res) => {
 });
 
 app.post('/api/sites', requirePermission('canManageSites'), (req, res) => {
-  const { customer_id, site_name, site_address, contact_person, contact_number, email, building_type, site_location, equipment_info, notes } = req.body;
+  const { customer_id, site_name, site_address, contact_person, contact_number, email, building_type, site_location, equipment_info, notes, buildings } = req.body;
   if (!site_name || !customer_id) return res.status(400).json({ error: 'Site name and Customer ID are required' });
   const newSite = db.insert('sites', {
     customer_id,
@@ -1236,10 +1236,20 @@ app.post('/api/sites', requirePermission('canManageSites'), (req, res) => {
     building_type: building_type || 'Commercial',
     site_location: site_location || '',
     equipment_info: equipment_info || '',
-    notes: notes || ''
+    notes: notes || '',
+    buildings: Array.isArray(buildings) ? buildings : []
   });
   db.logAudit(req.user.id, 'CREATE_SITE', 'sites', newSite.id, `Created site ${site_name}`);
   res.status(201).json(newSite);
+});
+
+app.put('/api/sites/:id', requirePermission('canManageSites'), (req, res) => {
+  const siteId = req.params.id;
+  const existing = db.getById('sites', siteId);
+  if (!existing) return res.status(404).json({ error: 'Site not found' });
+  const updated = db.update('sites', siteId, req.body);
+  db.logAudit(req.user.id, 'UPDATE_SITE', 'sites', siteId, `Updated site ${existing.site_name}`);
+  res.json(updated);
 });
 
 app.get('/api/sites/:id/details', (req, res) => {
@@ -2011,6 +2021,20 @@ app.post('/api/sites/:id/equipment', (req, res) => {
   const items = Array.isArray(req.body) ? req.body : [req.body];
   const saved = db.saveSiteEquipment(req.params.id, items);
   res.json(saved);
+});
+
+// --- AMC CHECKLIST TEMPLATES (Admin & CEO configuration) ---
+app.get('/api/checklist-templates', (req, res) => {
+  const result = db.getChecklistTemplates();
+  res.json(result);
+});
+
+app.put('/api/checklist-templates/:systemKey', (req, res) => {
+  if (!['Admin', 'CEO', 'GM', 'Managing Director (MD)', 'Managing Director', 'managing_director'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Admin and CEO can configure checklist templates.' });
+  }
+  const result = db.updateChecklistTemplate(req.params.systemKey, req.body, req.user);
+  res.json({ success: true, template: result });
 });
 
 // --- JOBS MANAGEMENT (Requirements 2-11, 32-37) ---

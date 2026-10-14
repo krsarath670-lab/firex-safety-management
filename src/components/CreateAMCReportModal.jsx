@@ -211,6 +211,7 @@ export default function CreateAMCReportModal({
       technician_name: selectedTechnicianName,
       systems: selectedVisit.systems,
       systems_covered: selectedVisit.systems,
+      buildings: activeContract.buildings || [],
       status: selectedVisit.status,
       prepared_by_name: currentUser?.name || selectedTechnicianName,
       prepared_by_user_id: currentUser?.id

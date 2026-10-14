@@ -121,37 +121,14 @@ export default function PDFReportGenerator({ report, onClose }) {
         className="w-full max-w-3xl bg-white shadow-2xl rounded-xl p-6 sm:p-10 text-slate-900 font-sans border border-slate-300 mb-12"
       >
         
-        {/* Bilingual Company Letterhead Banner (Requirements 6 & 7) */}
-        <div className="border-b-2 border-red-600 pb-3 mb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src={companySettings?.logo_url || '/logo.png'}
-                alt="FIREX Logo"
-                className="h-16 w-auto object-contain shrink-0 max-w-[120px]"
-                crossOrigin="anonymous"
-                onError={(e) => { e.target.src = '/logo.png'; }}
-              />
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-red-600">
-                  {companySettings?.company_name || 'FIREX FIRE & SAFETY'}
-                </h1>
-                <p className="text-sm font-bold text-slate-800" dir="rtl">
-                  {companySettings?.arabic_name || 'شركة فايركس لأدوات السلامه ذ.م.م'}
-                </p>
-                <p className="text-[10px] font-bold text-slate-600 tracking-wide">
-                  Safety Items W.L.L. • Al Seef, Kingdom of Bahrain
-                </p>
-              </div>
-            </div>
-
-            <div className="text-right text-[10px] text-slate-600 font-semibold space-y-0.5 shrink-0">
-              <p className="font-mono text-slate-900 font-bold">CR No: {companySettings?.cr_no || companySettings?.cr_number || '96850 1'}</p>
-              <p className="font-mono text-slate-900 font-bold">VAT No: {companySettings?.vat_no || companySettings?.vat_number || '220006271900002'}</p>
-              <p>Email: {companySettings?.email || 'service@firexbahrain.com'}</p>
-              <p>Tel: {companySettings?.phone || '+973 1716 2240'}</p>
-            </div>
-          </div>
+        {/* Official Approved Letterhead Banner (Part 10 - Exact graphic banner, no HTML substitute) */}
+        <div className="w-full mb-4 border-b-2 border-red-600 pb-2">
+          <img
+            src={companySettings?.letterhead_url || '/letterhead.png'}
+            alt="FIREX Fire & Safety"
+            className="w-full h-auto object-contain max-h-28 sm:max-h-32 mx-auto"
+            crossOrigin="anonymous"
+          />
         </div>
 
         {/* Official Document Banner (Requirements 8 & 9: Shows standard FX Document Number) */}

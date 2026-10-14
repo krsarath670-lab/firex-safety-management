@@ -418,6 +418,28 @@
   ],
   "customers": [
     {
+      "name": "Test Customer WLL",
+      "customer_code": "CUST-TST-01",
+      "cr_no": "",
+      "vat_no": "",
+      "villa_unit": "",
+      "building_no": "",
+      "road_no": "",
+      "block_no": "",
+      "area": "Al Seef",
+      "country": "Bahrain",
+      "contact_person": "Ebrahim Al Mannai",
+      "contact_mobile": "+973 3999 8888",
+      "phone": "",
+      "email": "info@testcustomer.com",
+      "remarks": "",
+      "notes": "",
+      "status": "Active",
+      "address": "Al Seef, Bahrain",
+      "id": "cus-1792007753200-113",
+      "created_at": "2026-10-14T19:55:53.200Z"
+    },
+    {
       "name": "Hawwar School",
       "customer_code": "CUST-BH-001",
       "cr_no": "111",
@@ -442,6 +464,90 @@
   ],
   "sites": [
     {
+      "customer_id": "cus-1792007753200-113",
+      "site_name": "Test Complex",
+      "site_address": "Building 100, Road 400, Seef, Bahrain",
+      "contact_person": "Ebrahim Al Mannai",
+      "contact_number": "+973 3999 8888",
+      "email": "",
+      "building_type": "Commercial",
+      "site_location": "",
+      "equipment_info": "",
+      "notes": "",
+      "buildings": [
+        {
+          "id": "bld-tst-1",
+          "building_number": "1",
+          "name": "Tower A",
+          "location": "Commercial Main Tower"
+        },
+        {
+          "id": "bld-tst-2",
+          "building_number": "2",
+          "name": "Tower B",
+          "location": "Residential Annex"
+        }
+      ],
+      "id": "sit-1792007845543-849",
+      "created_at": "2026-10-14T19:57:25.543Z"
+    },
+    {
+      "customer_id": "cus-1792007753200-113",
+      "site_name": "Test Complex",
+      "site_address": "Building 100, Road 400, Seef, Bahrain",
+      "contact_person": "",
+      "contact_number": "",
+      "email": "",
+      "building_type": "Commercial",
+      "site_location": "",
+      "equipment_info": "",
+      "notes": "",
+      "buildings": [
+        {
+          "id": "bld-tst-1",
+          "building_number": "1",
+          "name": "Tower A",
+          "location": "Commercial Main Tower"
+        },
+        {
+          "id": "bld-tst-2",
+          "building_number": "2",
+          "name": "Tower B",
+          "location": "Residential Annex"
+        }
+      ],
+      "id": "sit-1792007805729-104",
+      "created_at": "2026-10-14T19:56:45.729Z"
+    },
+    {
+      "customer_id": "cus-1792007753200-113",
+      "site_name": "Test Complex",
+      "site_address": "Building 100, Road 400, Seef, Bahrain",
+      "contact_person": "Ebrahim Al Mannai",
+      "contact_number": "+973 3999 8888",
+      "email": "",
+      "building_type": "Commercial",
+      "site_location": "",
+      "equipment_info": "",
+      "notes": "",
+      "buildings": [
+        {
+          "id": "bld-tst-1",
+          "building_number": "1",
+          "name": "Tower A",
+          "location": "Commercial Main Tower"
+        },
+        {
+          "id": "bld-tst-2",
+          "building_number": "2",
+          "name": "Tower B",
+          "location": "Residential Annex"
+        }
+      ],
+      "id": "sit-1792007753263-923",
+      "created_at": "2026-10-14T19:55:53.263Z"
+    },
+    {
       "customer_id": "cus-1791205043580-498",
       "site_name": "School",
       "site_address": "Riffa, Bahrain",
@@ -456,6 +562,384 @@
     }
   ],
   "amc_contracts": [
+    {
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "site_id": "sit-1792007845543-849",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "contract_type": "Comprehensive",
+      "start_date": "2026-10-01",
+      "end_date": "2027-10-01",
+      "service_start_date": "2026-10-01",
+      "extinguisher_start_date": "2026-10-01",
+      "supervisor_id": null,
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_name": "Unassigned Supervisor",
+      "technician_id": null,
+      "assigned_technician": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "renewal_date": "2027-10-01",
+      "contract_status": "Active",
+      "status": "Active",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "Fire Extinguishers",
+        "FM200"
+      ],
+      "systems_covered": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "Fire Extinguishers",
+        "FM200"
+      ],
+      "visit_frequency": "System-Specific",
+      "quotation_number": "",
+      "contract_value": 1200,
+      "vat_percent": 10,
+      "vat_amount": 120,
+      "total_including_vat": 1320,
+      "currency": "BHD",
+      "contact_person": "",
+      "remarks": "",
+      "reminder_days": [
+        90,
+        60,
+        30,
+        7
+      ],
+      "submitted_at": null,
+      "created_by": "use-1791834992009-260",
+      "created_at": "2026-10-14T19:57:25.625Z",
+      "id": "amc-1792007845636-930",
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (October 2026)",
+          "months": "Oct – Dec 2026",
+          "fullMonths": "October – December 2026",
+          "status": "Overdue",
+          "scheduled_date": "2026-10-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Extinguishers",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": "rpt-amc-1792007846397",
+          "report_number": "FX AMC RPT-10-002",
+          "report_status": "Not Started"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (January 2027)",
+          "months": "Jan – Mar 2027",
+          "fullMonths": "January – March 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-01-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (April 2027)",
+          "months": "Apr – Jun 2027",
+          "fullMonths": "April – June 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-04-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Extinguishers",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (July 2027)",
+          "months": "Jul – Sep 2027",
+          "fullMonths": "July – September 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-07-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      },
+      "updated_at": "2026-10-14T19:57:25.787Z"
+    },
+    {
+      "contract_number": "AMC-TST-2026-99",
+      "customer_id": "cus-1792007753200-113",
+      "site_id": "sit-1792007753263-923",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "contract_type": "Comprehensive",
+      "start_date": "2026-10-01",
+      "end_date": "2027-10-01",
+      "service_start_date": "2026-10-01",
+      "extinguisher_start_date": "2026-10-01",
+      "supervisor_id": null,
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_name": "Unassigned Supervisor",
+      "technician_id": null,
+      "assigned_technician": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "renewal_date": "2027-10-01",
+      "contract_status": "Active",
+      "status": "Active",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "Fire Extinguishers",
+        "FM200"
+      ],
+      "systems_covered": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "Fire Extinguishers",
+        "FM200"
+      ],
+      "visit_frequency": "System-Specific",
+      "quotation_number": "",
+      "contract_value": 1200,
+      "vat_percent": 10,
+      "vat_amount": 120,
+      "total_including_vat": 1320,
+      "currency": "BHD",
+      "contact_person": "",
+      "remarks": "",
+      "reminder_days": [
+        90,
+        60,
+        30,
+        7
+      ],
+      "submitted_at": null,
+      "created_by": "use-1791834992009-260",
+      "created_at": "2026-10-14T19:55:53.357Z",
+      "id": "amc-1792007753370-540",
+      "quarters": {
+        "Q1": {
+          "quarter": "Q1",
+          "name": "Q1 (October 2026)",
+          "months": "Oct – Dec 2026",
+          "fullMonths": "October – December 2026",
+          "status": "Overdue",
+          "scheduled_date": "2026-10-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Extinguishers",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        },
+        "Q2": {
+          "quarter": "Q2",
+          "name": "Q2 (January 2027)",
+          "months": "Jan – Mar 2027",
+          "fullMonths": "January – March 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-01-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        },
+        "Q3": {
+          "quarter": "Q3",
+          "name": "Q3 (April 2027)",
+          "months": "Apr – Jun 2027",
+          "fullMonths": "April – June 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-04-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Extinguishers",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        },
+        "Q4": {
+          "quarter": "Q4",
+          "name": "Q4 (July 2027)",
+          "months": "Jul – Sep 2027",
+          "fullMonths": "July – September 2027",
+          "status": "Scheduled",
+          "scheduled_date": "2027-07-01",
+          "actual_visit_date": null,
+          "technician_name": "Unassigned Technician",
+          "supervisor_name": "Unassigned Supervisor",
+          "systems_inspected": [
+            "Fire Alarm",
+            "Fire Fighting",
+            "Fire Hose Reel",
+            "Landing Valve",
+            "FM200"
+          ],
+          "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+          "checklist": {},
+          "faults_count": 0,
+          "faults_details": "",
+          "corrective_action": "",
+          "materials_used": [],
+          "photos": [],
+          "technician_remarks": "",
+          "customer_rep_name": "",
+          "customer_rep_designation": "",
+          "customer_signature": null,
+          "report_id": null,
+          "report_number": null,
+          "report_status": "Not Started"
+        }
+      },
+      "updated_at": "2026-10-14T19:55:53.435Z"
+    },
     {
       "contract_number": "AMC-2026-001",
       "customer_id": "cus-1791205043580-498",
@@ -629,6 +1113,691 @@
     }
   ],
   "amc_visits": [
+    {
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "site_id": "sit-1792007845543-849",
+      "sales_person_id": "use-1791204899105-379",
+      "visit_number": 1,
+      "scheduled_date": "2026-10-15",
+      "technician_id": "Unassigned",
+      "assigned_technician": "Unassigned",
+      "assigned_team": "FireX Service Team",
+      "system_type": "Fire Alarm",
+      "system": "Fire Alarm",
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "remarks": "",
+      "id": "amc-1792007846065-451",
+      "created_at": "2026-10-14T19:57:26.065Z",
+      "service_sequence": 1,
+      "frequency_months": 3,
+      "service_cycle": "Q1",
+      "quarter": "Q1",
+      "original_scheduled_date": "2026-10-15",
+      "rescheduled_date": null,
+      "actual_service_date": "2026-10-14",
+      "completed_date": null,
+      "supervisor_id": "usr-sup",
+      "report_id": "rpt-amc-1792007846397",
+      "checklist_data": {
+        "status": "In Progress",
+        "submitted_at": null,
+        "submitted_by": null,
+        "buildings": [
+          {
+            "building_id": "bld-tst-1",
+            "building_number": "1",
+            "building_name": "Tower A",
+            "location": "Commercial Main Tower",
+            "selected_systems": [
+              "fire_alarm",
+              "fire_hose_reels",
+              "landing_valves",
+              "fire_extinguishers",
+              "emergency_lights"
+            ],
+            "checklists": {
+              "fire_alarm": [
+                {
+                  "id": "fa-1-1",
+                  "item": "Main FACP Tower A",
+                  "status": "OK",
+                  "remarks": "Normal standby, loop healthy"
+                }
+              ],
+              "fire_hose_reels": [
+                {
+                  "id": "hr-1-1",
+                  "reel_id": "HR-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Main Lobby",
+                  "cabinet_condition": "OK",
+                  "hose_condition": "OK",
+                  "nozzle_operation": "OK",
+                  "valve_operation": "OK",
+                  "leakage_test": "OK",
+                  "water_flow_test": "OK",
+                  "status": "OK",
+                  "remarks": "30m unreeled, dynamic spray pattern verified"
+                }
+              ],
+              "landing_valves": [
+                {
+                  "id": "lv-1-1",
+                  "valve_id": "LV-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Core A Staircase",
+                  "valve_condition": "OK",
+                  "accessibility": "OK",
+                  "cap_chain": "OK",
+                  "handwheel_operation": "OK",
+                  "coupling_condition": "OK",
+                  "leakage_check": "OK",
+                  "pressure_flow_test": "OK",
+                  "status": "OK",
+                  "remarks": "Instantaneous coupling washer intact, no leaks"
+                }
+              ],
+              "fire_extinguishers": [
+                {
+                  "id": "ext-1-1",
+                  "ext_id": "EXT-A-01",
+                  "type": "CO2 (Carbon Dioxide)",
+                  "capacity": "5 kg",
+                  "serial_number": "FX-CO2-A01",
+                  "floor": "Basement",
+                  "location": "Electrical Room",
+                  "condition": "OK",
+                  "pressure_gauge": "N/A",
+                  "weight_status": "OK",
+                  "safety_pin": "OK",
+                  "status": "OK",
+                  "remarks": "Gross weight 11.9kg verified"
+                },
+                {
+                  "id": "ext-1-2",
+                  "ext_id": "EXT-A-02",
+                  "type": "ABC Dry Chemical Powder",
+                  "capacity": "6 kg",
+                  "serial_number": "FX-DCP-A02",
+                  "floor": "Ground Floor",
+                  "location": "Corridor",
+                  "condition": "OK",
+                  "pressure_gauge": "OK",
+                  "weight_status": "OK",
+                  "safety_pin": "OK",
+                  "status": "OK",
+                  "remarks": "Needle in green at 14 bar"
+                }
+              ],
+              "emergency_lights": [
+                {
+                  "id": "em-1-1",
+                  "light_id": "EM-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Corridor",
+                  "type": "Twin Spot 2x5W",
+                  "ac_power_indicator": "OK",
+                  "duration_test_passed": "OK",
+                  "status": "OK",
+                  "remarks": "90-minute battery duration test passed"
+                }
+              ]
+            },
+            "defects": [],
+            "remarks": "Tower A fire protection systems fully operational"
+          },
+          {
+            "building_id": "bld-tst-2",
+            "building_number": "2",
+            "building_name": "Tower B",
+            "location": "Residential Annex",
+            "selected_systems": [
+              "fire_alarm",
+              "fire_fighting",
+              "fm200_suppression"
+            ],
+            "checklists": {
+              "fire_alarm": [
+                {
+                  "id": "fa-2-1",
+                  "item": "FACP Sub-Panel Tower B",
+                  "status": "OK",
+                  "remarks": "Connected to master network"
+                }
+              ],
+              "fire_fighting": [
+                {
+                  "id": "ff-2-1",
+                  "item": "Electric Fire Pump",
+                  "status": "OK",
+                  "remarks": "750 GPM tested auto-start"
+                },
+                {
+                  "id": "ff-2-2",
+                  "item": "Diesel Fire Pump",
+                  "status": "OK",
+                  "remarks": "Cranking battery sound"
+                }
+              ],
+              "fm200_suppression": [
+                {
+                  "id": "fm-2-1",
+                  "system_tag": "FM200-TB-SERVER",
+                  "room_name": "Tower B Server Room",
+                  "floor": "1st Floor",
+                  "cylinder_pressure": "OK",
+                  "liquid_weight": "OK",
+                  "abort_switch": "OK",
+                  "room_integrity_enclosure": "OK",
+                  "status": "OK",
+                  "remarks": "Pressure 25 bar normal, door seals intact"
+                }
+              ]
+            },
+            "defects": [],
+            "remarks": "Tower B suppression and pumps tested"
+          }
+        ],
+        "fire_alarm_items": [
+          {
+            "item_no": 1,
+            "item": "Main Fire Alarm Control Panel (FACP)",
+            "make": "Notifier / Honeywell",
+            "type": "Addressable FACP",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Standby normal, zero active faults",
+            "id": "fa-1-1",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 2,
+            "item": "No. of Zones / Addressable Loops",
+            "make": "",
+            "type": "Addressable Loop",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "All loops reporting normal communication",
+            "id": "fa-1-2",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 3,
+            "item": "Loop Circuit Continuity & Isolators",
+            "make": "",
+            "type": "Loop Isolators",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Full loop continuity confirmed",
+            "id": "fa-1-3",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 4,
+            "item": "Protocol & Polling Speed",
+            "make": "",
+            "type": "FlashScan / CLIP",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Polling speed normal",
+            "id": "fa-1-4",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 5,
+            "item": "A/C Primary Mains Power Supply",
+            "make": "",
+            "type": "230V AC Dedicated Supply",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Mains healthy, breaker locked ON",
+            "id": "fa-1-5",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 6,
+            "item": "Standby Battery Backup & Charger",
+            "make": "Yuasa / Power-Sonic",
+            "type": "12V 17Ah SLA Standby",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Float voltage 27.4V, load test passed",
+            "id": "fa-1-6",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 7,
+            "item": "Optical Smoke Detectors",
+            "make": "System Sensor",
+            "type": "Optical Smoke Detector",
+            "quantity": "45",
+            "status": "OK",
+            "remarks": "Sample aerosol response within 10s",
+            "id": "fa-1-7",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 8,
+            "item": "Thermal / Heat Detectors",
+            "make": "System Sensor",
+            "type": "Rate-of-Rise / Fixed Temp",
+            "quantity": "12",
+            "status": "OK",
+            "remarks": "Kitchen and plant room sensors tested",
+            "id": "fa-1-8",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 9,
+            "item": "Multi-Criteria Optical/Heat Sensors",
+            "make": "System Sensor",
+            "type": "Optical / Heat Multi",
+            "quantity": "8",
+            "status": "OK",
+            "remarks": "Clean, sensitivity verified",
+            "id": "fa-1-9",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 10,
+            "item": "Manual Call Points / Break Glass",
+            "make": "KAC",
+            "type": "Manual Call Point (Resettable)",
+            "quantity": "16",
+            "status": "OK",
+            "remarks": "Tested with key, alarm initiated at FACP",
+            "id": "fa-1-10",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 11,
+            "item": "Monitor & Control Modules",
+            "make": "Notifier",
+            "type": "I/O Interface Modules",
+            "quantity": "10",
+            "status": "OK",
+            "remarks": "Interlock signals verified",
+            "id": "fa-1-11",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 12,
+            "item": "Electronic Alarm Sounders",
+            "make": "Notifier",
+            "type": "Electronic Sounder 24V",
+            "quantity": "20",
+            "status": "OK",
+            "remarks": "Sound level > 85 dB(A) at 3m",
+            "id": "fa-1-12",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 13,
+            "item": "Sounder Beacon / Strobe Lights",
+            "make": "System Sensor",
+            "type": "Sounder Beacon VAD",
+            "quantity": "8",
+            "status": "OK",
+            "remarks": "Audible & flashing synchronized",
+            "id": "fa-1-13",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 14,
+            "item": "Motorized Fire Alarm Bells",
+            "make": "FireX",
+            "type": "Motorized 6\" / 8\" Fire Bell",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Clear audible strike confirmed",
+            "id": "fa-1-14",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 15,
+            "item": "Auxiliary Warning Devices / Horns",
+            "make": "",
+            "type": "Aux Voice / Warning Device",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Auxiliary warning horn operational",
+            "id": "fa-1-15",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 16,
+            "item": "Optical Beam Smoke Detectors",
+            "make": "FireRay",
+            "type": "Reflective Optical Beam",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Atrium beam alignment and obscuration test passed",
+            "id": "fa-1-16",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 17,
+            "item": "Auxiliary Contacts (AHU / Elevator / Doors)",
+            "make": "",
+            "type": "Interlock Contacts",
+            "quantity": "6",
+            "status": "OK",
+            "remarks": "AHU trip and elevator grounding interlocks tested",
+            "id": "fa-1-17",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 18,
+            "item": "Civil Defense Auto-Dialer Link",
+            "make": "Civil Defense Auto-dialer",
+            "type": "24/7 Transmitter Link",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Civil Defense communication line healthy",
+            "id": "fa-1-18",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 19,
+            "item": "Network Link to Master Panel / Repeater",
+            "make": "Notifier Network",
+            "type": "RS-485 / Fiber Optic Link",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Repeater receiving events normally",
+            "id": "fa-1-19",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 20,
+            "item": "FACP LEDs, Buzzer & Display",
+            "make": "",
+            "type": "LED Status Bar & Backlit LCD",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Lamp test function executed, zero dead pixels",
+            "id": "fa-1-20",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 21,
+            "item": "Fire Resistant Cabling & Conduits",
+            "make": "FP200 Gold",
+            "type": "2-Core 1.5mm Fire Resistant",
+            "quantity": "N/A",
+            "status": "OK",
+            "remarks": "Insulation and conduit sound",
+            "id": "fa-1-21",
+            "building_number": "1",
+            "photos": []
+          }
+        ],
+        "fire_fighting_items": [
+          {
+            "item_no": 1,
+            "item": "Main Electric Fire Pump",
+            "make": "Peerless / Patterson",
+            "type": "Centrifugal 750 GPM @ 10 Bar",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Bearing temperature & auto-start normal",
+            "id": "ff-1-1",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 2,
+            "item": "Standby Diesel Fire Pump",
+            "make": "Cummins / Clarke",
+            "type": "Emergency Diesel Backup Pump",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Battery cranking normal, fuel & coolant level 100%",
+            "id": "ff-1-2",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 3,
+            "item": "Jockey Pressure-Maintenance Pump",
+            "make": "Grundfos / Aurora",
+            "type": "Vertical Multistage 15 GPM",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Cut-in at 8.5 bar, cut-out at 10.5 bar",
+            "id": "ff-1-3",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 4,
+            "item": "UL/FM Dual Pump Controller",
+            "make": "Firetrol / Tornatech",
+            "type": "Automatic Electric/Diesel Controller",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Phase monitoring & auto-transfer switch tested",
+            "id": "ff-1-4",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 5,
+            "item": "Dedicated Fire Water Storage Tank",
+            "make": "GRP Panel",
+            "type": "10,000 Gallon Water Tank",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Water level 100%, float valve operational",
+            "id": "ff-1-5",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 6,
+            "item": "Suction & Discharge OS&Y Gate Valves",
+            "make": "Nibco / Viking",
+            "type": "OS&Y Gate & Butterfly Valves",
+            "quantity": "12",
+            "status": "OK",
+            "remarks": "All valves supervised and locked in OPEN position",
+            "id": "ff-1-6",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 7,
+            "item": "Glycerin-Filled Pressure Gauges",
+            "make": "WIKA",
+            "type": "0-25 bar Dial Gauges",
+            "quantity": "6",
+            "status": "OK",
+            "remarks": "Zero calibration verified, readable dials",
+            "id": "ff-1-7",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 8,
+            "item": "Automatic Fire Sprinkler System",
+            "make": "Tyco / Viking",
+            "type": "Pendent Glass Bulb 68°C",
+            "quantity": "120",
+            "status": "OK",
+            "remarks": "Glass bulbs intact, deflectors unobstructed",
+            "id": "ff-1-8",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 9,
+            "item": "Sprinkler Alarm Check Valve & Water Gong",
+            "make": "Tyco",
+            "type": "Alarm Check Valve & Motor Gong",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Retard chamber & water motor gong tested",
+            "id": "ff-1-9",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 10,
+            "item": "Outdoor Pillar Fire Hydrants 2.5\"",
+            "make": "FireX / Mueller",
+            "type": "Pillar Hydrant 2-Way 2.5\"",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Valve spindle lubricated, caps greased",
+            "id": "ff-1-10",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 11,
+            "item": "4-Way Dry/Wet Riser Breeching Inlet",
+            "make": "FireX",
+            "type": "4-Way Breeching Inlet",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Drain valve clear, clack valves seated properly",
+            "id": "ff-1-11",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 12,
+            "item": "Fire Brigade Connection (FBC)",
+            "make": "Civil Defense Spec",
+            "type": "Storz FBC 4\" Inlet",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Caps chained, clear access from road",
+            "id": "ff-1-12",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 13,
+            "item": "Heavy Duty Fire Blankets",
+            "make": "FireX",
+            "type": "Fiberglass 1.2m x 1.8m",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Pouch clean, release straps accessible",
+            "id": "ff-1-13",
+            "building_number": "1",
+            "photos": []
+          }
+        ],
+        "extinguisher_items": [
+          {
+            "id": "ext-1-1",
+            "ext_id": "EXT-1-01",
+            "building_number": "1",
+            "type": "CO2 (Carbon Dioxide)",
+            "make": "FireX",
+            "capacity": "5 kg",
+            "serial_number": "FX-CO2-9841",
+            "location": "Main Electrical Switchgear Room",
+            "floor": "Basement 1",
+            "condition": "OK",
+            "pressure_gauge": "N/A",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Gross weight 11.8 kg (Tare 6.8 kg + Charge 5.0 kg), horn clean",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          },
+          {
+            "id": "ext-1-2",
+            "ext_id": "EXT-1-02",
+            "building_number": "1",
+            "type": "ABC Dry Chemical Powder",
+            "make": "FireX",
+            "capacity": "6 kg",
+            "serial_number": "FX-DCP-5520",
+            "location": "Corridor by Staircase Core A",
+            "floor": "Ground Floor",
+            "condition": "OK",
+            "pressure_gauge": "OK",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Pressure gauge in green band (14 bar), tamper seal intact",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          },
+          {
+            "id": "ext-1-3",
+            "ext_id": "EXT-1-03",
+            "building_number": "1",
+            "type": "Wet Chemical (Class K/F)",
+            "make": "FireX",
+            "capacity": "6 Liters",
+            "serial_number": "FX-WC-3312",
+            "location": "Commercial Kitchen Cooking Line",
+            "floor": "1st Floor",
+            "condition": "OK",
+            "pressure_gauge": "OK",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Applicator lance clean and unobstructed, charge pressure healthy",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          }
+        ],
+        "defects": [],
+        "customer_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "technician_signature": null,
+        "technician_notes": "",
+        "supervisor_review": null,
+        "updated_at": "2026-10-14T19:57:26.302Z",
+        "updated_by": "Admin"
+      },
+      "checklist_status": "In Progress",
+      "document_number": "FX AMC RPT-10-002",
+      "report_number": "FX AMC RPT-10-002",
+      "updated_at": "2026-10-14T19:57:26.397Z"
+    },
     {
       "id": "vis-amc-1791205127198-923-1-20261005",
       "amc_contract_id": "amc-1791205127198-923",
@@ -865,6 +2034,594 @@
       "updated_at": "2026-10-05T12:58:47.251Z",
       "frequency_months": 3,
       "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007753370-540-1-20261001",
+      "amc_contract_id": "amc-1792007753370-540",
+      "amc_id": "amc-1792007753370-540",
+      "contract_number": "AMC-TST-2026-99",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007753263-923",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 1,
+      "service_sequence": 1,
+      "quarter": "Q1",
+      "service_cycle": "Q1",
+      "scheduled_date": "2026-10-01",
+      "original_scheduled_date": "2026-10-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Extinguishers",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Extinguishers": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #1",
+      "photos": [],
+      "created_at": "2026-10-14T19:55:53.396Z",
+      "updated_at": "2026-10-14T19:55:53.396Z",
+      "frequency_months": 6,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007753370-540-2-20270101",
+      "amc_contract_id": "amc-1792007753370-540",
+      "amc_id": "amc-1792007753370-540",
+      "contract_number": "AMC-TST-2026-99",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007753263-923",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 2,
+      "service_sequence": 2,
+      "quarter": "Q2",
+      "service_cycle": "Q2",
+      "scheduled_date": "2027-01-01",
+      "original_scheduled_date": "2027-01-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Friday",
+      "day_of_week": "Friday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #2",
+      "photos": [],
+      "created_at": "2026-10-14T19:55:53.396Z",
+      "updated_at": "2026-10-14T19:55:53.396Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007753370-540-3-20270401",
+      "amc_contract_id": "amc-1792007753370-540",
+      "amc_id": "amc-1792007753370-540",
+      "contract_number": "AMC-TST-2026-99",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007753263-923",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 3,
+      "service_sequence": 3,
+      "quarter": "Q3",
+      "service_cycle": "Q3",
+      "scheduled_date": "2027-04-01",
+      "original_scheduled_date": "2027-04-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Extinguishers",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Extinguishers": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #3",
+      "photos": [],
+      "created_at": "2026-10-14T19:55:53.396Z",
+      "updated_at": "2026-10-14T19:55:53.396Z",
+      "frequency_months": 6,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007753370-540-4-20270701",
+      "amc_contract_id": "amc-1792007753370-540",
+      "amc_id": "amc-1792007753370-540",
+      "contract_number": "AMC-TST-2026-99",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007753263-923",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 4,
+      "service_sequence": 4,
+      "quarter": "Q4",
+      "service_cycle": "Q4",
+      "scheduled_date": "2027-07-01",
+      "original_scheduled_date": "2027-07-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #4",
+      "photos": [],
+      "created_at": "2026-10-14T19:55:53.396Z",
+      "updated_at": "2026-10-14T19:55:53.396Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007845636-930-1-20261001",
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007845543-849",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 1,
+      "service_sequence": 1,
+      "quarter": "Q1",
+      "service_cycle": "Q1",
+      "scheduled_date": "2026-10-01",
+      "original_scheduled_date": "2026-10-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Extinguishers",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Extinguishers": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #1",
+      "photos": [],
+      "created_at": "2026-10-14T19:57:25.679Z",
+      "updated_at": "2026-10-14T19:57:25.679Z",
+      "frequency_months": 6,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007845636-930-2-20270101",
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007845543-849",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 2,
+      "service_sequence": 2,
+      "quarter": "Q2",
+      "service_cycle": "Q2",
+      "scheduled_date": "2027-01-01",
+      "original_scheduled_date": "2027-01-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Friday",
+      "day_of_week": "Friday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #2",
+      "photos": [],
+      "created_at": "2026-10-14T19:57:25.679Z",
+      "updated_at": "2026-10-14T19:57:25.679Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007845636-930-3-20270401",
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007845543-849",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 3,
+      "service_sequence": 3,
+      "quarter": "Q3",
+      "service_cycle": "Q3",
+      "scheduled_date": "2027-04-01",
+      "original_scheduled_date": "2027-04-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Extinguishers",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Extinguishers": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Extinguisher + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #3",
+      "photos": [],
+      "created_at": "2026-10-14T19:57:25.679Z",
+      "updated_at": "2026-10-14T19:57:25.679Z",
+      "frequency_months": 6,
+      "rescheduled_date": null
+    },
+    {
+      "id": "vis-amc-1792007845636-930-4-20270701",
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579",
+      "customer_id": "cus-1792007753200-113",
+      "customer_name": "Customer",
+      "site_id": "sit-1792007845543-849",
+      "site_name": "Site",
+      "sales_person_id": "use-1791204899105-379",
+      "sales_person_name": "Amar",
+      "visit_number": 4,
+      "service_sequence": 4,
+      "quarter": "Q4",
+      "service_cycle": "Q4",
+      "scheduled_date": "2027-07-01",
+      "original_scheduled_date": "2027-07-01",
+      "actual_service_date": null,
+      "completed_date": null,
+      "day": "Thursday",
+      "day_of_week": "Thursday",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "FM200"
+      ],
+      "systems_label": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system_type": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "system": "Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200",
+      "services_status": {
+        "Fire Alarm": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Fighting": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Fire Hose Reel": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "Landing Valve": {
+          "completed": false,
+          "status": "Scheduled"
+        },
+        "FM200": {
+          "completed": false,
+          "status": "Scheduled"
+        }
+      },
+      "assigned_team": "FireX Service Team",
+      "assigned_technician": "Unassigned Technician",
+      "technician_id": "Unassigned Technician",
+      "technician_name": "Unassigned Technician",
+      "assigned_supervisor": "Unassigned Supervisor",
+      "supervisor_id": "usr-sup",
+      "supervisor_name": "Unassigned Supervisor",
+      "report_id": null,
+      "status": "Scheduled",
+      "visit_status": "Scheduled",
+      "checklist_status": "Draft",
+      "remarks": "Routine Fire Alarm + Fire Fighting + Fire Hose Reel + Landing Valve + FM200 safety compliance inspection #4",
+      "photos": [],
+      "created_at": "2026-10-14T19:57:25.679Z",
+      "updated_at": "2026-10-14T19:57:25.679Z",
+      "frequency_months": 3,
+      "rescheduled_date": null
     }
   ],
   "jobs": [],
@@ -1013,11 +2770,1084 @@
       "completed_at": null,
       "completed_by": null,
       "id": "rep-1791211832516-300"
+    },
+    {
+      "id": "rpt-amc-1792007846397",
+      "document_number": "FX AMC RPT-10-002",
+      "report_number": "FX AMC RPT-10-002",
+      "report_type": "AMC Service Report",
+      "amc_id": "amc-1792007845636-930",
+      "amc_contract_id": "amc-1792007845636-930",
+      "amc_number": "AMC-TST-5579",
+      "amc_visit_id": "amc-1792007846065-451",
+      "visit_id": "amc-1792007846065-451",
+      "visit_number": 1,
+      "quarter": "Q1",
+      "customer_id": "cus-1792007753200-113",
+      "site_id": "sit-1792007845543-849",
+      "service_date": "2026-10-14",
+      "contract_start_date": "2026-10-01",
+      "contract_end_date": "2027-10-01",
+      "prepared_by_name": "Admin",
+      "prepared_by_user_id": "use-1791834992009-260",
+      "prepared_date": "2026-10-14",
+      "systems": [
+        "Fire Alarm",
+        "Fire Fighting",
+        "Fire Hose Reel",
+        "Landing Valve",
+        "Fire Extinguishers",
+        "FM200"
+      ],
+      "buildings": [
+        {
+          "building_id": "bld-tst-1",
+          "building_number": "1",
+          "building_name": "Tower A",
+          "location": "Commercial Main Tower",
+          "selected_systems": [
+            "fire_alarm",
+            "fire_hose_reels",
+            "landing_valves",
+            "fire_extinguishers",
+            "emergency_lights"
+          ],
+          "checklists": {
+            "fire_alarm": [
+              {
+                "id": "fa-1-1",
+                "item": "Main FACP Tower A",
+                "status": "OK",
+                "remarks": "Normal standby, loop healthy"
+              }
+            ],
+            "fire_hose_reels": [
+              {
+                "id": "hr-1-1",
+                "reel_id": "HR-A-01",
+                "floor": "Ground Floor",
+                "location": "Main Lobby",
+                "cabinet_condition": "OK",
+                "hose_condition": "OK",
+                "nozzle_operation": "OK",
+                "valve_operation": "OK",
+                "leakage_test": "OK",
+                "water_flow_test": "OK",
+                "status": "OK",
+                "remarks": "30m unreeled, dynamic spray pattern verified"
+              }
+            ],
+            "landing_valves": [
+              {
+                "id": "lv-1-1",
+                "valve_id": "LV-A-01",
+                "floor": "Ground Floor",
+                "location": "Core A Staircase",
+                "valve_condition": "OK",
+                "accessibility": "OK",
+                "cap_chain": "OK",
+                "handwheel_operation": "OK",
+                "coupling_condition": "OK",
+                "leakage_check": "OK",
+                "pressure_flow_test": "OK",
+                "status": "OK",
+                "remarks": "Instantaneous coupling washer intact, no leaks"
+              }
+            ],
+            "fire_extinguishers": [
+              {
+                "id": "ext-1-1",
+                "ext_id": "EXT-A-01",
+                "type": "CO2 (Carbon Dioxide)",
+                "capacity": "5 kg",
+                "serial_number": "FX-CO2-A01",
+                "floor": "Basement",
+                "location": "Electrical Room",
+                "condition": "OK",
+                "pressure_gauge": "N/A",
+                "weight_status": "OK",
+                "safety_pin": "OK",
+                "status": "OK",
+                "remarks": "Gross weight 11.9kg verified"
+              },
+              {
+                "id": "ext-1-2",
+                "ext_id": "EXT-A-02",
+                "type": "ABC Dry Chemical Powder",
+                "capacity": "6 kg",
+                "serial_number": "FX-DCP-A02",
+                "floor": "Ground Floor",
+                "location": "Corridor",
+                "condition": "OK",
+                "pressure_gauge": "OK",
+                "weight_status": "OK",
+                "safety_pin": "OK",
+                "status": "OK",
+                "remarks": "Needle in green at 14 bar"
+              }
+            ],
+            "emergency_lights": [
+              {
+                "id": "em-1-1",
+                "light_id": "EM-A-01",
+                "floor": "Ground Floor",
+                "location": "Corridor",
+                "type": "Twin Spot 2x5W",
+                "ac_power_indicator": "OK",
+                "duration_test_passed": "OK",
+                "status": "OK",
+                "remarks": "90-minute battery duration test passed"
+              }
+            ]
+          },
+          "defects": [],
+          "remarks": "Tower A fire protection systems fully operational"
+        },
+        {
+          "building_id": "bld-tst-2",
+          "building_number": "2",
+          "building_name": "Tower B",
+          "location": "Residential Annex",
+          "selected_systems": [
+            "fire_alarm",
+            "fire_fighting",
+            "fm200_suppression"
+          ],
+          "checklists": {
+            "fire_alarm": [
+              {
+                "id": "fa-2-1",
+                "item": "FACP Sub-Panel Tower B",
+                "status": "OK",
+                "remarks": "Connected to master network"
+              }
+            ],
+            "fire_fighting": [
+              {
+                "id": "ff-2-1",
+                "item": "Electric Fire Pump",
+                "status": "OK",
+                "remarks": "750 GPM tested auto-start"
+              },
+              {
+                "id": "ff-2-2",
+                "item": "Diesel Fire Pump",
+                "status": "OK",
+                "remarks": "Cranking battery sound"
+              }
+            ],
+            "fm200_suppression": [
+              {
+                "id": "fm-2-1",
+                "system_tag": "FM200-TB-SERVER",
+                "room_name": "Tower B Server Room",
+                "floor": "1st Floor",
+                "cylinder_pressure": "OK",
+                "liquid_weight": "OK",
+                "abort_switch": "OK",
+                "room_integrity_enclosure": "OK",
+                "status": "OK",
+                "remarks": "Pressure 25 bar normal, door seals intact"
+              }
+            ]
+          },
+          "defects": [],
+          "remarks": "Tower B suppression and pumps tested"
+        }
+      ],
+      "checklist_data": {
+        "status": "In Progress",
+        "submitted_at": null,
+        "submitted_by": null,
+        "buildings": [
+          {
+            "building_id": "bld-tst-1",
+            "building_number": "1",
+            "building_name": "Tower A",
+            "location": "Commercial Main Tower",
+            "selected_systems": [
+              "fire_alarm",
+              "fire_hose_reels",
+              "landing_valves",
+              "fire_extinguishers",
+              "emergency_lights"
+            ],
+            "checklists": {
+              "fire_alarm": [
+                {
+                  "id": "fa-1-1",
+                  "item": "Main FACP Tower A",
+                  "status": "OK",
+                  "remarks": "Normal standby, loop healthy"
+                }
+              ],
+              "fire_hose_reels": [
+                {
+                  "id": "hr-1-1",
+                  "reel_id": "HR-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Main Lobby",
+                  "cabinet_condition": "OK",
+                  "hose_condition": "OK",
+                  "nozzle_operation": "OK",
+                  "valve_operation": "OK",
+                  "leakage_test": "OK",
+                  "water_flow_test": "OK",
+                  "status": "OK",
+                  "remarks": "30m unreeled, dynamic spray pattern verified"
+                }
+              ],
+              "landing_valves": [
+                {
+                  "id": "lv-1-1",
+                  "valve_id": "LV-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Core A Staircase",
+                  "valve_condition": "OK",
+                  "accessibility": "OK",
+                  "cap_chain": "OK",
+                  "handwheel_operation": "OK",
+                  "coupling_condition": "OK",
+                  "leakage_check": "OK",
+                  "pressure_flow_test": "OK",
+                  "status": "OK",
+                  "remarks": "Instantaneous coupling washer intact, no leaks"
+                }
+              ],
+              "fire_extinguishers": [
+                {
+                  "id": "ext-1-1",
+                  "ext_id": "EXT-A-01",
+                  "type": "CO2 (Carbon Dioxide)",
+                  "capacity": "5 kg",
+                  "serial_number": "FX-CO2-A01",
+                  "floor": "Basement",
+                  "location": "Electrical Room",
+                  "condition": "OK",
+                  "pressure_gauge": "N/A",
+                  "weight_status": "OK",
+                  "safety_pin": "OK",
+                  "status": "OK",
+                  "remarks": "Gross weight 11.9kg verified"
+                },
+                {
+                  "id": "ext-1-2",
+                  "ext_id": "EXT-A-02",
+                  "type": "ABC Dry Chemical Powder",
+                  "capacity": "6 kg",
+                  "serial_number": "FX-DCP-A02",
+                  "floor": "Ground Floor",
+                  "location": "Corridor",
+                  "condition": "OK",
+                  "pressure_gauge": "OK",
+                  "weight_status": "OK",
+                  "safety_pin": "OK",
+                  "status": "OK",
+                  "remarks": "Needle in green at 14 bar"
+                }
+              ],
+              "emergency_lights": [
+                {
+                  "id": "em-1-1",
+                  "light_id": "EM-A-01",
+                  "floor": "Ground Floor",
+                  "location": "Corridor",
+                  "type": "Twin Spot 2x5W",
+                  "ac_power_indicator": "OK",
+                  "duration_test_passed": "OK",
+                  "status": "OK",
+                  "remarks": "90-minute battery duration test passed"
+                }
+              ]
+            },
+            "defects": [],
+            "remarks": "Tower A fire protection systems fully operational"
+          },
+          {
+            "building_id": "bld-tst-2",
+            "building_number": "2",
+            "building_name": "Tower B",
+            "location": "Residential Annex",
+            "selected_systems": [
+              "fire_alarm",
+              "fire_fighting",
+              "fm200_suppression"
+            ],
+            "checklists": {
+              "fire_alarm": [
+                {
+                  "id": "fa-2-1",
+                  "item": "FACP Sub-Panel Tower B",
+                  "status": "OK",
+                  "remarks": "Connected to master network"
+                }
+              ],
+              "fire_fighting": [
+                {
+                  "id": "ff-2-1",
+                  "item": "Electric Fire Pump",
+                  "status": "OK",
+                  "remarks": "750 GPM tested auto-start"
+                },
+                {
+                  "id": "ff-2-2",
+                  "item": "Diesel Fire Pump",
+                  "status": "OK",
+                  "remarks": "Cranking battery sound"
+                }
+              ],
+              "fm200_suppression": [
+                {
+                  "id": "fm-2-1",
+                  "system_tag": "FM200-TB-SERVER",
+                  "room_name": "Tower B Server Room",
+                  "floor": "1st Floor",
+                  "cylinder_pressure": "OK",
+                  "liquid_weight": "OK",
+                  "abort_switch": "OK",
+                  "room_integrity_enclosure": "OK",
+                  "status": "OK",
+                  "remarks": "Pressure 25 bar normal, door seals intact"
+                }
+              ]
+            },
+            "defects": [],
+            "remarks": "Tower B suppression and pumps tested"
+          }
+        ],
+        "fire_alarm_items": [
+          {
+            "item_no": 1,
+            "item": "Main Fire Alarm Control Panel (FACP)",
+            "make": "Notifier / Honeywell",
+            "type": "Addressable FACP",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Standby normal, zero active faults",
+            "id": "fa-1-1",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 2,
+            "item": "No. of Zones / Addressable Loops",
+            "make": "",
+            "type": "Addressable Loop",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "All loops reporting normal communication",
+            "id": "fa-1-2",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 3,
+            "item": "Loop Circuit Continuity & Isolators",
+            "make": "",
+            "type": "Loop Isolators",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Full loop continuity confirmed",
+            "id": "fa-1-3",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 4,
+            "item": "Protocol & Polling Speed",
+            "make": "",
+            "type": "FlashScan / CLIP",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Polling speed normal",
+            "id": "fa-1-4",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 5,
+            "item": "A/C Primary Mains Power Supply",
+            "make": "",
+            "type": "230V AC Dedicated Supply",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Mains healthy, breaker locked ON",
+            "id": "fa-1-5",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 6,
+            "item": "Standby Battery Backup & Charger",
+            "make": "Yuasa / Power-Sonic",
+            "type": "12V 17Ah SLA Standby",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Float voltage 27.4V, load test passed",
+            "id": "fa-1-6",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 7,
+            "item": "Optical Smoke Detectors",
+            "make": "System Sensor",
+            "type": "Optical Smoke Detector",
+            "quantity": "45",
+            "status": "OK",
+            "remarks": "Sample aerosol response within 10s",
+            "id": "fa-1-7",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 8,
+            "item": "Thermal / Heat Detectors",
+            "make": "System Sensor",
+            "type": "Rate-of-Rise / Fixed Temp",
+            "quantity": "12",
+            "status": "OK",
+            "remarks": "Kitchen and plant room sensors tested",
+            "id": "fa-1-8",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 9,
+            "item": "Multi-Criteria Optical/Heat Sensors",
+            "make": "System Sensor",
+            "type": "Optical / Heat Multi",
+            "quantity": "8",
+            "status": "OK",
+            "remarks": "Clean, sensitivity verified",
+            "id": "fa-1-9",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 10,
+            "item": "Manual Call Points / Break Glass",
+            "make": "KAC",
+            "type": "Manual Call Point (Resettable)",
+            "quantity": "16",
+            "status": "OK",
+            "remarks": "Tested with key, alarm initiated at FACP",
+            "id": "fa-1-10",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 11,
+            "item": "Monitor & Control Modules",
+            "make": "Notifier",
+            "type": "I/O Interface Modules",
+            "quantity": "10",
+            "status": "OK",
+            "remarks": "Interlock signals verified",
+            "id": "fa-1-11",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 12,
+            "item": "Electronic Alarm Sounders",
+            "make": "Notifier",
+            "type": "Electronic Sounder 24V",
+            "quantity": "20",
+            "status": "OK",
+            "remarks": "Sound level > 85 dB(A) at 3m",
+            "id": "fa-1-12",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 13,
+            "item": "Sounder Beacon / Strobe Lights",
+            "make": "System Sensor",
+            "type": "Sounder Beacon VAD",
+            "quantity": "8",
+            "status": "OK",
+            "remarks": "Audible & flashing synchronized",
+            "id": "fa-1-13",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 14,
+            "item": "Motorized Fire Alarm Bells",
+            "make": "FireX",
+            "type": "Motorized 6\" / 8\" Fire Bell",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Clear audible strike confirmed",
+            "id": "fa-1-14",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 15,
+            "item": "Auxiliary Warning Devices / Horns",
+            "make": "",
+            "type": "Aux Voice / Warning Device",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Auxiliary warning horn operational",
+            "id": "fa-1-15",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 16,
+            "item": "Optical Beam Smoke Detectors",
+            "make": "FireRay",
+            "type": "Reflective Optical Beam",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Atrium beam alignment and obscuration test passed",
+            "id": "fa-1-16",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 17,
+            "item": "Auxiliary Contacts (AHU / Elevator / Doors)",
+            "make": "",
+            "type": "Interlock Contacts",
+            "quantity": "6",
+            "status": "OK",
+            "remarks": "AHU trip and elevator grounding interlocks tested",
+            "id": "fa-1-17",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 18,
+            "item": "Civil Defense Auto-Dialer Link",
+            "make": "Civil Defense Auto-dialer",
+            "type": "24/7 Transmitter Link",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Civil Defense communication line healthy",
+            "id": "fa-1-18",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 19,
+            "item": "Network Link to Master Panel / Repeater",
+            "make": "Notifier Network",
+            "type": "RS-485 / Fiber Optic Link",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Repeater receiving events normally",
+            "id": "fa-1-19",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 20,
+            "item": "FACP LEDs, Buzzer & Display",
+            "make": "",
+            "type": "LED Status Bar & Backlit LCD",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Lamp test function executed, zero dead pixels",
+            "id": "fa-1-20",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 21,
+            "item": "Fire Resistant Cabling & Conduits",
+            "make": "FP200 Gold",
+            "type": "2-Core 1.5mm Fire Resistant",
+            "quantity": "N/A",
+            "status": "OK",
+            "remarks": "Insulation and conduit sound",
+            "id": "fa-1-21",
+            "building_number": "1",
+            "photos": []
+          }
+        ],
+        "fire_fighting_items": [
+          {
+            "item_no": 1,
+            "item": "Main Electric Fire Pump",
+            "make": "Peerless / Patterson",
+            "type": "Centrifugal 750 GPM @ 10 Bar",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Bearing temperature & auto-start normal",
+            "id": "ff-1-1",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 2,
+            "item": "Standby Diesel Fire Pump",
+            "make": "Cummins / Clarke",
+            "type": "Emergency Diesel Backup Pump",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Battery cranking normal, fuel & coolant level 100%",
+            "id": "ff-1-2",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 3,
+            "item": "Jockey Pressure-Maintenance Pump",
+            "make": "Grundfos / Aurora",
+            "type": "Vertical Multistage 15 GPM",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Cut-in at 8.5 bar, cut-out at 10.5 bar",
+            "id": "ff-1-3",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 4,
+            "item": "UL/FM Dual Pump Controller",
+            "make": "Firetrol / Tornatech",
+            "type": "Automatic Electric/Diesel Controller",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Phase monitoring & auto-transfer switch tested",
+            "id": "ff-1-4",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 5,
+            "item": "Dedicated Fire Water Storage Tank",
+            "make": "GRP Panel",
+            "type": "10,000 Gallon Water Tank",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Water level 100%, float valve operational",
+            "id": "ff-1-5",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 6,
+            "item": "Suction & Discharge OS&Y Gate Valves",
+            "make": "Nibco / Viking",
+            "type": "OS&Y Gate & Butterfly Valves",
+            "quantity": "12",
+            "status": "OK",
+            "remarks": "All valves supervised and locked in OPEN position",
+            "id": "ff-1-6",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 7,
+            "item": "Glycerin-Filled Pressure Gauges",
+            "make": "WIKA",
+            "type": "0-25 bar Dial Gauges",
+            "quantity": "6",
+            "status": "OK",
+            "remarks": "Zero calibration verified, readable dials",
+            "id": "ff-1-7",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 8,
+            "item": "Automatic Fire Sprinkler System",
+            "make": "Tyco / Viking",
+            "type": "Pendent Glass Bulb 68°C",
+            "quantity": "120",
+            "status": "OK",
+            "remarks": "Glass bulbs intact, deflectors unobstructed",
+            "id": "ff-1-8",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 9,
+            "item": "Sprinkler Alarm Check Valve & Water Gong",
+            "make": "Tyco",
+            "type": "Alarm Check Valve & Motor Gong",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Retard chamber & water motor gong tested",
+            "id": "ff-1-9",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 10,
+            "item": "Outdoor Pillar Fire Hydrants 2.5\"",
+            "make": "FireX / Mueller",
+            "type": "Pillar Hydrant 2-Way 2.5\"",
+            "quantity": "2",
+            "status": "OK",
+            "remarks": "Valve spindle lubricated, caps greased",
+            "id": "ff-1-10",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 11,
+            "item": "4-Way Dry/Wet Riser Breeching Inlet",
+            "make": "FireX",
+            "type": "4-Way Breeching Inlet",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Drain valve clear, clack valves seated properly",
+            "id": "ff-1-11",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 12,
+            "item": "Fire Brigade Connection (FBC)",
+            "make": "Civil Defense Spec",
+            "type": "Storz FBC 4\" Inlet",
+            "quantity": "1",
+            "status": "OK",
+            "remarks": "Caps chained, clear access from road",
+            "id": "ff-1-12",
+            "building_number": "1",
+            "photos": []
+          },
+          {
+            "item_no": 13,
+            "item": "Heavy Duty Fire Blankets",
+            "make": "FireX",
+            "type": "Fiberglass 1.2m x 1.8m",
+            "quantity": "4",
+            "status": "OK",
+            "remarks": "Pouch clean, release straps accessible",
+            "id": "ff-1-13",
+            "building_number": "1",
+            "photos": []
+          }
+        ],
+        "extinguisher_items": [
+          {
+            "id": "ext-1-1",
+            "ext_id": "EXT-1-01",
+            "building_number": "1",
+            "type": "CO2 (Carbon Dioxide)",
+            "make": "FireX",
+            "capacity": "5 kg",
+            "serial_number": "FX-CO2-9841",
+            "location": "Main Electrical Switchgear Room",
+            "floor": "Basement 1",
+            "condition": "OK",
+            "pressure_gauge": "N/A",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Gross weight 11.8 kg (Tare 6.8 kg + Charge 5.0 kg), horn clean",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          },
+          {
+            "id": "ext-1-2",
+            "ext_id": "EXT-1-02",
+            "building_number": "1",
+            "type": "ABC Dry Chemical Powder",
+            "make": "FireX",
+            "capacity": "6 kg",
+            "serial_number": "FX-DCP-5520",
+            "location": "Corridor by Staircase Core A",
+            "floor": "Ground Floor",
+            "condition": "OK",
+            "pressure_gauge": "OK",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Pressure gauge in green band (14 bar), tamper seal intact",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          },
+          {
+            "id": "ext-1-3",
+            "ext_id": "EXT-1-03",
+            "building_number": "1",
+            "type": "Wet Chemical (Class K/F)",
+            "make": "FireX",
+            "capacity": "6 Liters",
+            "serial_number": "FX-WC-3312",
+            "location": "Commercial Kitchen Cooking Line",
+            "floor": "1st Floor",
+            "condition": "OK",
+            "pressure_gauge": "OK",
+            "weight_status": "OK",
+            "safety_pin": "OK",
+            "hose_nozzle": "OK",
+            "cylinder_body": "OK",
+            "signage_bracket": "OK",
+            "status": "OK",
+            "remarks": "Applicator lance clean and unobstructed, charge pressure healthy",
+            "photos": [],
+            "date_done": "2026-10-14",
+            "next_due_date": "2027-04-14"
+          }
+        ],
+        "defects": [],
+        "customer_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "technician_signature": null,
+        "technician_notes": "",
+        "supervisor_review": null,
+        "updated_at": "2026-10-14T19:57:26.302Z",
+        "updated_by": "Admin"
+      },
+      "status": "Draft",
+      "updated_at": "2026-10-14T19:57:26.397Z",
+      "created_at": "2026-10-14T19:57:26.397Z",
+      "created_by_user_id": "usr-tech-ahmed",
+      "contract_id": "amc-1792007845636-930",
+      "contract_number": "AMC-TST-5579"
     }
   ],
   "notifications": [],
   "quotations": [],
   "audit_logs": [
+    {
+      "id": "aud-1792007846445-653",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "SAVE_AMC_CHECKLIST",
+      "module": "amc_visits",
+      "resource": "amc_visits",
+      "entity": "amc_visits",
+      "entity_id": "amc-1792007846065-451",
+      "record_id": "amc-1792007846065-451",
+      "details": "Saved AMC checklist for visit #1",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:57:26.445Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:57:26 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:57:26 PM"
+    },
+    {
+      "id": "aud-1792007846119-421",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "SCHEDULE_AMC_VISIT",
+      "module": "amc_visits",
+      "resource": "amc_visits",
+      "entity": "amc_visits",
+      "entity_id": "amc-1792007846065-451",
+      "record_id": "amc-1792007846065-451",
+      "details": "Scheduled AMC visit for 2026-10-15",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:57:26.118Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:57:26 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:57:26 PM"
+    },
+    {
+      "id": "aud-1792007845863-375",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_AMC",
+      "module": "amc_contracts",
+      "resource": "amc_contracts",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1792007845636-930",
+      "record_id": "amc-1792007845636-930",
+      "details": "Created AMC contract AMC-TST-5579 (Status: Active) with 4 system visits",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:57:25.863Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:57:25 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:57:25 PM"
+    },
+    {
+      "id": "aud-1792007845568-410",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_SITE",
+      "module": "sites",
+      "resource": "sites",
+      "entity": "sites",
+      "entity_id": "sit-1792007845543-849",
+      "record_id": "sit-1792007845543-849",
+      "details": "Created site Test Complex",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:57:25.568Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:57:25 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:57:25 PM"
+    },
+    {
+      "id": "aud-1792007845441-629",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "UPDATE_CHECKLIST_TEMPLATE",
+      "module": "checklist_templates",
+      "resource": "checklist_templates",
+      "entity": "checklist_templates",
+      "entity_id": "fire_hose_reels",
+      "record_id": "fire_hose_reels",
+      "details": "Updated checklist template for fire_hose_reels",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:57:25.441Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:57:25 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:57:25 PM"
+    },
+    {
+      "id": "aud-1792007805753-970",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_SITE",
+      "module": "sites",
+      "resource": "sites",
+      "entity": "sites",
+      "entity_id": "sit-1792007805729-104",
+      "record_id": "sit-1792007805729-104",
+      "details": "Created site Test Complex",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:56:45.752Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:56:45 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:56:45 PM"
+    },
+    {
+      "id": "aud-1792007786181-688",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "UPDATE_CHECKLIST_TEMPLATE",
+      "module": "checklist_templates",
+      "resource": "checklist_templates",
+      "entity": "checklist_templates",
+      "entity_id": "fire_hose_reels",
+      "record_id": "fire_hose_reels",
+      "details": "Updated checklist template for fire_hose_reels",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:56:26.180Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:56:26 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:56:26 PM"
+    },
+    {
+      "id": "aud-1792007753461-822",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_AMC",
+      "module": "amc_contracts",
+      "resource": "amc_contracts",
+      "entity": "amc_contracts",
+      "entity_id": "amc-1792007753370-540",
+      "record_id": "amc-1792007753370-540",
+      "details": "Created AMC contract AMC-TST-2026-99 (Status: Active) with 4 system visits",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:55:53.460Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:55:53 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:55:53 PM"
+    },
+    {
+      "id": "aud-1792007753288-508",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_SITE",
+      "module": "sites",
+      "resource": "sites",
+      "entity": "sites",
+      "entity_id": "sit-1792007753263-923",
+      "record_id": "sit-1792007753263-923",
+      "details": "Created site Test Complex",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:55:53.288Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:55:53 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:55:53 PM"
+    },
+    {
+      "id": "aud-1792007753221-16",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "CREATE_CUSTOMER",
+      "module": "customers",
+      "resource": "customers",
+      "entity": "customers",
+      "entity_id": "cus-1792007753200-113",
+      "record_id": "cus-1792007753200-113",
+      "details": "Created customer Test Customer WLL (CUST-TST-01) with CR: N/A, VAT: N/A",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:55:53.220Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:55:53 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:55:53 PM"
+    },
+    {
+      "id": "aud-1792007753150-823",
+      "user_id": "use-1791834992009-260",
+      "user_name": "Admin",
+      "user_role": "Admin",
+      "action": "UPDATE_CHECKLIST_TEMPLATE",
+      "module": "checklist_templates",
+      "resource": "checklist_templates",
+      "entity": "checklist_templates",
+      "entity_id": "fire_hose_reels",
+      "record_id": "fire_hose_reels",
+      "details": "Updated checklist template for fire_hose_reels",
+      "status": "SUCCESS",
+      "before_values": null,
+      "after_values": null,
+      "timestamp": "2026-10-14T19:55:53.125Z",
+      "formatted_date": "14 Oct 2026",
+      "formatted_time": "10:55:53 PM",
+      "bahrain_date": "14 Oct 2026",
+      "bahrain_time": "14 Oct 2026 10:55:53 PM"
+    },
     {
       "id": "aud-1791961078942-278",
       "user_id": "sys",
@@ -2135,5 +4965,760 @@
   "document_sequences": {
     "AMC_RPT_2026-10": 1
   },
-  "_bulk_password_reset_v1": "2026-10-14T07:06:24.080Z"
+  "_bulk_password_reset_v1": "2026-10-14T07:06:24.080Z",
+  "checklist_templates": {
+    "fire_alarm": {
+      "system_key": "fire_alarm",
+      "label": "Fire Alarm System",
+      "description": "Addressable & Conventional Control Panels, Detectors, Call Points, Audio/Visuals & Interlocks",
+      "items": [
+        {
+          "item_no": 1,
+          "item": "Main Fire Alarm Control Panel (FACP)",
+          "make": "Notifier / Honeywell",
+          "type": "Addressable FACP",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Standby normal, zero active faults",
+          "id": "fa-1-1",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 2,
+          "item": "No. of Zones / Addressable Loops",
+          "make": "",
+          "type": "Addressable Loop",
+          "quantity": "4",
+          "status": "OK",
+          "remarks": "All loops reporting normal communication",
+          "id": "fa-1-2",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 3,
+          "item": "Loop Circuit Continuity & Isolators",
+          "make": "",
+          "type": "Loop Isolators",
+          "quantity": "4",
+          "status": "OK",
+          "remarks": "Full loop continuity confirmed",
+          "id": "fa-1-3",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 4,
+          "item": "Protocol & Polling Speed",
+          "make": "",
+          "type": "FlashScan / CLIP",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Polling speed normal",
+          "id": "fa-1-4",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 5,
+          "item": "A/C Primary Mains Power Supply",
+          "make": "",
+          "type": "230V AC Dedicated Supply",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Mains healthy, breaker locked ON",
+          "id": "fa-1-5",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 6,
+          "item": "Standby Battery Backup & Charger",
+          "make": "Yuasa / Power-Sonic",
+          "type": "12V 17Ah SLA Standby",
+          "quantity": "2",
+          "status": "OK",
+          "remarks": "Float voltage 27.4V, load test passed",
+          "id": "fa-1-6",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 7,
+          "item": "Optical Smoke Detectors",
+          "make": "System Sensor",
+          "type": "Optical Smoke Detector",
+          "quantity": "45",
+          "status": "OK",
+          "remarks": "Sample aerosol response within 10s",
+          "id": "fa-1-7",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 8,
+          "item": "Thermal / Heat Detectors",
+          "make": "System Sensor",
+          "type": "Rate-of-Rise / Fixed Temp",
+          "quantity": "12",
+          "status": "OK",
+          "remarks": "Kitchen and plant room sensors tested",
+          "id": "fa-1-8",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 9,
+          "item": "Multi-Criteria Optical/Heat Sensors",
+          "make": "System Sensor",
+          "type": "Optical / Heat Multi",
+          "quantity": "8",
+          "status": "OK",
+          "remarks": "Clean, sensitivity verified",
+          "id": "fa-1-9",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 10,
+          "item": "Manual Call Points / Break Glass",
+          "make": "KAC",
+          "type": "Manual Call Point (Resettable)",
+          "quantity": "16",
+          "status": "OK",
+          "remarks": "Tested with key, alarm initiated at FACP",
+          "id": "fa-1-10",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 11,
+          "item": "Monitor & Control Modules",
+          "make": "Notifier",
+          "type": "I/O Interface Modules",
+          "quantity": "10",
+          "status": "OK",
+          "remarks": "Interlock signals verified",
+          "id": "fa-1-11",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 12,
+          "item": "Electronic Alarm Sounders",
+          "make": "Notifier",
+          "type": "Electronic Sounder 24V",
+          "quantity": "20",
+          "status": "OK",
+          "remarks": "Sound level > 85 dB(A) at 3m",
+          "id": "fa-1-12",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 13,
+          "item": "Sounder Beacon / Strobe Lights",
+          "make": "System Sensor",
+          "type": "Sounder Beacon VAD",
+          "quantity": "8",
+          "status": "OK",
+          "remarks": "Audible & flashing synchronized",
+          "id": "fa-1-13",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 14,
+          "item": "Motorized Fire Alarm Bells",
+          "make": "FireX",
+          "type": "Motorized 6\" / 8\" Fire Bell",
+          "quantity": "4",
+          "status": "OK",
+          "remarks": "Clear audible strike confirmed",
+          "id": "fa-1-14",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 15,
+          "item": "Auxiliary Warning Devices / Horns",
+          "make": "",
+          "type": "Aux Voice / Warning Device",
+          "quantity": "2",
+          "status": "OK",
+          "remarks": "Auxiliary warning horn operational",
+          "id": "fa-1-15",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 16,
+          "item": "Optical Beam Smoke Detectors",
+          "make": "FireRay",
+          "type": "Reflective Optical Beam",
+          "quantity": "2",
+          "status": "OK",
+          "remarks": "Atrium beam alignment and obscuration test passed",
+          "id": "fa-1-16",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 17,
+          "item": "Auxiliary Contacts (AHU / Elevator / Doors)",
+          "make": "",
+          "type": "Interlock Contacts",
+          "quantity": "6",
+          "status": "OK",
+          "remarks": "AHU trip and elevator grounding interlocks tested",
+          "id": "fa-1-17",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 18,
+          "item": "Civil Defense Auto-Dialer Link",
+          "make": "Civil Defense Auto-dialer",
+          "type": "24/7 Transmitter Link",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Civil Defense communication line healthy",
+          "id": "fa-1-18",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 19,
+          "item": "Network Link to Master Panel / Repeater",
+          "make": "Notifier Network",
+          "type": "RS-485 / Fiber Optic Link",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Repeater receiving events normally",
+          "id": "fa-1-19",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 20,
+          "item": "FACP LEDs, Buzzer & Display",
+          "make": "",
+          "type": "LED Status Bar & Backlit LCD",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Lamp test function executed, zero dead pixels",
+          "id": "fa-1-20",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 21,
+          "item": "Fire Resistant Cabling & Conduits",
+          "make": "FP200 Gold",
+          "type": "2-Core 1.5mm Fire Resistant",
+          "quantity": "N/A",
+          "status": "OK",
+          "remarks": "Insulation and conduit sound",
+          "id": "fa-1-21",
+          "building_number": "1",
+          "photos": []
+        }
+      ]
+    },
+    "fire_fighting": {
+      "system_key": "fire_fighting",
+      "label": "Fire Fighting System",
+      "description": "Pumps, Jockey, Diesel, Water Tanks, Sprinklers, Hydrants & Valves",
+      "items": [
+        {
+          "item_no": 1,
+          "item": "Main Electric Fire Pump",
+          "make": "Peerless / Patterson",
+          "type": "Centrifugal 750 GPM @ 10 Bar",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Bearing temperature & auto-start normal",
+          "id": "ff-1-1",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 2,
+          "item": "Standby Diesel Fire Pump",
+          "make": "Cummins / Clarke",
+          "type": "Emergency Diesel Backup Pump",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Battery cranking normal, fuel & coolant level 100%",
+          "id": "ff-1-2",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 3,
+          "item": "Jockey Pressure-Maintenance Pump",
+          "make": "Grundfos / Aurora",
+          "type": "Vertical Multistage 15 GPM",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Cut-in at 8.5 bar, cut-out at 10.5 bar",
+          "id": "ff-1-3",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 4,
+          "item": "UL/FM Dual Pump Controller",
+          "make": "Firetrol / Tornatech",
+          "type": "Automatic Electric/Diesel Controller",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Phase monitoring & auto-transfer switch tested",
+          "id": "ff-1-4",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 5,
+          "item": "Dedicated Fire Water Storage Tank",
+          "make": "GRP Panel",
+          "type": "10,000 Gallon Water Tank",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Water level 100%, float valve operational",
+          "id": "ff-1-5",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 6,
+          "item": "Suction & Discharge OS&Y Gate Valves",
+          "make": "Nibco / Viking",
+          "type": "OS&Y Gate & Butterfly Valves",
+          "quantity": "12",
+          "status": "OK",
+          "remarks": "All valves supervised and locked in OPEN position",
+          "id": "ff-1-6",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 7,
+          "item": "Glycerin-Filled Pressure Gauges",
+          "make": "WIKA",
+          "type": "0-25 bar Dial Gauges",
+          "quantity": "6",
+          "status": "OK",
+          "remarks": "Zero calibration verified, readable dials",
+          "id": "ff-1-7",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 8,
+          "item": "Automatic Fire Sprinkler System",
+          "make": "Tyco / Viking",
+          "type": "Pendent Glass Bulb 68°C",
+          "quantity": "120",
+          "status": "OK",
+          "remarks": "Glass bulbs intact, deflectors unobstructed",
+          "id": "ff-1-8",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 9,
+          "item": "Sprinkler Alarm Check Valve & Water Gong",
+          "make": "Tyco",
+          "type": "Alarm Check Valve & Motor Gong",
+          "quantity": "2",
+          "status": "OK",
+          "remarks": "Retard chamber & water motor gong tested",
+          "id": "ff-1-9",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 10,
+          "item": "Outdoor Pillar Fire Hydrants 2.5\"",
+          "make": "FireX / Mueller",
+          "type": "Pillar Hydrant 2-Way 2.5\"",
+          "quantity": "2",
+          "status": "OK",
+          "remarks": "Valve spindle lubricated, caps greased",
+          "id": "ff-1-10",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 11,
+          "item": "4-Way Dry/Wet Riser Breeching Inlet",
+          "make": "FireX",
+          "type": "4-Way Breeching Inlet",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Drain valve clear, clack valves seated properly",
+          "id": "ff-1-11",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 12,
+          "item": "Fire Brigade Connection (FBC)",
+          "make": "Civil Defense Spec",
+          "type": "Storz FBC 4\" Inlet",
+          "quantity": "1",
+          "status": "OK",
+          "remarks": "Caps chained, clear access from road",
+          "id": "ff-1-12",
+          "building_number": "1",
+          "photos": []
+        },
+        {
+          "item_no": 13,
+          "item": "Heavy Duty Fire Blankets",
+          "make": "FireX",
+          "type": "Fiberglass 1.2m x 1.8m",
+          "quantity": "4",
+          "status": "OK",
+          "remarks": "Pouch clean, release straps accessible",
+          "id": "ff-1-13",
+          "building_number": "1",
+          "photos": []
+        }
+      ]
+    },
+    "fire_hose_reels": {
+      "system_key": "fire_hose_reels",
+      "label": "Fire Hose Reel System",
+      "description": "Swing Drums, Hoses, Shut-Off Nozzles, Inlets & Water Flow Verification",
+      "items": [
+        {
+          "id": "hr-1-1",
+          "reel_id": "HR-1-01",
+          "building_number": "1",
+          "floor": "Ground Floor",
+          "location": "Main Entrance Corridor by Core A",
+          "type": "Manual Swing Arm Drum",
+          "make": "FireX / Angus",
+          "cabinet_condition": "OK",
+          "hose_condition": "OK",
+          "nozzle_operation": "OK",
+          "valve_operation": "OK",
+          "leakage_test": "OK",
+          "water_flow_test": "OK",
+          "status": "OK",
+          "remarks": "Unreeled 30m, dynamic jet spray tested, smooth rewind",
+          "photos": []
+        },
+        {
+          "id": "hr-1-2",
+          "reel_id": "HR-1-02",
+          "building_number": "1",
+          "floor": "1st Floor",
+          "location": "Corridor Outside Unit 101",
+          "type": "Manual Swing Arm Drum",
+          "make": "FireX / Angus",
+          "cabinet_condition": "OK",
+          "hose_condition": "OK",
+          "nozzle_operation": "OK",
+          "valve_operation": "OK",
+          "leakage_test": "OK",
+          "water_flow_test": "OK",
+          "status": "OK",
+          "remarks": "Cabinet glass clean, pressure and jet flow normal",
+          "photos": []
+        },
+        {
+          "id": "hr-test-item",
+          "reel_id": "HR-TEST-01",
+          "item": "Hydrostatic Pressure Test 12 Bar",
+          "status": "OK",
+          "remarks": "Factory proof pressure test"
+        },
+        {
+          "id": "hr-test-item",
+          "reel_id": "HR-TEST-01",
+          "item": "Hydrostatic Pressure Test 12 Bar",
+          "status": "OK",
+          "remarks": "Factory proof pressure test"
+        },
+        {
+          "id": "hr-test-item",
+          "reel_id": "HR-TEST-01",
+          "item": "Hydrostatic Pressure Test 12 Bar",
+          "status": "OK",
+          "remarks": "Factory proof pressure test"
+        }
+      ],
+      "updated_at": "2026-10-14T19:57:25.413Z",
+      "updated_by": "Admin"
+    },
+    "landing_valves": {
+      "system_key": "landing_valves",
+      "label": "Landing Valve System",
+      "description": "Dry/Wet Riser Landing Valves, Couplings, Handwheels, Pressure & Seals",
+      "items": [
+        {
+          "id": "lv-1-1",
+          "valve_id": "LV-1-01",
+          "building_number": "1",
+          "floor": "Ground Floor",
+          "location": "Emergency Staircase Enclosure Landing",
+          "valve_condition": "OK",
+          "accessibility": "OK",
+          "cabinet_condition": "OK",
+          "cap_chain": "OK",
+          "handwheel_operation": "OK",
+          "coupling_condition": "OK",
+          "leakage_check": "OK",
+          "pressure_flow_test": "OK",
+          "status": "OK",
+          "remarks": "Instantaneous 2.5\" coupling washer intact, no seal weeping under 10 bar",
+          "photos": []
+        },
+        {
+          "id": "lv-1-2",
+          "valve_id": "LV-1-02",
+          "building_number": "1",
+          "floor": "1st Floor",
+          "location": "Emergency Staircase Enclosure Landing",
+          "valve_condition": "OK",
+          "accessibility": "OK",
+          "cabinet_condition": "OK",
+          "cap_chain": "OK",
+          "handwheel_operation": "OK",
+          "coupling_condition": "OK",
+          "leakage_check": "OK",
+          "pressure_flow_test": "OK",
+          "status": "OK",
+          "remarks": "Handwheel lubricated, blank cap chain secured",
+          "photos": []
+        }
+      ]
+    },
+    "fire_extinguishers": {
+      "system_key": "fire_extinguishers",
+      "label": "Fire Extinguishers",
+      "description": "DCP, CO2, Foam, Wet Chemical, Clean Agent Inspection & Weight/Pressure Verification",
+      "items": [
+        {
+          "id": "ext-1-1",
+          "ext_id": "EXT-1-01",
+          "building_number": "1",
+          "type": "CO2 (Carbon Dioxide)",
+          "make": "FireX",
+          "capacity": "5 kg",
+          "serial_number": "FX-CO2-9841",
+          "location": "Main Electrical Switchgear Room",
+          "floor": "Basement 1",
+          "condition": "OK",
+          "pressure_gauge": "N/A",
+          "weight_status": "OK",
+          "safety_pin": "OK",
+          "hose_nozzle": "OK",
+          "cylinder_body": "OK",
+          "signage_bracket": "OK",
+          "status": "OK",
+          "remarks": "Gross weight 11.8 kg (Tare 6.8 kg + Charge 5.0 kg), horn clean",
+          "photos": [],
+          "date_done": "2026-10-14",
+          "next_due_date": "2027-04-14"
+        },
+        {
+          "id": "ext-1-2",
+          "ext_id": "EXT-1-02",
+          "building_number": "1",
+          "type": "ABC Dry Chemical Powder",
+          "make": "FireX",
+          "capacity": "6 kg",
+          "serial_number": "FX-DCP-5520",
+          "location": "Corridor by Staircase Core A",
+          "floor": "Ground Floor",
+          "condition": "OK",
+          "pressure_gauge": "OK",
+          "weight_status": "OK",
+          "safety_pin": "OK",
+          "hose_nozzle": "OK",
+          "cylinder_body": "OK",
+          "signage_bracket": "OK",
+          "status": "OK",
+          "remarks": "Pressure gauge in green band (14 bar), tamper seal intact",
+          "photos": [],
+          "date_done": "2026-10-14",
+          "next_due_date": "2027-04-14"
+        },
+        {
+          "id": "ext-1-3",
+          "ext_id": "EXT-1-03",
+          "building_number": "1",
+          "type": "Wet Chemical (Class K/F)",
+          "make": "FireX",
+          "capacity": "6 Liters",
+          "serial_number": "FX-WC-3312",
+          "location": "Commercial Kitchen Cooking Line",
+          "floor": "1st Floor",
+          "condition": "OK",
+          "pressure_gauge": "OK",
+          "weight_status": "OK",
+          "safety_pin": "OK",
+          "hose_nozzle": "OK",
+          "cylinder_body": "OK",
+          "signage_bracket": "OK",
+          "status": "OK",
+          "remarks": "Applicator lance clean and unobstructed, charge pressure healthy",
+          "photos": [],
+          "date_done": "2026-10-14",
+          "next_due_date": "2027-04-14"
+        }
+      ]
+    },
+    "fm200_suppression": {
+      "system_key": "fm200_suppression",
+      "label": "FM200 / Clean Agent Fire Suppression",
+      "description": "Cylinder Pressure/Weight, Solenoid, Abort Switch, Room Enclosure & Gas Interlocks",
+      "items": [
+        {
+          "id": "fm-1-1",
+          "system_tag": "FM200-1-01",
+          "building_number": "1",
+          "room_name": "Primary Data Center & Server Room",
+          "floor": "1st Floor",
+          "cylinder_pressure": "OK",
+          "liquid_weight": "OK",
+          "piping_nozzles": "OK",
+          "actuator_solenoid": "OK",
+          "manual_release": "OK",
+          "abort_switch": "OK",
+          "cross_zoning_detection": "OK",
+          "warning_devices": "OK",
+          "damper_interlock": "OK",
+          "room_integrity_enclosure": "OK",
+          "main_reserve_switch": "OK",
+          "status": "OK",
+          "remarks": "Cylinder pressure 25 bar @ 21°C. 1st & 2nd stage cross-zoning sirens verified. Door seals tight.",
+          "photos": []
+        }
+      ]
+    },
+    "lpg_detection": {
+      "system_key": "lpg_detection",
+      "label": "LPG Gas Detection System",
+      "description": "Gas Sensors, Panel, Solenoid Shut-off Valve, Fan Interlock & Calibration",
+      "items": [
+        {
+          "id": "lpg-1-1",
+          "detector_id": "LPG-1-01",
+          "building_number": "1",
+          "location": "Central Kitchen Cooking Range",
+          "floor": "Ground Floor",
+          "type": "Catalytic Gas Detector",
+          "panel_status": "OK",
+          "power_battery": "OK",
+          "sensor_head": "OK",
+          "shutoff_valve": "OK",
+          "fan_interlock": "OK",
+          "sounder_strobe": "OK",
+          "calibration_record": "OK",
+          "status": "OK",
+          "remarks": "Bump test with butane mixture triggered gas shutoff solenoid and kitchen exhaust fan in 4s",
+          "photos": []
+        }
+      ]
+    },
+    "emergency_lights": {
+      "system_key": "emergency_lights",
+      "label": "Emergency Lights",
+      "description": "Twin Spot & Maintained Emergency Luminaires, Battery Duration & Charging",
+      "items": [
+        {
+          "id": "em-1-1",
+          "light_id": "EM-1-01",
+          "building_number": "1",
+          "floor": "Ground Floor",
+          "location": "Corridor Core A",
+          "type": "Twin Spot 2x5W LED Unit",
+          "ac_power_indicator": "OK",
+          "duration_test_passed": "OK",
+          "lamp_condition": "OK",
+          "charging_circuit": "OK",
+          "status": "OK",
+          "remarks": "Push-to-test button engaged, dual lamps illuminated on battery",
+          "photos": []
+        },
+        {
+          "id": "em-1-2",
+          "light_id": "EM-1-02",
+          "building_number": "1",
+          "floor": "1st Floor",
+          "location": "Main Hallway",
+          "type": "Twin Spot 2x5W LED Unit",
+          "ac_power_indicator": "OK",
+          "duration_test_passed": "OK",
+          "lamp_condition": "OK",
+          "charging_circuit": "OK",
+          "status": "OK",
+          "remarks": "Mains charging LED green, battery duration satisfactory",
+          "photos": []
+        }
+      ]
+    },
+    "exit_lights": {
+      "system_key": "exit_lights",
+      "label": "Exit Lights",
+      "description": "Maintained LED Exit Signs, Pictograms, Directional Arrows & Battery Backup",
+      "items": [
+        {
+          "id": "ex-1-1",
+          "sign_id": "EX-1-01",
+          "building_number": "1",
+          "floor": "Ground Floor",
+          "location": "Final Exit Door Core A",
+          "illumination": "OK",
+          "battery_backup": "OK",
+          "pictogram_condition": "OK",
+          "housing_condition": "OK",
+          "status": "OK",
+          "remarks": "Maintained LED exit luminaire, Running Man symbol clearly illuminated",
+          "photos": []
+        },
+        {
+          "id": "ex-1-2",
+          "sign_id": "EX-1-02",
+          "building_number": "1",
+          "floor": "1st Floor",
+          "location": "Staircase Landing Exit",
+          "illumination": "OK",
+          "battery_backup": "OK",
+          "pictogram_condition": "OK",
+          "housing_condition": "OK",
+          "status": "OK",
+          "remarks": "Directional arrow intact, 3-hour backup battery tested",
+          "photos": []
+        }
+      ]
+    },
+    "voice_evacuation": {
+      "system_key": "voice_evacuation",
+      "label": "Voice Evacuation / Other Systems",
+      "description": "Voice Alarm Console, Microphones, Audio Zones Clarity & Recorded Alerts",
+      "items": [
+        {
+          "id": "ve-1-1",
+          "item": "Master Voice Alarm Controller",
+          "building_number": "1",
+          "location": "Fire Control Centre / Security Desk",
+          "amplifier_status": "OK",
+          "microphone_test": "OK",
+          "prerecorded_messages": "OK",
+          "speaker_clarity": "OK",
+          "ambient_noise_coverage": "OK",
+          "status": "OK",
+          "remarks": "Bilingual English/Arabic evacuation message broadcast tested. Paging mic priority verified.",
+          "photos": []
+        }
+      ]
+    }
+  }
 }

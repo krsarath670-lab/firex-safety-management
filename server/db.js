@@ -4260,8 +4260,14 @@ class Database {
     const site = (db.sites || []).find(s => s.id === visit.site_id);
     const customer = (db.customers || []).find(c => c.id === visit.customer_id);
 
-    // If checklist already exists on visit, return it
-    if (visit.checklist_data && (visit.checklist_data.fire_alarm_items?.length || visit.checklist_data.fire_fighting_items?.length)) {
+    // If checklist already exists on visit, ensure buildings array is present
+    if (visit.checklist_data) {
+      if (!Array.isArray(visit.checklist_data.buildings) || visit.checklist_data.buildings.length === 0) {
+        // Upgrade legacy structure to multi-building
+        const initial = amcChecklist.buildInitialChecklist(site, contract, visit, null, []);
+        visit.checklist_data.buildings = initial.buildings || [];
+        this.write(db);
+      }
       return {
         visit,
         contract,
@@ -4275,8 +4281,7 @@ class Database {
     const previousVisit = (db.amc_visits || []).find(
       v => (v.amc_contract_id === visit.amc_contract_id || v.site_id === visit.site_id) &&
            v.id !== visit.id &&
-           v.checklist_data &&
-           v.checklist_data.fire_alarm_items?.length
+           v.checklist_data
     );
 
     const siteEquipment = this.getSiteEquipment(site?.id);
@@ -4329,13 +4334,16 @@ class Database {
       visit.report_status = 'Supervisor Review';
     }
 
+    const buildings = payload.buildings || visit.checklist_data?.buildings || [];
+
     visit.checklist_data = {
       status,
       submitted_at: isSubmitting ? new Date().toISOString() : (visit.checklist_data?.submitted_at || null),
       submitted_by: isSubmitting ? currentUser.name : (visit.checklist_data?.submitted_by || null),
-      fire_alarm_items: payload.fire_alarm_items || visit.checklist_data?.fire_alarm_items || [],
-      fire_fighting_items: payload.fire_fighting_items || visit.checklist_data?.fire_fighting_items || [],
-      extinguisher_items: payload.extinguisher_items || visit.checklist_data?.extinguisher_items || [],
+      buildings: buildings,
+      fire_alarm_items: payload.fire_alarm_items || visit.checklist_data?.fire_alarm_items || (buildings[0]?.checklists?.fire_alarm || []),
+      fire_fighting_items: payload.fire_fighting_items || visit.checklist_data?.fire_fighting_items || (buildings[0]?.checklists?.fire_fighting || []),
+      extinguisher_items: payload.extinguisher_items || visit.checklist_data?.extinguisher_items || (buildings[0]?.checklists?.fire_extinguishers || []),
       defects: payload.defects || [],
       customer_signature: payload.customer_signature || visit.checklist_data?.customer_signature || null,
       technician_signature: payload.technician_signature || visit.checklist_data?.technician_signature || null,
@@ -4345,19 +4353,45 @@ class Database {
       updated_by: currentUser.name
     };
 
-    // Defect Automation: Generate/update defects in db.faults for NOT OK items
+    // Defect Automation: Generate/update defects in db.faults for NOT OK items across all buildings
     if (!db.faults) db.faults = [];
-    const allItems = [
-      ...(visit.checklist_data.fire_alarm_items || []).map(i => ({ ...i, system: 'Fire Alarm' })),
-      ...(visit.checklist_data.fire_fighting_items || []).map(i => ({ ...i, system: 'Fire Fighting' })),
-      ...(visit.checklist_data.extinguisher_items || []).map(i => ({ ...i, system: 'Fire Extinguishers', item: `${i.type} (${i.capacity || ''})` }))
-    ];
+    const allItems = [];
+
+    if (Array.isArray(buildings) && buildings.length > 0) {
+      buildings.forEach(bld => {
+        const bName = bld.building_name || `Building ${bld.building_number || '1'}`;
+        const bNum = bld.building_number || '1';
+        const chks = bld.checklists || {};
+        Object.keys(chks).forEach(sysKey => {
+          const sysItems = chks[sysKey] || [];
+          if (Array.isArray(sysItems)) {
+            sysItems.forEach(item => {
+              allItems.push({
+                ...item,
+                building_number: bNum,
+                building_name: bName,
+                system_key: sysKey,
+                system: sysKey.replace(/_/g, ' ').toUpperCase()
+              });
+            });
+          }
+        });
+      });
+    } else {
+      allItems.push(
+        ...(visit.checklist_data.fire_alarm_items || []).map(i => ({ ...i, system: 'Fire Alarm' })),
+        ...(visit.checklist_data.fire_fighting_items || []).map(i => ({ ...i, system: 'Fire Fighting' })),
+        ...(visit.checklist_data.extinguisher_items || []).map(i => ({ ...i, system: 'Fire Extinguishers', item: `${i.type} (${i.capacity || ''})` }))
+      );
+    }
 
     allItems.forEach(item => {
       if (item.status === 'NOT OK') {
-        let existingFault = db.faults.find(f => f.visit_id === visit.id && (f.item_id === item.id || f.device_equipment === (item.item || item.type)));
+        const itemIdentifier = item.id || item.item_no || item.reel_id || item.valve_id || item.ext_id || item.serial_number || item.item;
+        let existingFault = db.faults.find(f => f.visit_id === visit.id && (f.item_id === itemIdentifier || f.device_equipment === (item.item || item.type || item.reel_id || item.valve_id)));
+        const buildingPrefix = item.building_name ? `[${item.building_name}] ` : '';
         if (existingFault) {
-          existingFault.fault_description = item.defect_description || item.remarks || `${item.item} requires maintenance`;
+          existingFault.fault_description = item.defect_description || item.remarks || `${buildingPrefix}${item.item || item.type || 'Equipment'} requires maintenance`;
           existingFault.action_taken = item.recommendation || existingFault.action_taken;
           existingFault.priority = item.priority || existingFault.priority || 'High';
           existingFault.photos = item.photos || existingFault.photos || [];
@@ -4375,11 +4409,11 @@ class Database {
             amc_id: contract?.id || visit.amc_contract_id,
             amc_contract_id: contract?.id || visit.amc_contract_id,
             visit_id: visit.id,
-            item_id: item.id,
-            system: item.system,
-            device_equipment: item.item || item.type,
-            location: item.location || (item.floor ? `Floor ${item.floor}` : (site?.site_name || 'Building Wide')),
-            fault_description: item.defect_description || item.remarks || `${item.item || item.type} defect logged during AMC inspection #${visit.visit_number}`,
+            item_id: itemIdentifier,
+            system: item.system || 'Fire Safety',
+            device_equipment: item.item || item.type || item.reel_id || item.valve_id || item.detector_id || 'Safety Equipment',
+            location: item.location || (item.floor ? `Floor ${item.floor}` : (item.building_name || site?.site_name || 'Building Wide')),
+            fault_description: item.defect_description || item.remarks || `${buildingPrefix}${item.item || item.type || 'Equipment'} defect logged during AMC inspection #${visit.visit_number}`,
             cause: item.cause || 'Routine preventive maintenance inspection discovery',
             action_taken: item.recommendation || 'Technical replacement/repair proposed',
             priority: item.priority || 'High',
@@ -4396,29 +4430,10 @@ class Database {
       }
     });
 
-    // Sync extinguishers to site equipment
-    if (visit.checklist_data.extinguisher_items?.length && site?.id) {
-      const extEquip = visit.checklist_data.extinguisher_items.map(e => ({
-        id: e.id,
-        system: "Fire Extinguishers",
-        item_name: `${e.type} ${e.capacity || ''}`.trim(),
-        make: e.make,
-        type: e.type,
-        capacity: e.capacity,
-        quantity: e.quantity || 1,
-        serial_number: e.serial_number,
-        location: e.location,
-        floor: e.floor,
-        last_inspected_date: visit.actual_service_date || new Date().toISOString().slice(0, 10),
-        next_due_date: e.next_due_date
-      }));
-      this.saveSiteEquipment(site.id, extEquip);
-    }
-
     // Sync to db.reports so report history is populated immediately under Customer + AMC + Quarter
     if (!db.reports) db.reports = [];
     
-    // Auto FX Document Number (Requirements 1, 8, 11, 13)
+    // Auto FX Document Number
     let reportNumber = visit.document_number || visit.report_number;
     if (!reportNumber || !String(reportNumber).startsWith('FX ')) {
       const existingRep = db.reports.find(r => r.amc_visit_id === visit.id || r.visit_id === visit.id);
@@ -4457,6 +4472,7 @@ class Database {
       prepared_by_user_id: currentUser?.id || visit.technician_id,
       prepared_date: new Date().toISOString().slice(0, 10),
       systems: visit.systems || contract?.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+      buildings: buildings,
       checklist_data: visit.checklist_data,
       status: reportStatus,
       updated_at: new Date().toISOString()
@@ -4481,8 +4497,46 @@ class Database {
 
     return {
       visit,
-      checklist: visit.checklist_data
+      checklist: visit.checklist_data,
+      report_id: report.id,
+      report_number: report.document_number || report.report_number
     };
+  }
+
+  getChecklistTemplates() {
+    const db = this.read();
+    if (!db.checklist_templates) {
+      db.checklist_templates = {};
+      amcChecklist.SYSTEM_DEFINITIONS.forEach(def => {
+        db.checklist_templates[def.key] = {
+          system_key: def.key,
+          label: def.label,
+          description: def.description,
+          items: amcChecklist.getDefaultSystemItems(def.key, "1")
+        };
+      });
+      this.write(db);
+    }
+    return {
+      definitions: amcChecklist.SYSTEM_DEFINITIONS,
+      templates: db.checklist_templates
+    };
+  }
+
+  updateChecklistTemplate(systemKey, templateData, user) {
+    const db = this.read();
+    if (!db.checklist_templates) {
+      this.getChecklistTemplates();
+    }
+    db.checklist_templates[systemKey] = {
+      ...(db.checklist_templates[systemKey] || {}),
+      ...templateData,
+      updated_at: new Date().toISOString(),
+      updated_by: user.name
+    };
+    this.write(db);
+    this.logAudit(user.id, 'UPDATE_CHECKLIST_TEMPLATE', 'checklist_templates', systemKey, `Updated checklist template for ${systemKey}`);
+    return db.checklist_templates[systemKey];
   }
 
   reviewAmcVisit(visitId, { action, remarks, supervisor_signature }, currentUser) {

@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Settings, Shield, Save, Upload, Image as ImageIcon, CheckCircle, RotateCcw, Eye, FileText, Check, AlertCircle, Calendar } from 'lucide-react';
+import { 
+  Settings, Shield, Save, Upload, Image as ImageIcon, 
+  CheckCircle, RotateCcw, Eye, FileText, Check, AlertCircle, Calendar, Layers 
+} from 'lucide-react';
+import ChecklistTemplateSettings from './ChecklistTemplateSettings';
 
 export default function CompanySettingsView() {
   const { currentUser, showToast, fetchCompanySettings } = useApp();
+  const [mainTab, setMainTab] = useState('branding'); // 'branding' | 'checklists'
   const [settings, setSettings] = useState({
     company_name: 'FIREX',
     arabic_name: 'شركة فايركس لأدوات السلامه',
@@ -32,8 +37,8 @@ export default function CompanySettingsView() {
   const letterheadInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
-  // Allowed to edit: GM, Managing Director (MD) or Supervisor
-  const canEdit = currentUser?.role === 'GM' || currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director' || currentUser?.role === 'Supervisor';
+  // Allowed to edit: Admin, CEO, GM, Managing Director (MD), Supervisor, Accounts
+  const canEdit = ['Admin', 'admin', 'CEO', 'ceo', 'GM', 'gm', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Supervisor', 'Accounts', 'accounts'].includes(currentUser?.role);
 
   useEffect(() => {
     fetch('/api/settings', {
@@ -230,8 +235,41 @@ export default function CompanySettingsView() {
         </div>
       </div>
 
-      {/* SECTION 1: Letterhead & Logo Upload Center */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+      {/* Settings Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setMainTab('branding')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+            mainTab === 'branding'
+              ? 'bg-navy-950 text-white shadow-md'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4 text-red-500" />
+          <span>Company Branding &amp; Letterhead</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMainTab('checklists')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+            mainTab === 'checklists'
+              ? 'bg-navy-950 text-white shadow-md'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-amber-500" />
+          <span>Checklist Templates (10 Systems)</span>
+        </button>
+      </div>
+
+      {mainTab === 'checklists' ? (
+        <ChecklistTemplateSettings />
+      ) : (
+        <>
+          {/* SECTION 1: Letterhead & Logo Upload Center */}
+          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-sm font-black text-navy-900 flex items-center gap-2">
@@ -689,6 +727,8 @@ export default function CompanySettingsView() {
           </div>
         )}
       </form>
+      </>
+      )}
     </div>
   );
 }
