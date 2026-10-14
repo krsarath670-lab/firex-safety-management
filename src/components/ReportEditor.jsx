@@ -350,24 +350,39 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
           </div>
         </div>
 
-        {/* Report Type Selector */}
+        {/* Report Type Selector (Strictly 2 Permitted Types: AMC Service Report & Emergency Call-Out Report) */}
         <div>
-          <label className="block font-bold text-slate-700 mb-1">Report Document Type *</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
-            {ALL_REPORT_TYPES.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setFormData((p) => ({ ...p, report_type: type }))}
-                className={`py-2 px-2 rounded-xl font-bold border transition-colors text-center text-[11px] ${
-                  formData.report_type === type
-                    ? 'bg-navy-900 text-white border-navy-900 shadow-sm'
-                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+          <label className="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">Report Document Type *</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {ALL_REPORT_TYPES.map((type) => {
+              const isSelected = formData.report_type === type;
+              const isAMC = type === 'AMC Service Report';
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData((p) => ({ ...p, report_type: type }))}
+                  className={`p-3 rounded-xl font-bold border transition-all text-left flex items-start gap-3 ${
+                    isSelected
+                      ? 'bg-navy-900 text-white border-navy-900 shadow-md ring-2 ring-navy-900/20'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-white/10 text-white' : isAMC ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-black block tracking-tight">{type}</span>
+                    <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}>
+                      {isAMC ? 'Quarterly AMC checklist, multi-panel inspection & test' : 'Emergency breakdown, fault troubleshooting & rectifications'}
+                    </span>
+                  </div>
+                  {isSelected && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 

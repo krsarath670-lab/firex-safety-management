@@ -3044,9 +3044,9 @@ app.post('/api/reports', (req, res) => {
   // Prevent duplicate reports for the same scheduled AMC visit (Part 3)
   const existingReports = db.get('reports') || [];
   let existingReport = null;
-  const targetVisitId = body.visit_id || body.amc_visit_id;
-  if (targetVisitId) {
-    existingReport = existingReports.find(r => r.visit_id === targetVisitId || r.amc_visit_id === targetVisitId);
+  const reqVisitId = body.visit_id || body.amc_visit_id;
+  if (reqVisitId) {
+    existingReport = existingReports.find(r => r.visit_id === reqVisitId || r.amc_visit_id === reqVisitId);
   }
   if (!existingReport && amc && body.quarter) {
     existingReport = existingReports.find(r => 
