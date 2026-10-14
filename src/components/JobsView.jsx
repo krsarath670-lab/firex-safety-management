@@ -13,7 +13,14 @@ import QuickAddCustomerModal from './QuickAddCustomerModal';
 
 export default function JobsView({ onStartJob, onStartInspectionForJob, onNewReportForJob, initialJobType = null }) {
   const { currentUser, showToast, allUsers } = useApp();
-  const canPrepareReports = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role) || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ].includes(currentUser?.role);
+
   const [jobs, setJobs] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);

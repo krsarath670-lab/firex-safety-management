@@ -3,11 +3,14 @@ import { useApp } from '../context/AppContext';
 import { 
   FileSpreadsheet, Plus, Search, Eye, Edit, Trash2, 
   CheckCircle2, Clock, ShieldCheck, ArrowRight, Download, 
-  Printer, UserCheck, AlertCircle, FileText, Sparkles
+  Printer, UserCheck, AlertCircle, FileText, Sparkles, Flame
 } from 'lucide-react';
 import CreateAMCReportModal from './CreateAMCReportModal';
 import AMCChecklistModal from './AMCChecklistModal';
 import AMCServiceReportModal from './AMCServiceReportModal';
+import GenerateReportModal from './GenerateReportModal';
+import EmergencyCalloutModal from './EmergencyCalloutModal';
+import EmergencyCalloutPDF from './EmergencyCalloutPDF';
 
 export default function ReportsView({ onNewReport, onEditReport, onPreviewReport }) {
   const { currentUser, showToast } = useApp();
@@ -17,8 +20,11 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const [preparedByFilter, setPreparedByFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // AMC Report Workflow Modals
+  // Report Workflow Modals
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showCreateAmcModal, setShowCreateAmcModal] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [previewingEmergencyCall, setPreviewingEmergencyCall] = useState(null);
   const [activeChecklistVisit, setActiveChecklistVisit] = useState(null);
   const [previewingVisit, setPreviewingVisit] = useState(null);
 
@@ -28,12 +34,19 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
   const isGM = role === 'GM';
   const isCEO = role === 'CEO';
   const isExec = isMD || isGM || isAdmin;
-  const canPrepareReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(role);
+  const canPrepareReports = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ].includes(role);
   const canReviewReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const canCompleteReports = isExec || ['Projects Manager', 'Engineer', 'Supervisor'].includes(role);
   const isTechnician = role === 'Technician';
   const isSales = role === 'Sales';
   const isAccounts = role === 'Accounts';
+
 
   const loadReports = async () => {
     try {
@@ -174,22 +187,16 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
         {canPrepareReports ? (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowCreateAmcModal(true)}
-              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-emerald-950/20 transition-all transform hover:scale-[1.02]"
-              title="Create new AMC periodic report with customer & quarter selection"
+              onClick={() => setShowGenerateModal(true)}
+              className="px-4 py-2.5 bg-gradient-to-r from-navy-950 via-slate-900 to-navy-900 hover:from-black hover:to-slate-950 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md shadow-navy-950/20 transition-all transform hover:scale-[1.02]"
+              title="Open Generate Report: AMC Service Report or Emergency Call-Out Report"
             >
-              <FileText className="w-4 h-4 text-emerald-200" />
-              <span>Create AMC Report</span>
-            </button>
-            <button
-              onClick={onNewReport}
-              className="px-3 py-2 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Other Report</span>
+              <Plus className="w-4 h-4 text-emerald-400" />
+              <span>Generate Report</span>
             </button>
           </div>
         ) : (
+
           <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
             {role} • View Only Mode
           </span>
@@ -366,7 +373,13 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
                 
                 {/* PDF Preview Button */}
                 <button
-                  onClick={() => onPreviewReport(r)}
+                  onClick={() => {
+                    if (r.report_type === 'Emergency Call-Out Report' || r.job_type === 'EMR') {
+                      setPreviewingEmergencyCall(r);
+                    } else if (onPreviewReport) {
+                      onPreviewReport(r);
+                    }
+                  }}
                   className="px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
                 >
                   <Eye className="w-3.5 h-3.5 text-blue-400" />
@@ -436,6 +449,14 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
         })
       )}
 
+      {/* GENERATE REPORT MODAL - Displays ONLY the two permitted options (Part 2 & Part 6) */}
+      <GenerateReportModal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        onSelectAMC={() => setShowCreateAmcModal(true)}
+        onSelectEmergency={() => setShowEmergencyModal(true)}
+      />
+
       {/* CREATE AMC REPORT MODAL (Customer -> AMC Contract -> Quarter -> Visit Selection) */}
       {showCreateAmcModal && (
         <CreateAMCReportModal
@@ -447,6 +468,20 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
           onViewReport={(visit) => {
             setShowCreateAmcModal(false);
             setPreviewingVisit(visit);
+          }}
+        />
+      )}
+
+      {/* CREATE EMERGENCY CALL-OUT REPORT MODAL */}
+      {showEmergencyModal && (
+        <EmergencyCalloutModal
+          onClose={() => setShowEmergencyModal(false)}
+          onSaved={(newCall) => {
+            setShowEmergencyModal(false);
+            loadReports();
+            if (newCall) {
+              setPreviewingEmergencyCall(newCall);
+            }
           }}
         />
       )}
@@ -476,6 +511,18 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
         />
       )}
 
+      {/* EMERGENCY CALL-OUT REPORT PDF MODAL */}
+      {previewingEmergencyCall && (
+        <EmergencyCalloutPDF
+          call={previewingEmergencyCall}
+          onClose={() => {
+            setPreviewingEmergencyCall(null);
+            loadReports();
+          }}
+        />
+      )}
+
     </div>
   );
 }
+

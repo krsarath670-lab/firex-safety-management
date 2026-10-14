@@ -3012,9 +3012,15 @@ app.get('/api/reports/:id', (req, res) => {
 });
 
 app.post('/api/reports', (req, res) => {
-  // STRICT PERMISSION CHECK (Requirement 1 & 14):
-  // Only Projects Manager, Engineer, Supervisor, Technician, and Managing Director can prepare reports
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'];
+  // STRICT PERMISSION CHECK (Part 1 & Part 5):
+  // Only Projects Manager, Engineer, Supervisor, Technician (and Admin) can prepare reports through Generate Report
+  const allowedRoles = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({
       error: 'Permission Denied',
@@ -3034,6 +3040,40 @@ app.post('/api/reports', (req, res) => {
   if (!amc && body.customer_id) {
     amc = amcs.find(c => c.customer_id === body.customer_id && (c.site_id === body.site_id || !body.site_id));
   }
+
+  // Prevent duplicate reports for the same scheduled AMC visit (Part 3)
+  const existingReports = db.get('reports') || [];
+  let existingReport = null;
+  const targetVisitId = body.visit_id || body.amc_visit_id;
+  if (targetVisitId) {
+    existingReport = existingReports.find(r => r.visit_id === targetVisitId || r.amc_visit_id === targetVisitId);
+  }
+  if (!existingReport && amc && body.quarter) {
+    existingReport = existingReports.find(r => 
+      (r.amc_id === amc.id || r.amc_contract_id === amc.id || r.contract_id === amc.id) && 
+      r.quarter === body.quarter
+    );
+  }
+
+  if (existingReport && (body.report_type === 'AMC Service Report' || !body.report_type || body.report_type === 'AMC')) {
+    const updated = db.update('reports', existingReport.id, {
+      ...body,
+      id: existingReport.id,
+      document_number: existingReport.document_number,
+      report_number: existingReport.report_number,
+      updated_at: nowAudit.iso,
+      last_modified_by_id: authUser.id,
+      last_modified_by_name: authUser.name,
+      last_modified_by_role: authUser.role
+    });
+    db.logAudit(authUser.id, 'UPDATE_REPORT', 'reports', existingReport.id, `Updated existing AMC report ${existingReport.report_number} for scheduled visit`);
+    return res.status(200).json({
+      ...updated,
+      reopened: true,
+      message: `Opened and updated existing report ${existingReport.report_number} for this scheduled visit.`
+    });
+  }
+
   const job = jobs.find(j => j.id === body.job_id || j.job_number === body.job_number);
 
   // Automatically pull: AMC number, Customer, Site, Sales Person, Contract start date, Contract end date, Visit number, Visit date, System, Technician, Supervisor (Requirements 25 & 26)
@@ -3452,14 +3492,22 @@ app.get('/api/emergency-calls/:id', (req, res) => {
   }
 });
 
-// Create new Emergency Call (GM, Managing Director, Engineer, Supervisor, Projects Manager, Admin, Accounts)
+// Create new Emergency Call (Projects Manager, Engineer, Supervisor, Technician, GM, MD, Admin, Accounts)
 app.post('/api/emergency-calls', (req, res) => {
   try {
-    const allowedRoles = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor', 'Projects Manager', 'Admin', 'admin', 'Accounts', 'accounts'];
+    const allowedRoles = [
+      'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+      'Engineer', 'engineer',
+      'Supervisor', 'supervisor',
+      'Technician', 'technician',
+      'GM', 'Managing Director (MD)', 'Managing Director', 'managing_director',
+      'Admin', 'admin',
+      'Accounts', 'accounts'
+    ];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only General Managers, Managing Directors, Engineers, Supervisors, Projects Managers, and Admin/Accounts can log new Emergency Call-Outs.'
+        message: 'You are not authorized to create Emergency Call-Out Reports.'
       });
     }
 
@@ -3469,6 +3517,40 @@ app.post('/api/emergency-calls', (req, res) => {
     }
 
     const newCall = db.createEmergencyCall(req.body, req.user);
+
+    // Sync to unified reports collection so ReportsView lists it
+    const reports = db.get('reports') || [];
+    if (!reports.some(r => r.emergency_call_id === newCall.id || r.report_number === newCall.report_number)) {
+      db.insert('reports', {
+        report_type: 'Emergency Call-Out Report',
+        job_type: 'EMR',
+        document_number: newCall.report_number,
+        report_number: newCall.report_number,
+        emergency_call_id: newCall.id,
+        call_number: newCall.call_number,
+        customer_id: newCall.customer_id,
+        customer_name: newCall.customer_name,
+        site_id: newCall.site_id,
+        site_name: newCall.site_name,
+        date: newCall.call_date,
+        system: newCall.system || 'Fire Alarm & Safety Systems',
+        work_description: newCall.action_taken || newCall.emergency_description || newCall.reported_problem,
+        faults_found: newCall.findings || newCall.reported_problem,
+        rectifications: newCall.rectification || newCall.action_taken,
+        recommendations: newCall.recommendations || '',
+        materials_used: newCall.materials_used || [],
+        photos: newCall.photos || [],
+        customer_signature: newCall.customer_signature,
+        technician_signature: newCall.technician_signature,
+        supervisor_signature: newCall.supervisor_signature,
+        status: newCall.report_status || 'Draft',
+        prepared_by_user_id: newCall.prepared_by_user_id,
+        prepared_by_name: newCall.prepared_by_name,
+        prepared_by_role: newCall.prepared_by_role,
+        created_by_user_id: newCall.created_by_user_id,
+        created_at: newCall.created_at
+      });
+    }
 
     // If Critical or High priority, trigger emergency notification
     if (['Critical', 'High'].includes(newCall.priority)) {
@@ -3493,6 +3575,7 @@ app.post('/api/emergency-calls', (req, res) => {
     res.status(500).json({ error: 'Failed to create emergency call' });
   }
 });
+
 
 // Update Emergency Call with role-based restriction enforcement
 app.put('/api/emergency-calls/:id', (req, res) => {

@@ -44,7 +44,8 @@ export default function EmergencyCalloutView() {
   const isPM = role === 'Projects Manager';
 
   const canPrepareReport = isPM || isEngineer || isSupervisor || isTech;
-  const canCreate = isGM || isEngineer || isSupervisor || isPM;
+  const canCreate = isGM || isEngineer || isSupervisor || isPM || isTech || ['Admin', 'admin'].includes(role);
+
   const canReview = isEngineer || isSupervisor || isPM;
   const canComplete = isEngineer || isSupervisor || isPM;
   const canClose = isGM;

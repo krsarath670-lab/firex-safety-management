@@ -214,7 +214,14 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     ...extinguisherItems.filter(i => i.status === 'NOT OK').map(i => ({ ...i, category: 'Fire Extinguishers', item: `${i.type} (${i.capacity})` }))
   ];
 
-  const canPrepareReports = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'CEO', 'Admin', 'Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ].includes(currentUser?.role);
+
 
   // Directly generate report: saves checklist progress and opens official A4 AMC Service Report
   const handleMakeReport = async () => {

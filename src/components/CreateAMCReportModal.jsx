@@ -30,13 +30,14 @@ export default function CreateAMCReportModal({
   const [selectedSupervisorName, setSelectedSupervisorName] = useState('');
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
   const [selectedTechnicianName, setSelectedTechnicianName] = useState('');
+  const [existingReports, setExistingReports] = useState([]);
 
-  // Load Customers, Contracts, and Staff
+  // Load Customers, Contracts, Staff, and Existing Reports
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        const [resCust, resAmc, resUsers] = await Promise.all([
+        const [resCust, resAmc, resUsers, resRpts] = await Promise.all([
           fetch('/api/customers', {
             headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id }
           }),
@@ -45,12 +46,16 @@ export default function CreateAMCReportModal({
           }),
           fetch('/api/users', {
             headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id }
+          }),
+          fetch('/api/reports', {
+            headers: { 'x-user-role': currentUser.role, 'x-user-id': currentUser.id }
           })
         ]);
 
         if (resCust.ok) setCustomers(await resCust.json());
         if (resAmc.ok) setAmcContracts(await resAmc.json());
         if (resUsers.ok) setEmployees(await resUsers.json());
+        if (resRpts.ok) setExistingReports(await resRpts.json());
       } catch (err) {
         console.error('Failed to load AMC report selection data:', err);
         showToast('Error loading selection data', 'error');
@@ -60,6 +65,7 @@ export default function CreateAMCReportModal({
     };
     loadInitialData();
   }, [currentUser]);
+
 
   // Filter contracts strictly to the selected customer (Prevent Customer A + Customer B AMC)
   const filteredContracts = amcContracts.filter(c => c.customer_id === selectedCustomerId);
@@ -146,6 +152,13 @@ export default function CreateAMCReportModal({
   const selectedVisit = activeContract ? getQuarterDetails(selectedQuarter) : null;
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId) || null;
 
+  // Check if a report already exists for this scheduled visit (Part 3)
+  const matchedExistingReport = existingReports.find(r => 
+    (selectedVisit?.report_id && (r.id === selectedVisit.report_id || r.report_number === selectedVisit.report_number)) ||
+    (r.visit_id && selectedVisit?.visit_id && r.visit_id === selectedVisit.visit_id) ||
+    ((r.amc_id === selectedContractId || r.amc_contract_id === selectedContractId || r.contract_id === selectedContractId) && r.quarter === selectedQuarter)
+  );
+
   // Proceed to digital checklist & report preparation
   const handleProceed = () => {
     if (!selectedCustomerId) {
@@ -158,6 +171,18 @@ export default function CreateAMCReportModal({
     }
     if (!selectedVisit) {
       showToast('Please select a service quarter', 'warning');
+      return;
+    }
+
+    // If report already exists for this scheduled visit, open it instead of creating duplicate (Part 3)
+    if (matchedExistingReport) {
+      showToast(`Report ${matchedExistingReport.report_number || matchedExistingReport.document_number || 'AMC Report'} already exists for ${selectedQuarter}. Opening existing report...`, 'info');
+      onClose();
+      if (onViewReport) {
+        onViewReport(matchedExistingReport);
+      } else if (onOpenChecklist) {
+        onOpenChecklist(matchedExistingReport);
+      }
       return;
     }
 
@@ -196,6 +221,7 @@ export default function CreateAMCReportModal({
       onOpenChecklist(fullVisitPayload);
     }
   };
+
 
   const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 
@@ -475,24 +501,31 @@ export default function CreateAMCReportModal({
                   </div>
                 </div>
 
-                {/* Report link if already prepared */}
-                {selectedVisit.report_id && (
-                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                {/* Report link if already prepared or existing report found */}
+                {(matchedExistingReport || selectedVisit.report_id) && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between shadow-xs">
                     <div>
-                      <span className="text-[10px] text-emerald-800 font-bold block">Official Report Generated</span>
-                      <span className="text-xs font-mono font-black text-emerald-950">{selectedVisit.report_number || 'RPT-AMC'}</span>
+                      <span className="text-[10px] text-emerald-800 font-black uppercase tracking-wider block">
+                        Official Report Already Created
+                      </span>
+                      <span className="text-xs font-mono font-black text-emerald-950">
+                        {matchedExistingReport?.document_number || matchedExistingReport?.report_number || selectedVisit.report_number || 'RPT-AMC'}
+                      </span>
+                      <span className="block text-[10px] text-emerald-700 mt-0.5">
+                        Status: <strong>{matchedExistingReport?.status || 'Completed'}</strong> • Prepared: {matchedExistingReport?.prepared_by_name || 'Staff'}
+                      </span>
                     </div>
                     {onViewReport && (
                       <button
                         type="button"
                         onClick={() => {
                           onClose();
-                          onViewReport(selectedVisit);
+                          onViewReport(matchedExistingReport || selectedVisit);
                         }}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>View PDF</span>
+                        <span>Open Report</span>
                       </button>
                     )}
                   </div>
@@ -517,13 +550,28 @@ export default function CreateAMCReportModal({
             type="button"
             disabled={!selectedCustomerId || !selectedContractId || !selectedVisit}
             onClick={handleProceed}
-            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/30 transition-all transform hover:scale-[1.02]"
+            className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg transition-all transform hover:scale-[1.02] ${
+              matchedExistingReport
+                ? 'bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white shadow-blue-900/30'
+                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-900/30'
+            } disabled:opacity-50 disabled:pointer-events-none`}
           >
-            <Wrench className="w-4 h-4 text-emerald-200" />
-            <span>Load AMC Checklist &amp; Make Report</span>
-            <ArrowRight className="w-4 h-4" />
+            {matchedExistingReport ? (
+              <>
+                <Eye className="w-4 h-4 text-blue-200" />
+                <span>Open Existing AMC Report</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <Wrench className="w-4 h-4 text-emerald-200" />
+                <span>Load AMC Checklist &amp; Make Report</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </div>
+
 
       </div>
     </div>

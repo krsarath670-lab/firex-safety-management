@@ -587,9 +587,10 @@ ROLE_PERMISSIONS['admin'] = ROLE_PERMISSIONS['Admin'];
 ROLE_PERMISSIONS['administrator'] = ROLE_PERMISSIONS['Admin'];
 ROLE_PERMISSIONS['ceo'] = ROLE_PERMISSIONS['CEO'];
 
-// Accounts Role: Full application access equivalent to Admin across all modules
-ROLE_PERMISSIONS['Accounts'] = { ...ROLE_PERMISSIONS['Admin'] };
+// Accounts Role: Full application access equivalent to Admin across all modules (with operational report preparation reserved for technical field roles)
+ROLE_PERMISSIONS['Accounts'] = { ...ROLE_PERMISSIONS['Admin'], canPrepareReports: false };
 ROLE_PERMISSIONS['accounts'] = ROLE_PERMISSIONS['Accounts'];
+
 ROLE_PERMISSIONS['accountant'] = ROLE_PERMISSIONS['Accounts'];
 ROLE_PERMISSIONS['Accountant'] = ROLE_PERMISSIONS['Accounts'];
 ROLE_PERMISSIONS['finance'] = ROLE_PERMISSIONS['Accounts'];

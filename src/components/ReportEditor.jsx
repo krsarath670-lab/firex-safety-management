@@ -199,7 +199,13 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     });
   };
 
-  const canPrepare = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role) || ['Projects Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepare = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ].includes(currentUser?.role);
 
   // If user is not authorized to prepare reports and this is a new report draft, block access
   if (!canPrepare && !initialData?.id) {
@@ -249,19 +255,17 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     onSave(finalReport);
   };
 
-  const ALL_REPORT_TYPES = [
+  // PART 2: Display ONLY two report options in Generate Report module
+  const PERMITTED_REPORT_TYPES = [
     'AMC Service Report',
-    'Work Completion Report',
-    'Fault Report',
-    'Inspection Report',
-    'Testing & Commissioning Report',
-    'Emergency Call-Out Report',
-    'Project Report',
-    'Fit-Out Report',
-    'Installation Report',
-    'Breakdown Report',
-    'Supply Report'
+    'Emergency Call-Out Report'
   ];
+  // Preserve historical report types if editing an existing record
+  const ALL_REPORT_TYPES = Array.from(new Set([
+    ...PERMITTED_REPORT_TYPES,
+    ...(initialData?.report_type ? [initialData.report_type] : [])
+  ]));
+
 
   return (
     <div className="space-y-4 pb-28">

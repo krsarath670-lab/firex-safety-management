@@ -23,6 +23,13 @@ import AuditLogView from './components/AuditLogView';
 import AIAssistantModal from './components/AIAssistantModal';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
+import GenerateReportModal from './components/GenerateReportModal';
+import CreateAMCReportModal from './components/CreateAMCReportModal';
+import AMCChecklistModal from './components/AMCChecklistModal';
+import AMCServiceReportModal from './components/AMCServiceReportModal';
+import EmergencyCalloutModal from './components/EmergencyCalloutModal';
+import EmergencyCalloutPDF from './components/EmergencyCalloutPDF';
+
 
 function AppContent() {
   const {
@@ -47,6 +54,14 @@ function AppContent() {
   const [previewingReport, setPreviewingReport] = useState(null);
   const [initialJobType, setInitialJobType] = useState(null);
 
+  // Generate Report Modal & Sub-workflow states (Part 2 & Part 6)
+  const [isGenerateReportModalOpen, setIsGenerateReportModalOpen] = useState(false);
+  const [showAppCreateAmcModal, setShowAppCreateAmcModal] = useState(false);
+  const [showAppEmergencyModal, setShowAppEmergencyModal] = useState(false);
+  const [appActiveChecklistVisit, setAppActiveChecklistVisit] = useState(null);
+  const [appPreviewingVisit, setAppPreviewingVisit] = useState(null);
+  const [appPreviewingEmergencyCall, setAppPreviewingEmergencyCall] = useState(null);
+
   // If not logged in, enforce Password Login Screen
   if (!isAuthenticated) {
     return <LoginView />;
@@ -68,9 +83,14 @@ function AppContent() {
   };
 
   const handleNewReport = (prefillData = null) => {
-    setEditingReport(prefillData || {});
-    setActiveTab('report_editor');
+    if (prefillData && prefillData.report_type) {
+      setEditingReport(prefillData);
+      setActiveTab('report_editor');
+    } else {
+      setIsGenerateReportModalOpen(true);
+    }
   };
+
 
   // Complete inspection -> transition to report editor
   const handleCompleteInspection = ({ checklist, faultCount, system }) => {
@@ -295,6 +315,79 @@ function AppContent() {
           />
         )}
 
+        {/* GENERATE REPORT MODAL - Displays ONLY the two permitted options (Part 2 & Part 6) */}
+        <GenerateReportModal
+          isOpen={isGenerateReportModalOpen}
+          onClose={() => setIsGenerateReportModalOpen(false)}
+          onSelectAMC={() => setShowAppCreateAmcModal(true)}
+          onSelectEmergency={() => setShowAppEmergencyModal(true)}
+        />
+
+        {/* CREATE AMC REPORT MODAL */}
+        {showAppCreateAmcModal && (
+          <CreateAMCReportModal
+            onClose={() => setShowAppCreateAmcModal(false)}
+            onOpenChecklist={(visit) => {
+              setShowAppCreateAmcModal(false);
+              setAppActiveChecklistVisit(visit);
+            }}
+            onViewReport={(visit) => {
+              setShowAppCreateAmcModal(false);
+              setAppPreviewingVisit(visit);
+            }}
+          />
+        )}
+
+        {/* DIGITAL AMC CHECKLIST MODAL */}
+        {appActiveChecklistVisit && (
+          <AMCChecklistModal
+            visit={appActiveChecklistVisit}
+            onClose={() => setAppActiveChecklistVisit(null)}
+            onRefresh={fetchStats}
+            onViewReport={(v) => {
+              setAppActiveChecklistVisit(null);
+              setAppPreviewingVisit(v);
+              fetchStats();
+            }}
+          />
+        )}
+
+        {/* OFFICIAL CIVIL DEFENSE AMC SERVICE REPORT PDF MODAL */}
+        {appPreviewingVisit && (
+          <AMCServiceReportModal
+            visit={appPreviewingVisit}
+            onClose={() => {
+              setAppPreviewingVisit(null);
+              fetchStats();
+            }}
+          />
+        )}
+
+        {/* CREATE EMERGENCY CALL-OUT REPORT MODAL */}
+        {showAppEmergencyModal && (
+          <EmergencyCalloutModal
+            onClose={() => setShowAppEmergencyModal(false)}
+            onSaved={(newCall) => {
+              setShowAppEmergencyModal(false);
+              fetchStats();
+              if (newCall) {
+                setAppPreviewingEmergencyCall(newCall);
+              }
+            }}
+          />
+        )}
+
+        {/* EMERGENCY CALL-OUT REPORT PDF MODAL */}
+        {appPreviewingEmergencyCall && (
+          <EmergencyCalloutPDF
+            call={appPreviewingEmergencyCall}
+            onClose={() => {
+              setAppPreviewingEmergencyCall(null);
+              fetchStats();
+            }}
+          />
+        )}
+
         {/* Account Switcher / Login Modal */}
         {isLoginModalOpen && (
           <LoginModal
@@ -302,6 +395,7 @@ function AppContent() {
             onClose={() => setIsLoginModalOpen(false)}
           />
         )}
+
 
       </div>
     </DeviceFrame>

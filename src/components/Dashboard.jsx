@@ -39,8 +39,14 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   const isAdmin = ['Admin', 'admin'].includes(currentUser?.role);
   const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
-  const isGM = currentUser?.role === 'GM';
-  const canPrepareReports = isMD || isAdmin || isAccounts || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = [
+    'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
+    'Engineer', 'engineer',
+    'Supervisor', 'supervisor',
+    'Technician', 'technician',
+    'Admin', 'admin'
+  ].includes(currentUser?.role);
+
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
