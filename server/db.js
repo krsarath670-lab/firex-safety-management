@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const amcChecklist = require('./amcChecklist');
 
 const DATA_DIR = path.join(__dirname, 'data');
@@ -935,6 +936,50 @@ class Database {
           modified = true;
         }
       });
+
+      // One-time bulk password reset migration across PostgreSQL cloud DB and local JSON
+      if (!data._bulk_password_reset_v1) {
+        const BULK_RESET_MAP = {
+          'admin': 'LC6C7S',
+          'ahamdjamal': 'EJR5W2',
+          'yaser': 'U2NMC3',
+          'md': 'F8B3PU',
+          'mohamedhweidi': 'FUHP43',
+          'chandiramohan': '7FB6DK',
+          'sarath': 'EX8DS2',
+          'hasanzulaikh': 'PN8GH8',
+          'abdulmajeed': 'G76JER',
+          'amar': '8WN7AX',
+          'abdulsattarsaiyed': 'NC5ZN7',
+          'mohammedalawadhi': '2QZS2B'
+        };
+
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+        (data.users || []).forEach(u => {
+          const uname = String(u.username || '').toLowerCase();
+          const rname = String(u.name || '').toLowerCase();
+          const targetPass = BULK_RESET_MAP[uname] || BULK_RESET_MAP[rname];
+          if (targetPass) {
+            const salt = crypto.randomBytes(16).toString('hex');
+            const hash = crypto.pbkdf2Sync(targetPass, salt, 1000, 64, 'sha512').toString('hex');
+            const hashed = `pbkdf2:${salt}:${hash}`;
+            u.password = hashed;
+            u.pin = hashed;
+            u.must_change_password = true;
+            u.temp_password_active = true;
+            u.temp_password_expires_at = expiresAt;
+            u.last_reset_at = now.toISOString();
+            u.last_reset_by_name = 'Administrator';
+            u.last_reset_mode = 'Bulk Password Reset';
+            modified = true;
+          }
+        });
+
+        data._bulk_password_reset_v1 = now.toISOString();
+        modified = true;
+      }
 
       if (data.reports && Array.isArray(data.reports)) {
         data.reports.forEach(r => {
