@@ -35,10 +35,12 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
-  const isAccounts = currentUser?.role === 'Accounts';
+  const isAccounts = ['Accounts', 'accounts'].includes(currentUser?.role);
+  const isAdmin = ['Admin', 'admin'].includes(currentUser?.role);
+  const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
-  const canPrepareReports = isMD || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
+  const canPrepareReports = isMD || isAdmin || isAccounts || ['Projects Manager', 'projects_manager', 'Project Manager', 'Engineer', 'Supervisor', 'Technician'].includes(currentUser?.role);
 
   // Get active upcoming visits list
   const upcomingVisits = dashboardStats?.upcoming_amc?.[upcomingTab] || [];
@@ -1334,179 +1336,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     );
   }
 
-  // ----------------------------------------------------
-  // ACCOUNTS DASHBOARD VIEW (Financial Management)
-  // ----------------------------------------------------
-  if (isAccounts) {
-    const fin = dashboardStats?.financials || {};
-    return (
-      <div className="space-y-4 pb-24">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-teal-950 via-navy-900 to-teal-900 rounded-2xl p-4 sm:p-5 text-white shadow-md border border-teal-800/80 relative overflow-hidden">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-teal-500/10 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex items-start justify-between">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase bg-teal-500/20 text-teal-300 border border-teal-400/30">
-                  Accounts &amp; Finance Mode
-                </span>
-                <span className="text-xs text-slate-300">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
-              </div>
-              <h1 className="text-lg sm:text-xl font-extrabold text-white mt-1">
-                Welcome back, {currentUser?.name}
-              </h1>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Financial management, tax invoicing, customer statements, and financial hold control.
-              </p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-teal-900/60 border border-teal-700 flex items-center justify-center shadow-inner">
-              <Receipt className="w-6 h-6 text-teal-400" />
-            </div>
-          </div>
-        </div>
 
-        {/* Overdue Receivables Alert */}
-        {dashboardStats?.overdueInvoicesCount > 0 && (
-          <div 
-            onClick={() => setActiveTab('accounts')}
-            className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-300 rounded-xl p-3.5 flex items-start justify-between cursor-pointer hover:shadow-md transition-all"
-          >
-            <div className="flex items-start space-x-3">
-              <div className="p-2 rounded-lg bg-red-600 text-white shadow-sm mt-0.5">
-                <AlertOctagon className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="text-xs font-bold text-red-950 uppercase tracking-wide">
-                  Pending Overdue Invoices ({dashboardStats.overdueInvoicesCount})
-                </h2>
-                <p className="text-xs text-red-900 mt-0.5 font-medium">
-                  Total outstanding overdue: <strong className="font-mono">{formatBHD(dashboardStats.overdueInvoicesAmount || 0)}</strong>. Follow up required or place payment hold on jobs.
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-red-600 self-center" />
-          </div>
-        )}
-
-        {/* Active Payment Holds Alert */}
-        {dashboardStats?.paymentHoldsCount > 0 && (
-          <div 
-            onClick={() => setActiveTab('jobs')}
-            className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:bg-red-100/60 transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span className="text-xs font-bold text-red-900">
-                🔴 {dashboardStats.paymentHoldsCount} Work Order(s) Currently on Payment Hold
-              </span>
-            </div>
-            <button className="text-xs font-bold text-red-700 hover:underline">
-              Inspect Holds →
-            </button>
-          </div>
-        )}
-
-        {/* Financial KPI Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Total Invoiced
-            </span>
-            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-slate-900">
-              {formatBHD(fin.total_invoiced || 0)}
-            </div>
-            <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
-              Excl: {formatBHD(fin.total_subtotal || 0)} | VAT: {formatBHD(fin.total_vat || 0)}
-            </span>
-          </div>
-
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Collected Revenue
-            </span>
-            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-emerald-700">
-              {formatBHD(fin.total_paid || 0)}
-            </div>
-            <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-              Bank receipts &amp; settlements
-            </span>
-          </div>
-
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Pending Balance
-            </span>
-            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-amber-700">
-              {formatBHD(fin.total_outstanding || 0)}
-            </div>
-            <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
-              Current receivables
-            </span>
-          </div>
-
-          <div className="bg-white rounded-xl p-3 sm:p-3.5 border border-slate-200 shadow-sm">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Overdue Receivables
-            </span>
-            <div className="mt-1 text-lg sm:text-xl font-mono font-black text-red-700">
-              {formatBHD(dashboardStats?.overdueInvoicesAmount || 0)}
-            </div>
-            <span className="text-[10px] text-red-600 font-semibold block mt-0.5">
-              {dashboardStats?.overdueInvoicesCount || 0} overdue invoice(s)
-            </span>
-          </div>
-        </div>
-
-        {/* Quick Action Shortcuts */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
-          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-            Financial Management Shortcuts
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <button
-              onClick={() => setActiveTab('accounts')}
-              className="p-3 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <Receipt className="w-4 h-4 text-white" />
-              <span>Invoices &amp; Accounts</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('jobs')}
-              className="p-3 bg-navy-900 hover:bg-navy-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <Briefcase className="w-4 h-4 text-white" />
-              <span>Job Holds &amp; Orders</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('customers')}
-              className="p-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <Building2 className="w-4 h-4 text-white" />
-              <span>Client Statements</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('accounts')}
-              className="p-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-sm"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-white" />
-              <span>Export Excel Ledger</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Emergency Call-Outs & Rapid Response */}
-        {renderEmergencyCalloutWidget()}
-
-        {/* AMC Service Cards — Active Contracts & Dynamic Cycles (Requirement 9) */}
-        {renderAmcServiceCardsWidget()}
-
-        {/* Upcoming AMC Visits Widget */}
-        {renderUpcomingVisitsWidget()}
-      </div>
-    );
-  }
 
   // ----------------------------------------------------
   // PROJECTS MANAGER DASHBOARD VIEW
@@ -1964,14 +1794,14 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
       {/* Emergency Call-Outs & Rapid Response Widget */}
       {renderEmergencyCalloutWidget()}
 
-      {/* GM Financial & Invoicing Overview Widget (Strictly Hidden for Technicians) */}
-      {isGM && dashboardStats?.financials && (
+      {/* Financial & Invoicing Overview Widget (Strictly Hidden for Technicians) */}
+      {(isGM || isAccounts || isAdmin || isMD || isCEO) && dashboardStats?.financials && (
         <div className="bg-gradient-to-br from-navy-900 via-slate-900 to-navy-950 text-white p-4 rounded-2xl border border-navy-700 shadow-md space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-teal-400" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Financial &amp; Invoicing KPIs (GM Overview)
+                Financial &amp; Invoicing KPIs (Executive Overview)
               </h3>
             </div>
             <button

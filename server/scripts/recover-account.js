@@ -11,7 +11,7 @@
 
 const path = require('path');
 const db = require('../db');
-const { hashPassword, normalizeRole, sanitizeUser } = require('../auth');
+const { hashPassword, normalizeRole, sanitizeUser, validatePasswordFormat, generate6CharPassword } = require('../auth');
 
 function parseArgs() {
   const args = {};
@@ -34,7 +34,7 @@ async function main() {
   const role = normalizeRole(rawRole);
   const username = (args.username || '').trim();
   const name = (args.name || role).trim();
-  const password = (args.password || '').trim();
+  let password = (args.password || '').trim();
   const email = (args.email || `${role.toLowerCase().replace(/[^a-z0-9]/g, '')}@firexbahrain.com`).trim();
 
   if (!username) {
@@ -42,9 +42,15 @@ async function main() {
     process.exit(1);
   }
 
-  if (!password || password.length < 4) {
-    console.error('Error: --password must be at least 4 characters long.');
-    process.exit(1);
+  if (!password) {
+    password = generate6CharPassword();
+    console.log(`[FIREX Recovery] Auto-generated compliant 6-character password: ${password}`);
+  } else {
+    const val = validatePasswordFormat(password);
+    if (!val.valid) {
+      console.error(`Error: --password invalid. ${val.message} (Must be exactly 6 alphanumeric chars, e.g. FX7B2K)`);
+      process.exit(1);
+    }
   }
 
   // Wait briefly for Postgres connection if running with DATABASE_URL

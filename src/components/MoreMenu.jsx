@@ -17,9 +17,9 @@ export default function MoreMenu({ onSelectView }) {
   const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role);
   const isCEO = currentUser?.role === 'CEO';
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
-  const canManageStaff = isAdmin || isGM || isMD || isCEO || isProjectsManager;
+  const canManageStaff = isAdmin || isAccounts || isGM || isMD || isCEO || isProjectsManager;
   const canAccessFinance = isGM || isMD || isCEO || isAdmin || isAccounts || currentUser?.role === 'Engineer';
-  const canAccessAudit = isMD || isGM || isCEO || isAdmin;
+  const canAccessAudit = isMD || isGM || isCEO || isAdmin || isAccounts;
 
   const menuSections = [
     {

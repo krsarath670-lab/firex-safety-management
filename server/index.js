@@ -2,8 +2,24 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
-const { authMiddleware, requirePermission, requireRole, ROLE_PERMISSIONS, normalizeRole, sanitizeJobForRole, sanitizeContractForRole, hashPassword, verifyPassword, sanitizeUser } = require('./auth');
 const ai = require('./ai');
+const { 
+  authMiddleware, 
+  requirePermission, 
+  requireRole, 
+  ROLE_PERMISSIONS, 
+  normalizeRole, 
+  sanitizeJobForRole, 
+  sanitizeContractForRole, 
+  hashPassword, 
+  verifyPassword, 
+  sanitizeUser,
+  validatePasswordFormat,
+  generate6CharPassword,
+  recordFailedLogin,
+  checkLoginLockout,
+  clearLoginAttempts
+} = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -163,6 +179,17 @@ app.post('/api/auth/setup-first-user', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { userId, role, identifier, username, email, password, pin } = req.body;
   const inputSecret = (password || pin || '').toString().trim();
+  const idfRaw = (identifier || username || email || userId || (role ? String(role) : '') || '').toString().trim();
+
+  // Check rate limiting / temporary lockout (5 failed attempts locks for 15 mins)
+  const lockout = checkLoginLockout(idfRaw);
+  if (lockout.isLocked) {
+    return res.status(429).json({
+      error: 'Account Temporarily Locked',
+      message: `Too many failed login attempts. This account is temporarily locked. Please try again in ${lockout.remainingMinutes} minute(s).`
+    });
+  }
+
   const users = db.get('users') || [];
 
   let user = null;
@@ -188,7 +215,8 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   if (!user) {
-    return res.status(404).json({ error: 'User Not Found', message: 'No account found matching the provided identifier.' });
+    recordFailedLogin(idfRaw);
+    return res.status(401).json({ error: 'Invalid Credentials', message: 'Invalid username or password.' });
   }
 
   if (user.status === 'Inactive') {
@@ -202,9 +230,23 @@ app.post('/api/auth/login', (req, res) => {
   }
   const isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
   if (!isMatch) {
+    const attempt = recordFailedLogin(user.username || idfRaw);
     db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Failed login attempt for user ${user.name}`, { status: 'FAILED' });
-    return res.status(401).json({ error: 'Incorrect Password', message: 'Invalid password or PIN entered. Please try again.' });
+    if (attempt.lockUntil > Date.now()) {
+      return res.status(429).json({
+        error: 'Account Temporarily Locked',
+        message: 'Too many failed login attempts. This account is temporarily locked for 15 minutes.'
+      });
+    }
+    const remaining = Math.max(0, 5 - attempt.attempts);
+    return res.status(401).json({
+      error: 'Incorrect Password',
+      message: `Invalid password entered. ${remaining} attempt(s) remaining before account lockout.`
+    });
   }
+
+  // Clear failed login attempts on successful match
+  clearLoginAttempts(user.username || idfRaw);
 
   // Check if temporary password has expired (24 hours)
   if (user.temp_password_active && user.temp_password_expires_at) {
@@ -230,7 +272,9 @@ app.post('/api/auth/login', (req, res) => {
   // Audit login
   db.logAudit(user.id, 'LOGIN', 'users', user.id, `User ${user.name} logged in successfully (${userRole})`, { status: 'SUCCESS' });
 
-  const mustChangePassword = Boolean(user.must_change_password || user.temp_password_active);
+  // Require password change if temporary, if flagged, or if existing password does not meet the 6-character alphanumeric standard
+  const meetsSixCharFormat = validatePasswordFormat(inputSecret).valid;
+  const mustChangePassword = Boolean(user.must_change_password || user.temp_password_active || !meetsSixCharFormat);
 
   res.json({
     message: `Welcome back, ${user.name}!`,
@@ -249,17 +293,19 @@ app.post('/api/auth/change-password', (req, res) => {
   }
 
   const cleanNew = (newPassword || '').toString().trim();
-  if (!cleanNew || cleanNew.length < 3) {
-    return res.status(400).json({ error: 'Password Required', message: 'New password must be at least 3 characters.' });
+  const passValidation = validatePasswordFormat(cleanNew);
+  if (!passValidation.valid) {
+    return res.status(400).json({ error: 'Invalid Password Format', message: passValidation.message });
   }
 
   const user = db.getById('users', req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
-  // If user doesn't have must_change_password flag, verify current password
-  if (!user.must_change_password && !user.temp_password_active) {
-    const expectedCurrent = (user.password || user.pin || '').toString().trim();
-    if (expectedCurrent && !verifyPassword(currentPassword, expectedCurrent)) {
+  // If user doesn't have must_change_password or temp password and was already using 6 chars, verify current password
+  const currentSecret = (user.password || user.pin || '').toString().trim();
+  const isLegacy = !validatePasswordFormat(currentSecret).valid;
+  if (!user.must_change_password && !user.temp_password_active && !isLegacy) {
+    if (currentSecret && !verifyPassword(currentPassword, currentSecret)) {
       return res.status(400).json({ error: 'Incorrect Current Password', message: 'Current password entered is incorrect.' });
     }
   }
@@ -274,7 +320,7 @@ app.post('/api/auth/change-password', (req, res) => {
     password_updated_at: new Date().toISOString()
   });
 
-  db.logAudit(req.user.id, 'CHANGE_PASSWORD', 'users', user.id, `User ${user.name} changed their password`);
+  db.logAudit(req.user.id, 'CHANGE_PASSWORD', 'users', user.id, `User ${user.name} changed their password to 6-character format`);
 
   res.json({
     message: 'Password changed successfully.',
@@ -350,8 +396,9 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
   }
 
   const cleanPass = (password || pin || '').toString().trim();
-  if (cleanPass.length < 3) {
-    return res.status(400).json({ error: 'Password Required', message: 'Password must be at least 3 characters.' });
+  const passVal = validatePasswordFormat(cleanPass);
+  if (!passVal.valid) {
+    return res.status(400).json({ error: 'Invalid Password Format', message: passVal.message });
   }
 
   const cleanUsername = (req.body.username || '').toString().trim();
@@ -376,7 +423,7 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     phone: phone ? phone.trim() : '',
     designation: designation ? designation.trim() : role,
     status: status || 'Active',
-    pin: cleanPass,
+    pin: hashedPass,
     password: hashedPass,
     notes: notes || '',
     avatar: initials || 'FS',
@@ -413,9 +460,13 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
   if (updates.password || updates.pin) {
     const cleanPass = (updates.password || updates.pin).toString().trim();
     if (cleanPass && !cleanPass.startsWith('pbkdf2:')) {
+      const passVal = validatePasswordFormat(cleanPass);
+      if (!passVal.valid) {
+        return res.status(400).json({ error: 'Invalid Password Format', message: passVal.message });
+      }
       const hashedPass = hashPassword(cleanPass);
       updates.password = hashedPass;
-      updates.pin = cleanPass;
+      updates.pin = hashedPass;
       updates.last_reset_by_id = req.user.id;
       updates.last_reset_by_name = req.user.name;
       updates.last_reset_by_role = req.user.role;
@@ -433,8 +484,9 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
 app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, res) => {
   const { newPassword, pin } = req.body;
   const cleanPass = (newPassword || pin || '').toString().trim();
-  if (!cleanPass || cleanPass.length < 3) {
-    return res.status(400).json({ error: 'Password / PIN must be at least 3 characters or digits' });
+  const passVal = validatePasswordFormat(cleanPass);
+  if (!passVal.valid) {
+    return res.status(400).json({ error: 'Invalid Password Format', message: passVal.message });
   }
 
   const target = db.getById('users', req.params.id);
@@ -443,7 +495,7 @@ app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, r
   const hashed = hashPassword(cleanPass);
   const updated = db.update('users', target.id, {
     password: hashed,
-    pin: cleanPass,
+    pin: hashed,
     must_change_password: false,
     temp_password_active: false,
     temp_password_expires_at: null,
@@ -455,12 +507,12 @@ app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, r
     last_reset_mode: 'Direct Password Set'
   });
 
-  db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password / PIN updated for ${target.name} (${target.role}) by ${req.user.name}`);
+  db.logAudit(req.user.id, 'SET_PASSWORD', 'users', target.id, `Password updated for ${target.name} (${target.role}) by ${req.user.name}`);
   res.json({ message: `Password for ${target.name} successfully updated.`, user: sanitizeUser(updated, req.user?.role) });
 });
 
 // Management Advanced Password Reset (Admin, CEO, MD, GM, Projects Manager):
-// 1. Generate 24-hour time-limited temporary password
+// 1. Generate 24-hour time-limited temporary password (6-char alphanumeric)
 // 2. Force password change on next login
 // 3. Deactivate or reactivate account
 app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (req, res) => {
@@ -485,16 +537,14 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
   }
 
   if (mode === 'temp') {
-    // Generate secure temporary random password (alphanumeric, 8 chars)
-    const crypto = require('crypto');
-    const plainTemp = 'FX-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    // Generate secure 6-character temporary password (alphanumeric, letters & numbers)
+    const plainTemp = generate6CharPassword();
     const hashedTemp = hashPassword(plainTemp);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
     const updated = db.update('users', target.id, {
       password: hashedTemp,
-      pin: plainTemp,
-      temp_password: plainTemp,
+      pin: hashedTemp,
       temp_password_active: true,
       temp_password_expires_at: expiresAt,
       must_change_password: true,
@@ -537,14 +587,15 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
 
   if (mode === 'set') {
     const cleanPass = (newPassword || '').toString().trim();
-    if (!cleanPass || cleanPass.length < 3) {
-      return res.status(400).json({ error: 'Password Required', message: 'Password must be at least 3 characters.' });
+    const passVal = validatePasswordFormat(cleanPass);
+    if (!passVal.valid) {
+      return res.status(400).json({ error: 'Invalid Password Format', message: passVal.message });
     }
 
     const hashed = hashPassword(cleanPass);
     const updated = db.update('users', target.id, {
       password: hashed,
-      pin: cleanPass,
+      pin: hashed,
       must_change_password: false,
       temp_password_active: false,
       temp_password_expires_at: null,
@@ -1860,9 +1911,9 @@ app.post('/api/amc-visits', requirePermission('canScheduleVisits'), (req, res) =
 });
 
 app.post('/api/amc-visits/:id/reschedule', (req, res) => {
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'GM', 'Admin'];
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'GM', 'Admin', 'admin', 'Accounts', 'accounts'];
   if (!allowedRoles.includes(req.user.role) && !req.permissions?.canScheduleVisits) {
-    return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, or GM can reschedule visits.' });
+    return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, GM, Admin, or Accounts can reschedule visits.' });
   }
 
   const { new_scheduled_date, reason } = req.body;
@@ -1879,7 +1930,7 @@ app.post('/api/amc-visits/:id/reschedule', (req, res) => {
 });
 
 app.post('/api/amc-visits/:id/complete', (req, res) => {
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'GM', 'Admin'];
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'GM', 'Admin', 'admin', 'Accounts', 'accounts'];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Access Denied', message: 'Not authorized to complete visits.' });
   }
@@ -2963,7 +3014,7 @@ app.get('/api/reports/:id', (req, res) => {
 app.post('/api/reports', (req, res) => {
   // STRICT PERMISSION CHECK (Requirement 1 & 14):
   // Only Projects Manager, Engineer, Supervisor, Technician, and Managing Director can prepare reports
-  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'];
+  const allowedRoles = ['Projects Manager', 'Engineer', 'Supervisor', 'Technician', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'];
   if (!allowedRoles.includes(req.user.role)) {
     return res.status(403).json({
       error: 'Permission Denied',
@@ -3135,11 +3186,11 @@ app.put('/api/reports/:id', (req, res) => {
     });
   }
 
-  // Sales and Accounts have view-only access where permitted
-  if (['Sales', 'Accounts'].includes(req.user.role)) {
+  // Sales has view-only access where permitted
+  if (['Sales'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Sales and Accounts users have view-only access to reports and cannot edit or complete them.'
+      message: 'Sales users have view-only access to reports and cannot edit or complete them.'
     });
   }
 
@@ -3205,7 +3256,7 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if (updates.status === 'Reviewed' && existing.status !== 'Reviewed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role)) {
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, Admin, or Managing Director can review reports.' });
     }
     updates.reviewed_by_user_id = authUser.id;
@@ -3218,7 +3269,7 @@ app.put('/api/reports/:id', (req, res) => {
   }
 
   if ((updates.status === 'Completed' || updates.status === 'Approved') && existing.status !== 'Completed') {
-    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin'].includes(req.user.role)) {
+    if (!['Projects Manager', 'Engineer', 'Supervisor', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'].includes(req.user.role)) {
       return res.status(403).json({ error: 'Access Denied', message: 'Only Projects Manager, Engineer, Supervisor, Admin, or Managing Director can complete reports.' });
     }
     // Standardize to Completed
@@ -3401,14 +3452,14 @@ app.get('/api/emergency-calls/:id', (req, res) => {
   }
 });
 
-// Create new Emergency Call (GM, Managing Director, Engineer, Supervisor, Projects Manager)
+// Create new Emergency Call (GM, Managing Director, Engineer, Supervisor, Projects Manager, Admin, Accounts)
 app.post('/api/emergency-calls', (req, res) => {
   try {
-    const allowedRoles = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor', 'Projects Manager'];
+    const allowedRoles = ['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor', 'Projects Manager', 'Admin', 'admin', 'Accounts', 'accounts'];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only General Managers, Managing Directors, Engineers, Supervisors, and Projects Managers can log new Emergency Call-Outs.'
+        message: 'Only General Managers, Managing Directors, Engineers, Supervisors, Projects Managers, and Admin/Accounts can log new Emergency Call-Outs.'
       });
     }
 
@@ -3455,12 +3506,13 @@ app.put('/api/emergency-calls/:id', (req, res) => {
     const isSupervisor = req.user.role === 'Supervisor';
     const isTech = req.user.role === 'Technician';
     const isSales = req.user.role === 'Sales';
-    const isAccounts = req.user.role === 'Accounts';
+    const isAccounts = ['Accounts', 'accounts'].includes(req.user.role);
+    const isAdmin = ['Admin', 'admin'].includes(req.user.role);
     const isPM = req.user.role === 'Projects Manager';
 
-    // If call is already Approved or Closed, only GM or Managing Director can modify
+    // If call is already Approved or Closed, only GM, Managing Director, Admin, or Accounts can modify
     if (['Approved', 'Closed'].includes(existing.report_status) || ['Approved', 'Closed'].includes(existing.status)) {
-      if (!isGM && !isMD) {
+      if (!isGM && !isMD && !isAdmin && !isAccounts) {
         return res.status(403).json({
           error: 'Report Locked',
           message: 'This Emergency Call-Out report has been Approved / Closed and is strictly read-only. Only Executive Management can make revisions.'
@@ -3489,13 +3541,7 @@ app.put('/api/emergency-calls/:id', (req, res) => {
         error: 'Forbidden',
         message: 'Sales representatives have view-only access to Emergency Call-Out technical findings.'
       });
-    } else if (isAccounts) {
-      allowedUpdates = {
-        invoice_id: req.body.invoice_id,
-        invoice_number: req.body.invoice_number,
-        billing_status: req.body.billing_status
-      };
-    } else if (!isGM && !isCEO && !isEngineer && !isSupervisor && !isPM) {
+    } else if (!isGM && !isMD && !isCEO && !isEngineer && !isSupervisor && !isPM && !isAdmin && !isAccounts) {
       return res.status(403).json({
         error: 'Forbidden',
         message: 'Unauthorized role for modifying emergency calls.'
@@ -3510,7 +3556,7 @@ app.put('/api/emergency-calls/:id', (req, res) => {
   }
 });
 
-// Quick action: Record Arrival On Site (Technician / Supervisor / PM / GM)
+// Quick action: Record Arrival On Site (Technician / Supervisor / PM / GM / Admin / Accounts)
 app.post('/api/emergency-calls/:id/arrival', (req, res) => {
   try {
     const existing = db.getEmergencyCallById(req.params.id);
@@ -3532,7 +3578,7 @@ app.post('/api/emergency-calls/:id/arrival', (req, res) => {
   }
 });
 
-// Submit report for review (Technician, Supervisor, Engineer, GM)
+// Submit report for review (Technician, Supervisor, Engineer, GM, Admin, Accounts)
 app.post('/api/emergency-calls/:id/submit', (req, res) => {
   try {
     const existing = db.getEmergencyCallById(req.params.id);
@@ -3556,12 +3602,12 @@ app.post('/api/emergency-calls/:id/submit', (req, res) => {
   }
 });
 
-// Review report (Supervisor, Engineer, Projects Manager, Managing Director)
+// Review report (Supervisor, Engineer, Projects Manager, Managing Director, Admin, Accounts)
 app.post('/api/emergency-calls/:id/review', (req, res) => {
   try {
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'];
     if (!allowed.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, Projects Managers, and Managing Director can review reports.' });
+      return res.status(403).json({ error: 'Forbidden', message: 'Only Supervisors, Engineers, Projects Managers, Admin, Accounts, and Managing Director can review reports.' });
     }
 
     const existing = db.getEmergencyCallById(req.params.id);
@@ -3579,14 +3625,14 @@ app.post('/api/emergency-calls/:id/review', (req, res) => {
   }
 });
 
-// Complete report (Supervisor, Engineer, Projects Manager, Managing Director) - NO GM approval step
+// Complete report (Supervisor, Engineer, Projects Manager, Managing Director, Admin, Accounts) - NO GM approval step
 app.post('/api/emergency-calls/:id/complete', (req, res) => {
   try {
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'];
     if (!allowed.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Projects Managers, Engineers, Supervisors, and Managing Director can complete emergency reports.'
+        message: 'Only Projects Managers, Engineers, Supervisors, Admin, Accounts, and Managing Director can complete emergency reports.'
       });
     }
 
@@ -3613,11 +3659,11 @@ app.post('/api/emergency-calls/:id/approve', (req, res) => {
         message: 'GM does not approve reports. Reports are completed by Projects Manager, Engineer, or Supervisor.'
       });
     }
-    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director'];
+    const allowed = ['Supervisor', 'Engineer', 'Projects Manager', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'];
     if (!allowed.includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Projects Managers, Engineers, Supervisors, and Managing Director can complete emergency reports.'
+        message: 'Only Projects Managers, Engineers, Supervisors, Admin, Accounts, and Managing Director can complete emergency reports.'
       });
     }
 
@@ -3635,13 +3681,13 @@ app.post('/api/emergency-calls/:id/approve', (req, res) => {
   }
 });
 
-// Close Emergency Call (GM, Managing Director)
+// Close Emergency Call (GM, Managing Director, Admin, Accounts)
 app.post('/api/emergency-calls/:id/close', (req, res) => {
   try {
-    if (!['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director'].includes(req.user.role)) {
+    if (!['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Admin', 'admin', 'Accounts', 'accounts'].includes(req.user.role)) {
       return res.status(403).json({
         error: 'Forbidden',
-        message: 'Only Executive Management (GM or Managing Director) can officially close an Emergency Call-Out.'
+        message: 'Only Executive Management (GM, Managing Director, Admin, or Accounts) can officially close an Emergency Call-Out.'
       });
     }
 

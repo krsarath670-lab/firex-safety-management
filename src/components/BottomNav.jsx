@@ -7,7 +7,9 @@ export default function BottomNav() {
 
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
-  const isAccounts = currentUser?.role === 'Accounts';
+  const isAccounts = ['Accounts', 'accounts'].includes(currentUser?.role);
+  const isAdmin = ['Admin', 'admin'].includes(currentUser?.role);
+  const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const isGM = currentUser?.role === 'GM';
   const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
@@ -35,14 +37,15 @@ export default function BottomNav() {
       { id: 'reports', label: 'Reports', icon: FileText, badge: dashboardStats?.pendingReportsCount > 0 ? dashboardStats.pendingReportsCount : null },
       { id: 'more', label: 'More', icon: Grid, badge: null }
     ];
-  } else if (isAccounts) {
+  } else if (isAdmin || isAccounts || isGM || isMD || isCEO) {
+    // Executive & Management Roles (Admin, Accounts, GM, MD, CEO): Full executive navigation
     navItems = [
       { id: 'dashboard', label: 'Home', icon: Home, badge: null },
       { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
       { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
-      { id: 'customers', label: 'Statements', icon: Building2, badge: null },
-      { id: 'jobs', label: 'Holds & Jobs', icon: Briefcase, badge: dashboardStats?.paymentHoldsCount > 0 ? dashboardStats.paymentHoldsCount : null },
-      { id: 'more', label: 'More', icon: Grid, badge: null }
+      { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
+      { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
+      { id: 'more', label: 'More', icon: Grid, badge: (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) > 0 ? (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) : null }
     ];
   } else if (isProjectsManager) {
     navItems = [
@@ -52,16 +55,6 @@ export default function BottomNav() {
       { id: 'customers', label: 'Sites', icon: Building2, badge: null },
       { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
       { id: 'more', label: 'More', icon: Grid, badge: dashboardStats?.operationalHoldsCount > 0 ? dashboardStats.operationalHoldsCount : null }
-    ];
-  } else if (isGM || isMD) {
-    // GM & Managing Director: Full executive overview with direct Accounts link and Emergency Call-Out
-    navItems = [
-      { id: 'dashboard', label: 'Home', icon: Home, badge: null },
-      { id: 'emergency', label: 'Emergency', icon: Flame, badge: emergencyBadge, isEmergency: true },
-      { id: 'accounts', label: 'Accounts', icon: Receipt, badge: dashboardStats?.overdueInvoicesCount > 0 ? dashboardStats.overdueInvoicesCount : null },
-      { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: dashboardStats?.pendingJobsCount > 0 ? dashboardStats.pendingJobsCount : null },
-      { id: 'amc', label: 'AMC', icon: ShieldCheck, badge: dashboardStats?.expiring30Days > 0 ? dashboardStats.expiring30Days : null },
-      { id: 'more', label: 'More', icon: Grid, badge: (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) > 0 ? (dashboardStats?.paymentHoldsCount || 0) + (dashboardStats?.operationalHoldsCount || 0) : null }
     ];
   } else {
     // Engineer, Supervisor

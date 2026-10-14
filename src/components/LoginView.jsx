@@ -1,242 +1,142 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Shield, Lock, Eye, EyeOff, KeyRound, AlertCircle, CheckCircle2, 
-  ChevronRight, User, UserPlus, Sparkles, Phone, Mail, Check
+  User, Check, ArrowRight, ShieldCheck
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function LoginView() {
   const { login, companySettings } = useApp();
   
-  const [usersList, setUsersList] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  
   // Normal Login state
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [loginUsername, setLoginUsername] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Initial GM Setup state
-  const [gmName, setGmName] = useState('');
-  const [gmPhone, setGmPhone] = useState('+973 ');
-  const [gmEmail, setGmEmail] = useState('');
-  const [gmPassword, setGmPassword] = useState('');
-  const [gmConfirmPassword, setGmConfirmPassword] = useState('');
-  const [showGmPassword, setShowGmPassword] = useState(false);
-  const [setupLoading, setSetupLoading] = useState(false);
-  const [setupError, setSetupError] = useState('');
+  // Password reset/migration modal state
+  const [mustChangeData, setMustChangeData] = useState(null); // { user, permissions }
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changeLoading, setChangeLoading] = useState(false);
+  const [changeError, setChangeError] = useState('');
 
-  const [mustChangePasswordData, setMustChangePasswordData] = useState(null); // { user, token }
-  const [newPasswordValue, setNewPasswordValue] = useState('');
-  const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
-  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
-  const [changePasswordError, setChangePasswordError] = useState('');
+  // 6-Character alphanumeric validation checker
+  const isLength6 = newPassword.length === 6;
+  const isAlphanumeric = /^[a-zA-Z0-9]+$/.test(newPassword);
+  const hasLetterAndDigit = /(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword);
+  const isValidFormat = isLength6 && isAlphanumeric && hasLetterAndDigit;
+  const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
 
-  // 10 Standard roles defined in Part 1
-  const ALL_SYSTEM_ROLES = [
-    { id: 1, key: 'MD', role: 'Managing Director (MD)', label: '1. MD', color: 'bg-amber-600', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
-    { id: 2, key: 'CEO', role: 'CEO', label: '2. CEO', color: 'bg-amber-700', badgeColor: 'bg-amber-100 text-amber-900 border-amber-300' },
-    { id: 3, key: 'Admin', role: 'Admin', label: '3. Admin', color: 'bg-rose-700', badgeColor: 'bg-rose-100 text-rose-800 border-rose-300' },
-    { id: 4, key: 'GM', role: 'GM', label: '4. GM', color: 'bg-purple-600', badgeColor: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { id: 5, key: 'Engineer', role: 'Engineer', label: '5. Engineer', color: 'bg-indigo-600', badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-    { id: 6, key: 'Supervisor', role: 'Supervisor', label: '6. Supervisor', color: 'bg-blue-600', badgeColor: 'bg-blue-100 text-blue-800 border-blue-200' },
-    { id: 7, key: 'Technician', role: 'Technician', label: '7. Technician', color: 'bg-emerald-600', badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { id: 8, key: 'Sales', role: 'Sales', label: '8. Sales', color: 'bg-amber-600', badgeColor: 'bg-amber-100 text-amber-800 border-amber-200' },
-    { id: 9, key: 'Accounts', role: 'Accounts', label: '9. Accounts', color: 'bg-teal-600', badgeColor: 'bg-teal-100 text-teal-800 border-teal-200' },
-    { id: 10, key: 'Projects Manager', role: 'Projects Manager', label: '10. Projects Manager', color: 'bg-cyan-600', badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200' }
-  ];
-
-  // Fetch all available active staff users
-  const fetchUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const res = await fetch('/api/auth/users-list');
-      if (res.ok) {
-        const data = await res.json();
-        setUsersList(data);
-      }
-    } catch (err) {
-      console.warn('Failed loading users list:', err);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleSelectRole = (role) => {
-    // When a role is clicked, if an account exists for this role, select that account
-    // Never bypass authentication or auto-fill password
-    const matches = usersList.filter(u => 
-      u.role === role || 
-      (role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role))
-    );
-    if (matches.length > 0) {
-      setSelectedUserId(matches[0].id);
-      if (matches[0].username) {
-        setLoginUsername(matches[0].username);
-      }
-    } else {
-      setSelectedUserId('');
-      setLoginUsername('');
-    }
-    setPassword('');
-    setLoginError('');
-  };
-
-  // Submit standard login
+  // Handle standard login submit
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
-    setLoginError('');
+    setError('');
 
-    const typedUsername = loginUsername.trim();
-    if (!typedUsername && !selectedUserId) {
-      setLoginError('Please enter your username or select your registered account');
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedUsername) {
+      setError('Please enter your username.');
       return;
     }
-    if (!password) {
-      setLoginError('Please enter your assigned password or PIN');
+    if (!trimmedPassword) {
+      setError('Please enter your password.');
       return;
     }
 
-    setLoginLoading(true);
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(typedUsername ? { identifier: typedUsername, password } : { userId: selectedUserId, password })
+        body: JSON.stringify({ identifier: trimmedUsername, password: trimmedPassword })
       });
 
       const data = await res.json();
       if (res.ok) {
         if (data.must_change_password) {
-          // Trigger password change modal
-          setMustChangePasswordData({ user: data.user, permissions: data.permissions });
+          // Trigger the 6-character password setup modal
+          setMustChangeData({ user: data.user, permissions: data.permissions });
         } else {
           login(data.user, data.permissions);
         }
       } else {
-        setLoginError(data.message || 'Incorrect password or PIN. Please try again.');
+        setError(data.message || data.error || 'Authentication failed. Please check your credentials.');
       }
     } catch {
-      setLoginError('Network connection error. Please verify your connection.');
+      setError('Network connection error. Please verify the server is running and try again.');
     } finally {
-      setLoginLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCompletePasswordChange = async (e) => {
+  // Handle password migration / reset submit
+  const handleChangePassword = async (e) => {
     if (e) e.preventDefault();
-    setChangePasswordError('');
-    if (!newPasswordValue || newPasswordValue.length < 3) {
-      setChangePasswordError('Password must be at least 3 characters.');
-      return;
-    }
-    if (newPasswordValue !== confirmPasswordValue) {
-      setChangePasswordError('Passwords do not match. Please re-enter.');
+    setChangeError('');
+
+    if (!isValidFormat) {
+      setChangeError('Password must be exactly 6 characters with both letters and numbers (no special characters).');
       return;
     }
 
-    setChangePasswordLoading(true);
+    if (!passwordsMatch) {
+      setChangeError('The passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setChangeLoading(true);
     try {
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-user-id': mustChangePasswordData.user.id,
-          'x-user-role': mustChangePasswordData.user.role
+          'x-user-id': mustChangeData.user.id,
+          'x-user-role': mustChangeData.user.role
         },
-        body: JSON.stringify({
-          newPassword: newPasswordValue.trim()
+        body: JSON.stringify({ 
+          currentPassword: password, 
+          newPassword: newPassword.trim() 
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        login(data.user, mustChangePasswordData.permissions);
-        setMustChangePasswordData(null);
+        // Complete login with updated user data
+        login(data.user || mustChangeData.user, mustChangeData.permissions);
       } else {
-        setChangePasswordError(data.message || 'Failed to update password.');
+        setChangeError(data.message || data.error || 'Failed to update password. Please try again.');
       }
     } catch {
-      setChangePasswordError('Network connection error while updating password.');
+      setChangeError('Network error while updating password.');
     } finally {
-      setChangePasswordLoading(false);
+      setChangeLoading(false);
     }
   };
-
-  // Submit GM Initial Setup
-  const handleSetupFirstUser = async (e) => {
-    if (e) e.preventDefault();
-    setSetupError('');
-
-    if (!gmName.trim()) {
-      setSetupError('Please enter the General Manager full name.');
-      return;
-    }
-
-    const trimmedPass = gmPassword.trim();
-    if (!trimmedPass || trimmedPass.length < 3) {
-      setSetupError('Password / PIN must be at least 3 characters or digits.');
-      return;
-    }
-
-    if (trimmedPass !== gmConfirmPassword.trim()) {
-      setSetupError('Passwords do not match. Please re-enter.');
-      return;
-    }
-
-    setSetupLoading(true);
-    try {
-      const res = await fetch('/api/auth/setup-first-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: gmName.trim(),
-          phone: gmPhone.trim(),
-          email: gmEmail.trim(),
-          password: trimmedPass,
-          pin: trimmedPass
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        // Log in immediately
-        login(data.user, data.permissions);
-      } else {
-        setSetupError(data.message || 'Setup failed. Please try again.');
-      }
-    } catch {
-      setSetupError('Network connection error while initializing GM account.');
-    } finally {
-      setSetupLoading(false);
-    }
-  };
-
-  const selectedUser = usersList.find(u => u.id === selectedUserId);
-  const isSetupMode = !loadingUsers && usersList.length === 0;
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-3 sm:p-6 select-none">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 sm:p-6 select-none relative overflow-hidden">
       
-      {/* App Container */}
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Main Login Card */}
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Top Header Banner */}
-        <div className="bg-navy-900 text-white p-6 text-center relative overflow-hidden border-b border-navy-800">
-          
+        {/* Header Section: Logo & Application Name */}
+        <div className="bg-navy-950 text-white p-7 text-center relative overflow-hidden border-b border-navy-800">
           <div className="relative z-10 flex flex-col items-center">
+            
+            {/* Logo */}
             {companySettings?.logo_url ? (
               <div className="w-16 h-16 rounded-2xl bg-white p-2 shadow-xl border border-navy-700 mb-3 flex items-center justify-center">
                 <img
                   src={companySettings.logo_url}
-                  alt="FIREX Logo"
+                  alt="FireX Logo"
                   className="w-full h-full object-contain"
                   onError={(e) => { e.target.src = '/logo.png'; }}
                 />
@@ -247,476 +147,246 @@ export default function LoginView() {
               </div>
             )}
             
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight text-white">FIREX BAHRAIN</h1>
-              <span className="text-[10px] font-bold bg-safety-red px-1.5 py-0.5 rounded tracking-normal">
-                FIRE &amp; SAFETY
-              </span>
-            </div>
-            
-            <p className="text-xs text-slate-300 font-medium mt-1">
-              Service Management Application
+            {/* Application Branding */}
+            <h1 className="text-xl font-black tracking-tight text-white">
+              FIREX BAHRAIN
+            </h1>
+            <p className="text-xs font-semibold text-red-400 uppercase tracking-widest mt-0.5">
+              Fire &amp; Safety Service Management
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              CR: 96850 1 • VAT: 220006271900002 • Tel: 17162240
+            <p className="text-[11px] text-slate-400 mt-1 font-medium">
+              Enterprise Field Operations &amp; Compliance Portal
             </p>
           </div>
-
-          {/* Ambient background glow */}
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-8 -top-8 w-32 h-32 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
         </div>
 
-        {/* LOADING SPINNER */}
-        {loadingUsers ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-slate-600">Connecting to FIREX Service...</p>
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="p-6 sm:p-8 space-y-5">
+          
+          {/* Error Message Banner */}
+          {error && (
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 flex items-start gap-2.5 animate-in slide-in-from-top-1">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+              <div className="font-semibold leading-relaxed">{error}</div>
+            </div>
+          )}
+
+          {/* 1. Username Field */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Username
+            </label>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                required
+                autoFocus
+                autoComplete="username"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError('');
+                }}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm transition-all"
+              />
+            </div>
           </div>
-        ) : isSetupMode ? (
-          /* ========================================================================= */
-          /* INITIAL SETUP VIEW: CREATE GM ACCOUNT                                     */
-          /* ========================================================================= */
-          <form onSubmit={handleSetupFirstUser} className="p-5 sm:p-6 space-y-4">
-            
-            {/* Setup Header Badge */}
-            <div className="text-center pb-1">
-              <div className="inline-flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
-                <Sparkles className="w-3 h-3 text-purple-600" />
-                <span>Initial Setup • Clean System</span>
-              </div>
-              <h2 className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-wider">
-                Create General Manager (GM)
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                All staff accounts are clear. Enter your details to create the primary GM account. You can then add your Engineers, Supervisors, Technicians, and Sales team with passwords.
-              </p>
-            </div>
 
-            {/* Error Message Alert */}
-            {setupError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 animate-in slide-in-from-top-1">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-                <div className="font-semibold leading-snug">{setupError}</div>
-              </div>
-            )}
-
-            {/* GM Name */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                General Manager Full Name *
+          {/* 2. Password Field & 3. Show/Hide Password */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Password
               </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-3 text-slate-400">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  placeholder="e.g. Eng. Mohamed Hweidi"
-                  value={gmName}
-                  onChange={(e) => setGmName(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-purple-600 text-xs sm:text-sm"
-                />
+            </div>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError('');
+                }}
+                className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1 cursor-pointer transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* 4. Login Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 px-4 bg-navy-950 hover:bg-navy-900 active:scale-[0.99] text-white font-bold rounded-xl shadow-lg shadow-navy-950/20 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              <>
+                <span>Sign In</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+
+          {/* Secure System Notice Footer */}
+          <div className="pt-2 text-center border-t border-slate-100">
+            <p className="text-[11px] text-slate-400 font-medium">
+              Authorized personnel only. Sessions are monitored and audited.
+            </p>
+          </div>
+        </form>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 6-CHARACTER PASSWORD REQUIREMENT / UPDATE MODAL                             */}
+      {/* ========================================================================= */}
+      {mustChangeData && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="bg-navy-950 text-white p-5 border-b border-navy-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-white">
+                  Update Password Requirement
+                </h3>
+                <p className="text-[11px] text-slate-300">
+                  Account: <strong className="text-white">{mustChangeData.user.name}</strong> ({mustChangeData.user.role})
+                </p>
               </div>
             </div>
 
-            {/* Mobile / Phone & Email */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Mobile Number *
-                </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-3 text-slate-400">
-                    <Phone className="w-3.5 h-3.5" />
-                  </div>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+973 17162240"
-                    value={gmPhone}
-                    onChange={(e) => setGmPhone(e.target.value)}
-                    className="w-full pl-8 pr-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-purple-600 text-xs"
-                  />
-                </div>
+            {/* Modal Body */}
+            <form onSubmit={handleChangePassword} className="p-5 sm:p-6 space-y-4">
+              
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+                For security compliance, please set your personal password. It must be <strong>exactly 6 characters</strong> using letters and numbers.
               </div>
 
+              {changeError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div className="font-semibold">{changeError}</div>
+                </div>
+              )}
+
+              {/* New Password Field */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email (Optional)
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  New 6-Character Password
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3 top-3 text-slate-400">
-                    <Mail className="w-3.5 h-3.5" />
-                  </div>
                   <input
-                    type="email"
-                    placeholder="gm@firexbahrain.com"
-                    value={gmEmail}
-                    onChange={(e) => setGmEmail(e.target.value)}
-                    className="w-full pl-8 pr-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-purple-600 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Password / PIN Fields */}
-            <div className="space-y-3 pt-1 border-t border-slate-100">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    GM Password / PIN *
-                  </label>
-                  <span className="text-[10px] text-slate-400">Minimum 3 characters/digits</span>
-                </div>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-3 text-slate-400">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <input
-                    type={showGmPassword ? 'text' : 'password'}
+                    type={showNewPassword ? "text" : "password"}
+                    maxLength={6}
                     required
-                    placeholder="Enter your password or PIN"
-                    value={gmPassword}
-                    onChange={(e) => setGmPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-purple-600"
+                    autoFocus
+                    placeholder="e.g. FX7B2K"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                    className="w-full px-3.5 py-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 tracking-widest focus:bg-white focus:ring-2 focus:ring-navy-900 uppercase"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowGmPassword(!showGmPassword)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
-                    {showGmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
+              {/* Confirm Password Field */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Confirm Password / PIN *
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Confirm Password
                 </label>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-3 text-slate-400">
-                    <Check className="w-4 h-4" />
-                  </div>
-                  <input
-                    type={showGmPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Re-enter password or PIN"
-                    value={gmConfirmPassword}
-                    onChange={(e) => setGmConfirmPassword(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-purple-600"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={setupLoading}
-              className="w-full h-12 bg-purple-700 hover:bg-purple-800 active:bg-purple-900 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20 transition-all disabled:opacity-50 mt-2"
-            >
-              {setupLoading ? (
-                <span className="animate-pulse">Creating GM Account...</span>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 text-purple-200" />
-                  <span>Create GM Account &amp; Launch App</span>
-                </>
-              )}
-            </button>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-              <span className="text-[11px] text-slate-600 font-medium">
-                💡 After launching, go to <strong className="text-purple-700">Staff Management</strong> to add Engineers, Supervisors, Technicians, and Sales.
-              </span>
-            </div>
-
-          </form>
-        ) : (
-          /* ========================================================================= */
-          /* STANDARD SIGN IN VIEW                                                     */
-          /* ========================================================================= */
-          <form onSubmit={handleLogin} className="p-5 sm:p-6 space-y-4">
-            
-            <div className="text-center pb-1">
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                Sign In to Your Account
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Select your user profile and enter your PIN / password
-              </p>
-            </div>
-
-            {/* Error Message Alert */}
-            {loginError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 animate-in slide-in-from-top-1">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-                <div className="font-semibold leading-snug">{loginError}</div>
-              </div>
-            )}
-
-            {/* 10 Standard Application Roles (Part 1 Requirements) */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                  Available Roles (10 System Roles):
-                </label>
-                <span className="text-[10px] text-slate-400 font-medium">Select to filter user</span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                {ALL_SYSTEM_ROLES.map((r) => {
-                  const hasUserInRole = usersList.some(u => 
-                    u.role === r.role || 
-                    (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(u.role))
-                  );
-                  const isRoleSelected = selectedUser?.role === r.role || 
-                    (r.role === 'Managing Director (MD)' && ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser?.role));
-
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => handleSelectRole(r.role)}
-                      className={`p-2 rounded-xl text-left border transition-all flex flex-col justify-between ${
-                        isRoleSelected
-                          ? `${r.color} text-white border-transparent shadow-md scale-[1.02]`
-                          : hasUserInRole
-                            ? 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200 hover:border-slate-300'
-                            : 'bg-slate-50/60 text-slate-400 border-dashed border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className={`text-[11px] font-black leading-tight block ${isRoleSelected ? 'text-white' : 'text-slate-800'}`}>
-                        {r.label}
-                      </span>
-                      <span className={`text-[9px] font-bold mt-1 block truncate ${
-                        isRoleSelected 
-                          ? 'text-white/80' 
-                          : hasUserInRole ? 'text-emerald-600' : 'text-slate-400'
-                      }`}>
-                        {hasUserInRole ? '● Registered' : '○ Not added yet'}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Username Sign-in */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Username / Email / Mobile:
-              </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-3.5 text-slate-400">
-                  <User className="w-4 h-4" />
-                </div>
                 <input
-                  type="text"
-                  autoComplete="username"
-                  placeholder="Enter your assigned username"
-                  value={loginUsername}
-                  onChange={(e) => { setLoginUsername(e.target.value); setLoginError(''); }}
-                  className="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                  type={showNewPassword ? "text" : "password"}
+                  maxLength={6}
+                  required
+                  placeholder="Re-enter 6-character password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 tracking-widest focus:bg-white focus:ring-2 focus:ring-navy-900 uppercase"
                 />
               </div>
-            </div>
 
-            {/* User Account Dropdown */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Or Select Registered User:
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => {
-                    setSelectedUserId(e.target.value);
-                    const chosen = usersList.find(u => u.id === e.target.value);
-                    if (chosen && chosen.username) {
-                      setLoginUsername(chosen.username);
-                    }
-                    setPassword('');
-                    setLoginError('');
-                  }}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 appearance-none pr-10 text-xs sm:text-sm"
-                >
-                  <option value="">-- Choose User Account ({usersList.length} registered) --</option>
-                  {usersList.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} — {u.role} {u.username ? `(@${u.username})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-3.5 top-3.5 pointer-events-none text-slate-400">
-                  <ChevronRight className="w-4 h-4 rotate-90" />
-                </div>
-              </div>
-
-              {/* Selected User Info Preview Badge */}
-              {selectedUser && (
-                <div className="mt-2 flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white ${
-                      ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-600' :
-                      selectedUser.role === 'CEO' ? 'bg-amber-700' :
-                      selectedUser.role === 'Admin' ? 'bg-rose-700' :
-                      selectedUser.role === 'Sales' ? 'bg-amber-600' :
-                      selectedUser.role === 'GM' ? 'bg-purple-600' :
-                      selectedUser.role === 'Engineer' ? 'bg-indigo-600' :
-                      selectedUser.role === 'Technician' ? 'bg-emerald-600' :
-                      selectedUser.role === 'Accounts' ? 'bg-teal-600' :
-                      selectedUser.role === 'Projects Manager' ? 'bg-cyan-600' : 'bg-blue-600'
-                    }`}>
-                      {selectedUser.avatar || selectedUser.role?.[0]}
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 block leading-tight">{selectedUser.name}</span>
-                      <span className="text-[10px] text-slate-500 block leading-tight">
-                        {selectedUser.username ? `@${selectedUser.username} • ` : ''}{selectedUser.designation || selectedUser.role}
-                      </span>
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(selectedUser.role) ? 'bg-amber-100 text-amber-900 border border-amber-300' :
-                    selectedUser.role === 'CEO' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
-                    selectedUser.role === 'Admin' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                    selectedUser.role === 'Sales' ? 'bg-amber-100 text-amber-800' :
-                    selectedUser.role === 'GM' ? 'bg-purple-100 text-purple-800' :
-                    selectedUser.role === 'Technician' ? 'bg-emerald-100 text-emerald-800' :
-                    selectedUser.role === 'Accounts' ? 'bg-teal-100 text-teal-800' :
-                    selectedUser.role === 'Projects Manager' ? 'bg-cyan-100 text-cyan-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {selectedUser.role}
+              {/* Live Format Checklist */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                <span className="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">
+                  Password Requirements:
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isLength6 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                    {isLength6 ? <Check className="w-2.5 h-2.5" /> : '•'}
+                  </span>
+                  <span className={isLength6 ? 'text-emerald-700 font-semibold' : 'text-slate-600'}>
+                    Exactly 6 characters ({newPassword.length}/6)
                   </span>
                 </div>
-              )}
-            </div>
-
-            {/* Password / PIN Input */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Password / PIN:
-                </label>
-              </div>
-
-              <div className="relative">
-                <div className="absolute left-3.5 top-3.5 text-slate-400">
-                  <Lock className="w-4 h-4" />
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${hasLetterAndDigit ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                    {hasLetterAndDigit ? <Check className="w-2.5 h-2.5" /> : '•'}
+                  </span>
+                  <span className={hasLetterAndDigit ? 'text-emerald-700 font-semibold' : 'text-slate-600'}>
+                    Contains both letters and numbers
+                  </span>
                 </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter assigned password or PIN"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 p-0.5"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">
-                Users authenticate with credentials assigned by Management or Administrator.
-              </p>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loginLoading}
-              className="w-full h-12 bg-navy-900 hover:bg-navy-800 active:bg-black text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-navy-900/20 transition-all disabled:opacity-50 mt-1"
-            >
-              {loginLoading ? (
-                <span className="animate-pulse">Checking credentials...</span>
-              ) : (
-                <>
-                  <KeyRound className="w-4 h-4 text-emerald-400" />
-                  <span>Sign In &amp; Open App</span>
-                </>
-              )}
-            </button>
-
-            {/* Helper Footer */}
-            <div className="pt-2 text-center border-t border-slate-100">
-              <span className="text-[11px] text-slate-500">
-                Staff accounts and access rights are managed in <strong className="text-navy-900 font-bold">User Management</strong>.
-              </span>
-            </div>
-
-          </form>
-        )}
-
-      </div>
-
-      {/* FORCE PASSWORD CHANGE MODAL */}
-      {mustChangePasswordData && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white max-w-sm w-full rounded-2xl p-6 shadow-2xl space-y-4 text-xs">
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto">
-                <KeyRound className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-slate-900">
-                Password Change Required
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Welcome <strong>{mustChangePasswordData.user.name}</strong>. An Administrator has reset your password or issued a temporary code. Please create a new personal password to continue.
-              </p>
-            </div>
-
-            {changePasswordError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-                <span className="font-semibold">{changePasswordError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCompletePasswordChange} className="space-y-3">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">New Password / PIN *</label>
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  placeholder="Minimum 3 characters"
-                  value={newPasswordValue}
-                  onChange={(e) => setNewPasswordValue(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${passwordsMatch ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                    {passwordsMatch ? <Check className="w-2.5 h-2.5" /> : '•'}
+                  </span>
+                  <span className={passwordsMatch ? 'text-emerald-700 font-semibold' : 'text-slate-600'}>
+                    Passwords match
+                  </span>
+                </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Confirm New Password *</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Re-enter password"
-                  value={confirmPasswordValue}
-                  onChange={(e) => setConfirmPasswordValue(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
+              {/* Submit Button */}
               <button
                 type="submit"
-                disabled={changePasswordLoading}
-                className="w-full h-11 bg-navy-900 hover:bg-navy-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition-all disabled:opacity-50 mt-2"
+                disabled={changeLoading || !isValidFormat || !passwordsMatch}
+                className="w-full py-3 bg-navy-950 hover:bg-navy-900 text-white font-bold rounded-xl shadow transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40 cursor-pointer"
               >
-                {changePasswordLoading ? (
-                  <span>Updating Password...</span>
+                {changeLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving Password...</span>
+                  </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Set New Password &amp; Open App</span>
+                    <span>Save &amp; Continue to App</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -724,7 +394,6 @@ export default function LoginView() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

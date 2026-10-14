@@ -45,13 +45,14 @@ export default function UserManagementView() {
     notes: ''
   });
 
-  // Access control: Exactly 5 management roles have staff-management permissions
+  // Access control: Exactly 6 management roles have staff-management permissions
   const isGM = currentUser?.role === 'GM';
   const isMD = ['Managing Director (MD)', 'Managing Director', 'managing_director'].includes(currentUser?.role);
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'admin';
   const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
-  const canManageStaff = isAdmin || isCEO || isMD || isGM || isProjectsManager;
+  const isAccounts = ['Accounts', 'accounts'].includes(currentUser?.role);
+  const canManageStaff = isAdmin || isAccounts || isCEO || isMD || isGM || isProjectsManager;
   const isExecutive = canManageStaff;
 
   // Load all users from backend
@@ -118,10 +119,9 @@ export default function UserManagementView() {
   // Open Edit Modal
   const handleOpenEdit = (user) => {
     if (!canManageStaff) {
-      showToast('Staff editing is restricted to Management roles (Admin, CEO, MD, GM, Projects Manager).', 'error');
+      showToast('Staff editing is restricted to Management roles (Admin, Accounts, CEO, MD, GM, Projects Manager).', 'error');
       return;
     }
-    const currentPass = user.pin || user.password || '1234';
     setSelectedUser(user);
     setFormData({
       name: user.name || '',
@@ -134,13 +134,13 @@ export default function UserManagementView() {
       role: user.role || 'Technician',
       phone: user.phone || '+973 ',
       designation: user.designation || '',
-      pin: currentPass,
-      password: currentPass,
-      confirmPassword: currentPass,
+      pin: '',
+      password: '',
+      confirmPassword: '',
       status: user.status || 'Active',
       notes: user.notes || ''
     });
-    setShowModalPassword(true);
+    setShowModalPassword(false);
     setModalMode('edit');
   };
 
@@ -155,13 +155,14 @@ export default function UserManagementView() {
       showToast('Please enter a login username', 'error');
       return;
     }
-    const pwChanged = modalMode === 'add' || formData.password !== (selectedUser?.password || selectedUser?.pin);
-    if (pwChanged) {
-      if (!formData.password || formData.password.trim().length < 3) {
-        showToast('Password must be at least 3 characters', 'error');
+    const hasPasswordInput = Boolean(formData.password && formData.password.trim());
+    if (modalMode === 'add' || hasPasswordInput) {
+      const passClean = (formData.password || '').trim();
+      if (!/^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{6}$/.test(passClean)) {
+        showToast('Password must be exactly 6 alphanumeric characters with both letters and numbers (no special characters).', 'error');
         return;
       }
-      if (formData.password !== formData.confirmPassword) {
+      if (passClean !== (formData.confirmPassword || '').trim()) {
         showToast('Password and Confirm Password do not match', 'error');
         return;
       }
@@ -171,7 +172,7 @@ export default function UserManagementView() {
       const url = modalMode === 'edit' ? `/api/users/${selectedUser.id}` : '/api/users';
       const method = modalMode === 'edit' ? 'PUT' : 'POST';
       const { confirmPassword, ...payload } = formData;
-      if (!pwChanged) {
+      if (modalMode === 'edit' && !hasPasswordInput) {
         delete payload.password;
         delete payload.pin;
       }
@@ -325,11 +326,12 @@ export default function UserManagementView() {
     }
   };
 
-  // Save New Password / PIN directly
+  // Save New Password directly (Option C)
   const handleSavePassword = async (e) => {
     if (e) e.preventDefault();
-    if (!newPasswordInput || newPasswordInput.trim().length < 3) {
-      showToast('Password / PIN must be at least 3 characters', 'error');
+    const clean = (newPasswordInput || '').trim();
+    if (!/^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{6}$/.test(clean)) {
+      showToast('Password must be exactly 6 alphanumeric characters containing both letters and numbers (no special characters).', 'error');
       return;
     }
 
@@ -1008,23 +1010,32 @@ export default function UserManagementView() {
                       <button
                         type="button"
                         onClick={() => {
-                          const rnd = Math.floor(1000 + Math.random() * 9000).toString();
+                          const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+                          const digits = '23456789';
+                          let code = '';
+                          for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * letters.length)];
+                          for (let i = 0; i < 2; i++) code += digits[Math.floor(Math.random() * digits.length)];
+                          const rnd = code.split('').sort(() => 0.5 - Math.random()).join('');
                           setFormData(p => ({ ...p, pin: rnd, password: rnd, confirmPassword: rnd }));
                         }}
                         className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer"
                       >
-                        Random PIN
+                        Generate Code
                       </button>
                     </div>
                   </div>
                   <div className="relative">
                     <input
                       type={showModalPassword ? "text" : "password"}
-                      required
-                      placeholder="Enter password or PIN"
+                      maxLength={6}
+                      required={modalMode === 'add'}
+                      placeholder={modalMode === 'edit' ? "Leave blank to keep current, or 6-char password" : "6-char password (e.g. FX7B2K)"}
                       value={formData.password || ''}
-                      onChange={(e) => setFormData(p => ({ ...p, pin: e.target.value, password: e.target.value }))}
-                      className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                        setFormData(p => ({ ...p, pin: clean, password: clean }));
+                      }}
+                      className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 uppercase focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm"
                     />
                     <button
                       type="button"
@@ -1035,15 +1046,19 @@ export default function UserManagementView() {
                       {showModalPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <span className="text-[10px] text-slate-400">Staff password required to open mobile app or web portal.</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Must be exactly 6 characters containing both letters and numbers.</span>
                   
                   <div className="relative mt-1.5">
                     <input
                       type={showModalPassword ? "text" : "password"}
-                      placeholder="Confirm password"
+                      maxLength={6}
+                      placeholder="Confirm 6-character password"
                       value={formData.confirmPassword || ''}
-                      onChange={(e) => setFormData(p => ({ ...p, confirmPassword: e.target.value }))}
-                      className={`w-full p-2.5 pr-10 bg-slate-50 border rounded-xl font-mono font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm ${
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                        setFormData(p => ({ ...p, confirmPassword: clean }));
+                      }}
+                      className={`w-full p-2.5 pr-10 bg-slate-50 border rounded-xl font-mono font-bold text-slate-900 uppercase focus:bg-white focus:ring-2 focus:ring-blue-500 text-center tracking-widest text-sm ${
                         formData.confirmPassword && formData.confirmPassword !== formData.password ? 'border-red-400' : 'border-slate-200'
                       }`}
                     />
@@ -1230,28 +1245,27 @@ export default function UserManagementView() {
               </button>
             </div>
 
-            {/* Current Password / PIN Banner */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-600" />
-                <span className="text-slate-600 font-bold">Current Password / PIN:</span>
-                <span className="font-mono font-black text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300 tracking-wider">
-                  {passwordModalUser.pin || passwordModalUser.password || '1234'}
+            {/* Account Security Information Banner */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-bold uppercase text-[10px]">Username:</span>
+                <span className="font-mono font-bold text-slate-900">{passwordModalUser.username || 'Not set'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-bold uppercase text-[10px]">Account Status:</span>
+                <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${passwordModalUser.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                  {passwordModalUser.status || 'Active'}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard?.writeText(passwordModalUser.pin || passwordModalUser.password || '1234');
-                  showToast('Password copied to clipboard', 'success');
-                }}
-                className="text-[10px] font-bold text-blue-600 hover:underline cursor-pointer"
-              >
-                Copy
-              </button>
+              {passwordModalUser.last_reset_at && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                  <span>Last Reset: {passwordModalUser.last_reset_mode || 'Administrative'} ({passwordModalUser.last_reset_by_name || 'Management'})</span>
+                  <span>{new Date(passwordModalUser.last_reset_at).toLocaleDateString('en-GB')}</span>
+                </div>
+              )}
             </div>
 
-            {/* Generated Temporary Password Display (Shown once to Admin) */}
+            {/* Generated Temporary Password Display (Shown once to Management) */}
             {tempPasswordResult && (
               <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2.5 animate-in slide-in-from-top-2">
                 <div className="flex items-center gap-2 text-amber-900 font-black text-xs uppercase tracking-wide">
@@ -1259,7 +1273,7 @@ export default function UserManagementView() {
                   <span>Time-Limited Temporary Password (24h)</span>
                 </div>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Provide this one-time code to <strong>{passwordModalUser.name}</strong>. It will expire in 24 hours. They will be required to choose a new password upon signing in.
+                  Provide this 6-character code to <strong>{passwordModalUser.name}</strong>. It will expire in 24 hours. They will be required to choose a new password upon signing in.
                 </p>
                 <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-amber-200">
                   <span className="font-mono text-base font-black text-slate-900 tracking-widest select-all">
@@ -1300,7 +1314,7 @@ export default function UserManagementView() {
                   Issue 24h Temp Password
                 </span>
                 <span className="text-[10px] text-slate-500 mt-1 block leading-snug">
-                  Generates a random secure code shown once with copy button.
+                  Generates a 6-character random alphanumeric code valid for 24h.
                 </span>
               </button>
 
@@ -1317,7 +1331,7 @@ export default function UserManagementView() {
                   Force Password Change
                 </span>
                 <span className="text-[10px] text-slate-500 mt-1 block leading-snug">
-                  Forces user to choose a new password on their next login attempt.
+                  Forces user to choose a new 6-character password on next login.
                 </span>
               </button>
             </div>
@@ -1327,32 +1341,31 @@ export default function UserManagementView() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-bold text-slate-700">
-                    Option C: Set Specific Password / PIN Directly
+                    Option C: Set 6-Character Password Directly
                   </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setNewPasswordInput('1234')}
-                      className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Default (1234)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewPasswordInput(Math.floor(1000 + Math.random() * 9000).toString())}
-                      className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer"
-                    >
-                      Random PIN
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+                      const digits = '23456789';
+                      let code = '';
+                      for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * letters.length)];
+                      for (let i = 0; i < 2; i++) code += digits[Math.floor(Math.random() * digits.length)];
+                      setNewPasswordInput(code.split('').sort(() => 0.5 - Math.random()).join(''));
+                    }}
+                    className="text-[10px] text-emerald-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Generate Random Code
+                  </button>
                 </div>
                 <div className="relative">
                   <input
                     type={showDirectPassword ? "text" : "password"}
-                    placeholder="Enter new password / PIN (min 3 chars)"
+                    maxLength={6}
+                    placeholder="Enter exactly 6 alphanumeric chars (e.g. FX7B2K)"
                     value={newPasswordInput}
-                    onChange={(e) => setNewPasswordInput(e.target.value)}
-                    className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-amber-500 tracking-wider"
+                    onChange={(e) => setNewPasswordInput(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                    className="w-full p-2.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold text-slate-900 uppercase focus:bg-white focus:ring-2 focus:ring-amber-500 tracking-wider"
                   />
                   <button
                     type="button"
@@ -1363,6 +1376,9 @@ export default function UserManagementView() {
                     {showDirectPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Must be exactly 6 characters with letters and numbers (no special characters).
+                </span>
               </div>
 
               <div className="pt-1 flex gap-2">

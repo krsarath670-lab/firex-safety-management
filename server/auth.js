@@ -587,7 +587,84 @@ ROLE_PERMISSIONS['admin'] = ROLE_PERMISSIONS['Admin'];
 ROLE_PERMISSIONS['administrator'] = ROLE_PERMISSIONS['Admin'];
 ROLE_PERMISSIONS['ceo'] = ROLE_PERMISSIONS['CEO'];
 
+// Accounts Role: Full application access equivalent to Admin across all modules
+ROLE_PERMISSIONS['Accounts'] = { ...ROLE_PERMISSIONS['Admin'] };
+ROLE_PERMISSIONS['accounts'] = ROLE_PERMISSIONS['Accounts'];
+ROLE_PERMISSIONS['accountant'] = ROLE_PERMISSIONS['Accounts'];
+ROLE_PERMISSIONS['Accountant'] = ROLE_PERMISSIONS['Accounts'];
+ROLE_PERMISSIONS['finance'] = ROLE_PERMISSIONS['Accounts'];
+ROLE_PERMISSIONS['Finance'] = ROLE_PERMISSIONS['Accounts'];
+
 const crypto = require('crypto');
+
+function validatePasswordFormat(password) {
+  if (!password || typeof password !== 'string') {
+    return { valid: false, message: 'Password is required.' };
+  }
+  const str = password.trim();
+  if (str.length !== 6) {
+    return { valid: false, message: 'Password must be exactly 6 characters.' };
+  }
+  if (!/^[a-zA-Z0-9]{6}$/.test(str)) {
+    return { valid: false, message: 'Password must contain alphanumeric characters only (no spaces or special characters).' };
+  }
+  if (!/(?=.*[a-zA-Z])(?=.*[0-9])/.test(str)) {
+    return { valid: false, message: 'Password must contain both letters and numbers.' };
+  }
+  return { valid: true, value: str };
+}
+
+function generate6CharPassword() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  let res = '';
+  for (let i = 0; i < 4; i++) {
+    res += letters[Math.floor(Math.random() * letters.length)];
+  }
+  for (let i = 0; i < 2; i++) {
+    res += digits[Math.floor(Math.random() * digits.length)];
+  }
+  return res.split('').sort(() => 0.5 - Math.random()).join('');
+}
+
+// In-memory failed login attempts tracker: 5 failed attempts locks account for 15 minutes
+const loginAttempts = new Map();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function recordFailedLogin(key) {
+  if (!key) return { attempts: 1, lockUntil: 0 };
+  const normKey = String(key).toLowerCase().trim();
+  const current = loginAttempts.get(normKey) || { attempts: 0, lockUntil: 0 };
+  const now = Date.now();
+  if (current.lockUntil && current.lockUntil > now) {
+    return current;
+  }
+  const newAttempts = (current.lockUntil && current.lockUntil <= now) ? 1 : current.attempts + 1;
+  const lockUntil = newAttempts >= MAX_FAILED_ATTEMPTS ? now + LOCKOUT_DURATION_MS : 0;
+  const state = { attempts: newAttempts, lockUntil };
+  loginAttempts.set(normKey, state);
+  return state;
+}
+
+function checkLoginLockout(key) {
+  if (!key) return { isLocked: false };
+  const normKey = String(key).toLowerCase().trim();
+  const current = loginAttempts.get(normKey);
+  if (!current) return { isLocked: false };
+  const now = Date.now();
+  if (current.lockUntil && current.lockUntil > now) {
+    const remainingMinutes = Math.max(1, Math.ceil((current.lockUntil - now) / 60000));
+    return { isLocked: true, remainingMinutes, lockUntil: current.lockUntil };
+  }
+  return { isLocked: false };
+}
+
+function clearLoginAttempts(key) {
+  if (!key) return;
+  const normKey = String(key).toLowerCase().trim();
+  loginAttempts.delete(normKey);
+}
 
 function hashPassword(plainPassword) {
   if (!plainPassword) return plainPassword;
@@ -614,9 +691,10 @@ function verifyPassword(inputPassword, storedPassword) {
   return strInput === strStored;
 }
 
-function sanitizeUser(user, viewerRole) {
+function sanitizeUser(user) {
   if (!user) return null;
-  const { password, pin, ...safe } = user;
+  // Strictly scrub all credential secrets (password, pin, temp_password)
+  const { password, pin, temp_password, ...safe } = user;
   
   let resetStatus = 'Active';
   if (user.temp_password_active) {
@@ -639,33 +717,8 @@ function sanitizeUser(user, viewerRole) {
     }
   }
 
-  // If viewer is Admin or authorized Management, expose readable password/PIN
-  const normViewer = viewerRole ? normalizeRole(viewerRole) : null;
-  const canViewCredentials = normViewer && [
-    'Admin',
-    'CEO',
-    'Managing Director (MD)',
-    'GM',
-    'Projects Manager'
-  ].includes(normViewer);
-
-  let displayPass = null;
-  if (user.pin && !String(user.pin).startsWith('pbkdf2:')) {
-    displayPass = user.pin;
-  } else if (user.password && !String(user.password).startsWith('pbkdf2:')) {
-    displayPass = user.password;
-  } else if (user.temp_password) {
-    displayPass = user.temp_password;
-  } else {
-    displayPass = '1234';
-  }
-
   return {
     ...safe,
-    ...(canViewCredentials ? {
-      pin: displayPass,
-      password: displayPass
-    } : {}),
     has_password: Boolean(password || pin),
     password_reset_status: resetStatus,
     created_by_name: createdByName || user.created_by || 'System',
@@ -812,8 +865,9 @@ function authMiddleware(req, res, next) {
  */
 function requirePermission(permKey) {
   return (req, res, next) => {
-    // Admin has full system access across all modules
-    if (req.user && normalizeRole(req.user.role) === 'Admin') {
+    // Admin and Accounts have full system access across all modules
+    const norm = req.user ? normalizeRole(req.user.role) : '';
+    if (norm === 'Admin' || norm === 'Accounts') {
       return next();
     }
     if (!req.permissions || !req.permissions[permKey]) {
@@ -832,8 +886,9 @@ function requirePermission(permKey) {
 function requireRole(...allowedRoles) {
   const normAllowed = allowedRoles.map(r => normalizeRole(r));
   return (req, res, next) => {
-    // Admin has full system access across all modules
-    if (req.user && normalizeRole(req.user.role) === 'Admin') {
+    // Admin and Accounts have full system access across all modules
+    const norm = req.user ? normalizeRole(req.user.role) : '';
+    if (norm === 'Admin' || norm === 'Accounts') {
       return next();
     }
     const userRole = req.user ? normalizeRole(req.user.role) : 'None';
@@ -857,5 +912,10 @@ module.exports = {
   sanitizeContractForRole,
   hashPassword,
   verifyPassword,
-  sanitizeUser
+  sanitizeUser,
+  validatePasswordFormat,
+  generate6CharPassword,
+  recordFailedLogin,
+  checkLoginLockout,
+  clearLoginAttempts
 };
