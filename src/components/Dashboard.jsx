@@ -33,11 +33,14 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
   };
 
   const isMD = currentUser?.role === 'Managing Director (MD)' || currentUser?.role === 'Managing Director' || currentUser?.role === 'managing_director';
+  const isGM = currentUser?.role === 'GM' || currentUser?.role === 'General Manager' || currentUser?.role === 'gm';
+  const isCEO = currentUser?.role === 'CEO' || currentUser?.role === 'ceo';
   const isSales = currentUser?.role === 'Sales';
   const isTechnician = currentUser?.role === 'Technician';
+  const isSupervisor = currentUser?.role === 'Supervisor' || currentUser?.role === 'supervisor';
+  const isEngineer = currentUser?.role === 'Engineer' || currentUser?.role === 'engineer';
   const isAccounts = ['Accounts', 'accounts'].includes(currentUser?.role);
   const isAdmin = ['Admin', 'admin'].includes(currentUser?.role);
-  const isCEO = currentUser?.role === 'CEO';
   const isProjectsManager = ['Projects Manager', 'projects_manager', 'Project Manager', 'PM'].includes(currentUser?.role);
   const canPrepareReports = [
     'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
