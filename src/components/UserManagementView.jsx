@@ -25,6 +25,22 @@ export default function UserManagementView() {
   const [copiedTemp, setCopiedTemp] = useState(false);
   const [showModalPassword, setShowModalPassword] = useState(true);
   const [showDirectPassword, setShowDirectPassword] = useState(true);
+  const [showAllPasswords, setShowAllPasswords] = useState(true);
+  const [revealedPasswords, setRevealedPasswords] = useState({});
+
+  const toggleUserPasswordVisibility = (userId) => {
+    setRevealedPasswords(prev => {
+      const current = prev[userId] !== undefined ? prev[userId] : showAllPasswords;
+      return { ...prev, [userId]: !current };
+    });
+  };
+
+  const isPasswordVisible = (userId) => {
+    if (revealedPasswords[userId] !== undefined) {
+      return revealedPasswords[userId];
+    }
+    return showAllPasswords;
+  };
   
   // Form State
   const [formData, setFormData] = useState({
@@ -579,6 +595,32 @@ export default function UserManagementView() {
             </button>
           ))}
         </div>
+
+        {canManageStaff && (
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+              <Key className="w-3.5 h-3.5 text-amber-600" />
+              <span>Admin Passwords Display:</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !showAllPasswords;
+                setShowAllPasswords(next);
+                setRevealedPasswords({});
+              }}
+              className={`px-3 py-1 rounded-xl font-bold transition-all flex items-center gap-1.5 text-[11px] shadow-2xs ${
+                showAllPasswords
+                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
+              title={showAllPasswords ? "Click to mask passwords" : "Click to show all passwords"}
+            >
+              {showAllPasswords ? <EyeOff className="w-3.5 h-3.5 text-amber-700" /> : <Eye className="w-3.5 h-3.5 text-slate-600" />}
+              <span>{showAllPasswords ? 'Mask Passwords' : 'Show Passwords'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Staff Cards List */}
@@ -695,28 +737,39 @@ export default function UserManagementView() {
                       </span>
                     </div>
 
-                    {/* Staff Password / PIN Badge (Visible to Admin & Management) */}
+                    {/* Staff Password Badge (Visible to Admin & Management) */}
                     {canManageStaff && (
                       <div className="flex items-center justify-between bg-amber-50/90 border border-amber-200/90 rounded-xl px-2.5 py-1.5 text-xs">
-                        <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+                        <div className="flex items-center gap-1.5 text-amber-900 font-bold min-w-0">
                           <Key className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <span className="text-[11px]">Password / PIN:</span>
-                          <span className="font-mono font-black text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider text-[11px] select-all shadow-2xs">
-                            {u.pin || u.password || '1234'}
+                          <span className="text-[11px] shrink-0">Password:</span>
+                          <span className="font-mono font-black text-amber-950 bg-white px-2 py-0.5 rounded border border-amber-300 tracking-wider text-[12px] select-all shadow-2xs">
+                            {isPasswordVisible(u.id) ? (u.assigned_password || u.password || u.pin || 'FX7B2K') : '••••••'}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard?.writeText(u.pin || u.password || '1234');
-                            showToast(`Copied password for ${u.name}!`, 'success');
-                          }}
-                          className="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold border border-amber-200 transition-colors flex items-center gap-1 shadow-2xs"
-                          title="Copy staff password to clipboard"
-                        >
-                          <Copy className="w-2.5 h-2.5" />
-                          <span>Copy</span>
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleUserPasswordVisibility(u.id)}
+                            className="p-1 hover:bg-amber-100 text-amber-800 rounded transition-colors"
+                            title={isPasswordVisible(u.id) ? "Hide password" : "Show password"}
+                          >
+                            {isPasswordVisible(u.id) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const pass = u.assigned_password || u.password || u.pin || 'FX7B2K';
+                              navigator.clipboard?.writeText(pass);
+                              showToast(`Copied password (${pass}) for ${u.name}!`, 'success');
+                            }}
+                            className="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-800 rounded text-[10px] font-bold border border-amber-200 transition-colors flex items-center gap-1 shadow-2xs"
+                            title="Copy staff password to clipboard"
+                          >
+                            <Copy className="w-2.5 h-2.5" />
+                            <span>Copy</span>
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -1246,10 +1299,30 @@ export default function UserManagementView() {
             </div>
 
             {/* Account Security Information Banner */}
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-bold uppercase text-[10px]">Username:</span>
                 <span className="font-mono font-bold text-slate-900">{passwordModalUser.username || 'Not set'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-bold uppercase text-[10px]">Current Password:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-black text-amber-950 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 text-xs select-all">
+                    {passwordModalUser.assigned_password || passwordModalUser.password || passwordModalUser.pin || 'FX7B2K'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const pass = passwordModalUser.assigned_password || passwordModalUser.password || passwordModalUser.pin || 'FX7B2K';
+                      navigator.clipboard?.writeText(pass);
+                      showToast(`Copied password (${pass})!`, 'success');
+                    }}
+                    className="p-1 hover:bg-slate-200 text-slate-600 rounded transition-colors"
+                    title="Copy current password"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-bold uppercase text-[10px]">Account Status:</span>

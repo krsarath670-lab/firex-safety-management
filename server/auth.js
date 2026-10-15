@@ -692,11 +692,23 @@ function verifyPassword(inputPassword, storedPassword) {
   return strInput === strStored;
 }
 
-function sanitizeUser(user) {
+function sanitizeUser(user, callerRole) {
   if (!user) return null;
-  // Strictly scrub all credential secrets (password, pin, temp_password)
+  // Strictly scrub raw cryptographic secrets from non-management callers
   const { password, pin, temp_password, ...safe } = user;
   
+  const roleToCheck = callerRole || safe.role;
+  const normCaller = normalizeRole(roleToCheck);
+  const isManagementCaller = ['Admin', 'Managing Director (MD)', 'CEO', 'GM', 'Projects Manager', 'Accounts'].includes(normCaller);
+
+  // If management caller (e.g. Admin inspecting staff), provide the clean assigned password
+  const readablePass = isManagementCaller ? (
+    user.assigned_password || 
+    (password && !String(password).startsWith('pbkdf2:') ? password : '') || 
+    (pin && !String(pin).startsWith('pbkdf2:') ? pin : '') || 
+    null
+  ) : null;
+
   let resetStatus = 'Active';
   if (user.temp_password_active) {
     if (user.temp_password_expires_at && new Date(user.temp_password_expires_at).getTime() < Date.now()) {
@@ -720,7 +732,10 @@ function sanitizeUser(user) {
 
   return {
     ...safe,
-    has_password: Boolean(password || pin),
+    has_password: Boolean(password || pin || user.assigned_password),
+    assigned_password: readablePass,
+    password: readablePass,
+    pin: readablePass,
     password_reset_status: resetStatus,
     created_by_name: createdByName || user.created_by || 'System',
     last_reset_by_name: user.last_reset_by_name || null,

@@ -952,6 +952,30 @@ class Database {
         }
       });
 
+      // Ensure assigned_password exists for all staff so Admin can always view and copy it
+      const STAFF_PASSWORD_CATALOG = {
+        'admin': 'FX7B2K',
+        'md': 'F8B3PU',
+        'ahamdjamal': 'EJR5W2',
+        'yaser': 'U2NMC3',
+        'mohamedhweidi': 'FUHP43',
+        'chandiramohan': '7FB6DK',
+        'sarath': 'EX8DS2',
+        'hasanzulaikh': 'PN8GH8',
+        'abdulmajeed': 'G76JER',
+        'amar': '8WN7AX',
+        'abdulsattarsaiyed': 'NC5ZN7',
+        'mohammedalawadhi': '2QZS2B'
+      };
+
+      (data.users || []).forEach(u => {
+        const uname = String(u.username || '').toLowerCase();
+        if (!u.assigned_password && STAFF_PASSWORD_CATALOG[uname]) {
+          u.assigned_password = STAFF_PASSWORD_CATALOG[uname];
+          modified = true;
+        }
+      });
+
       // One-time bulk password reset migration across PostgreSQL cloud DB and local JSON
       if (!data._bulk_password_reset_v1) {
         const BULK_RESET_MAP = {

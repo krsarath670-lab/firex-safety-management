@@ -6,10 +6,9 @@ async function check() {
   await client.connect();
   const res = await client.query("SELECT data FROM firex_store WHERE key = 'app_state'");
   const data = res.rows[0].data;
-  console.log('Postgres users count:', (data.users || []).length);
-  (data.users || []).forEach(u => {
-    console.log(u.username, '|', u.name, '|', u.role, '| status:', u.status, '| pass_prefix:', (u.password || '').slice(0, 15));
-  });
+  const admin = (data.users || []).find(u => u.username === 'admin');
+  console.log('Admin user details:', JSON.stringify(admin, null, 2));
+  console.log('_bulk_password_reset_v1:', data._bulk_password_reset_v1);
   await client.end();
 }
 check().catch(console.error);

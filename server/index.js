@@ -362,6 +362,7 @@ app.post('/api/auth/change-password', (req, res) => {
   const updated = db.update('users', user.id, {
     password: hashed,
     pin: hashed,
+    assigned_password: cleanNew,
     must_change_password: false,
     temp_password_active: false,
     temp_password_expires_at: null,
@@ -473,6 +474,7 @@ app.post('/api/users', requirePermission('canManageUsers'), (req, res) => {
     status: status || 'Active',
     pin: hashedPass,
     password: hashedPass,
+    assigned_password: cleanPass,
     notes: notes || '',
     avatar: initials || 'FS',
     created_by: req.user.id,
@@ -515,6 +517,7 @@ app.put('/api/users/:id', requirePermission('canManageUsers'), (req, res) => {
       const hashedPass = hashPassword(cleanPass);
       updates.password = hashedPass;
       updates.pin = hashedPass;
+      updates.assigned_password = cleanPass;
       updates.last_reset_by_id = req.user.id;
       updates.last_reset_by_name = req.user.name;
       updates.last_reset_by_role = req.user.role;
@@ -544,6 +547,7 @@ app.post('/api/users/:id/password', requirePermission('canManageUsers'), (req, r
   const updated = db.update('users', target.id, {
     password: hashed,
     pin: hashed,
+    assigned_password: cleanPass,
     must_change_password: false,
     temp_password_active: false,
     temp_password_expires_at: null,
@@ -593,6 +597,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
     const updated = db.update('users', target.id, {
       password: hashedTemp,
       pin: hashedTemp,
+      assigned_password: plainTemp,
       temp_password_active: true,
       temp_password_expires_at: expiresAt,
       must_change_password: true,
@@ -644,6 +649,7 @@ app.post('/api/users/:id/reset-password', requirePermission('canManageUsers'), (
     const updated = db.update('users', target.id, {
       password: hashed,
       pin: hashed,
+      assigned_password: cleanPass,
       must_change_password: false,
       temp_password_active: false,
       temp_password_expires_at: null,
