@@ -221,7 +221,8 @@ app.post('/api/auth/login', async (req, res) => {
   if (user) {
     let expectedSecret = (user.password || user.pin || '').toString().trim();
     let pinSecret = (user.pin || '').toString().trim();
-    isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+    const matchesAssigned = Boolean(user.assigned_password && user.assigned_password.trim() === inputSecret);
+    isMatch = matchesAssigned || verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
 
     // If password mismatch, refresh from PostgreSQL once in case password was updated in DB
     if (!isMatch && typeof db.refreshFromPostgres === 'function') {
@@ -231,7 +232,18 @@ app.post('/api/auth/login', async (req, res) => {
       if (user) {
         expectedSecret = (user.password || user.pin || '').toString().trim();
         pinSecret = (user.pin || '').toString().trim();
-        isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+        const matchesAssignedFresh = Boolean(user.assigned_password && user.assigned_password.trim() === inputSecret);
+        isMatch = matchesAssignedFresh || verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+      }
+    }
+
+    // If matched via assigned_password and hash is out of sync, sync hash immediately
+    if (isMatch && user.assigned_password && user.assigned_password.trim() === inputSecret) {
+      if (!expectedSecret.startsWith('pbkdf2:') || !verifyPassword(inputSecret, expectedSecret)) {
+        const freshHash = hashPassword(inputSecret);
+        user.password = freshHash;
+        user.pin = freshHash;
+        db.update('users', user.id, { password: freshHash, pin: freshHash, assigned_password: inputSecret });
       }
     }
   }
