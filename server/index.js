@@ -176,10 +176,71 @@ app.post('/api/auth/setup-first-user', (req, res) => {
   });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { userId, role, identifier, username, email, password, pin } = req.body;
   const inputSecret = (password || pin || '').toString().trim();
   const idfRaw = (identifier || username || email || userId || (role ? String(role) : '') || '').toString().trim();
+
+  // Helper to locate user in user list
+  const findTargetUser = (userList) => {
+    if (userId) return userList.find(u => u.id === userId);
+    if (identifier || username || email) {
+      const idf = (identifier || username || email).toString().trim().toLowerCase();
+      let matched = userList.find(u => 
+        (u.username && u.username.toLowerCase() === idf) ||
+        (u.id && u.id.toLowerCase() === idf) ||
+        (u.email && u.email.toLowerCase() === idf) ||
+        (u.phone && u.phone.replace(/\s+/g, '') === idf.replace(/\s+/g, '')) ||
+        (u.name && u.name.toLowerCase() === idf)
+      );
+      if (!matched) {
+        const normInput = normalizeRole(idf);
+        matched = userList.find(u => normalizeRole(u.role).toLowerCase() === normInput.toLowerCase());
+      }
+      return matched;
+    }
+    if (role) {
+      const norm = normalizeRole(role);
+      return userList.find(u => normalizeRole(u.role).toLowerCase() === norm.toLowerCase());
+    }
+    return null;
+  };
+
+  let users = db.get('users') || [];
+  let user = findTargetUser(users);
+
+  // If user not found, or might have been updated directly in PostgreSQL, refresh cache
+  if (!user && typeof db.refreshFromPostgres === 'function') {
+    await db.refreshFromPostgres();
+    users = db.get('users') || [];
+    user = findTargetUser(users);
+  }
+
+  // Pre-check credentials if user exists, before checking lockout (allows immediate login if new password matches)
+  let isMatch = false;
+  if (user) {
+    let expectedSecret = (user.password || user.pin || '').toString().trim();
+    let pinSecret = (user.pin || '').toString().trim();
+    isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+
+    // If password mismatch, refresh from PostgreSQL once in case password was updated in DB
+    if (!isMatch && typeof db.refreshFromPostgres === 'function') {
+      await db.refreshFromPostgres();
+      users = db.get('users') || [];
+      user = findTargetUser(users);
+      if (user) {
+        expectedSecret = (user.password || user.pin || '').toString().trim();
+        pinSecret = (user.pin || '').toString().trim();
+        isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+      }
+    }
+  }
+
+  // If secret matches, instantly clear any lockout
+  if (isMatch && user) {
+    clearLoginAttempts(user.username || idfRaw);
+    clearLoginAttempts(idfRaw);
+  }
 
   // Check rate limiting / temporary lockout (5 failed attempts locks for 15 mins)
   const lockout = checkLoginLockout(idfRaw);
@@ -188,30 +249,6 @@ app.post('/api/auth/login', (req, res) => {
       error: 'Account Temporarily Locked',
       message: `Too many failed login attempts. This account is temporarily locked. Please try again in ${lockout.remainingMinutes} minute(s).`
     });
-  }
-
-  const users = db.get('users') || [];
-
-  let user = null;
-  if (userId) {
-    user = users.find(u => u.id === userId);
-  } else if (identifier || username || email) {
-    const idf = (identifier || username || email).toString().trim().toLowerCase();
-    user = users.find(u => 
-      (u.username && u.username.toLowerCase() === idf) ||
-      (u.id && u.id.toLowerCase() === idf) ||
-      (u.email && u.email.toLowerCase() === idf) ||
-      (u.phone && u.phone.replace(/\s+/g, '') === idf.replace(/\s+/g, '')) ||
-      (u.name && u.name.toLowerCase() === idf)
-    );
-    // If not found by direct username/email/name, match by role or role alias
-    if (!user) {
-      const normInput = normalizeRole(idf);
-      user = users.find(u => normalizeRole(u.role).toLowerCase() === normInput.toLowerCase());
-    }
-  } else if (role) {
-    const norm = normalizeRole(role);
-    user = users.find(u => normalizeRole(u.role).toLowerCase() === norm.toLowerCase());
   }
 
   if (!user) {
@@ -224,11 +261,10 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const expectedSecret = (user.password || user.pin || '').toString().trim();
-  const pinSecret = (user.pin || '').toString().trim();
   if (!expectedSecret) {
     return res.status(401).json({ error: 'Password Not Set', message: 'No password has been configured for this account. Please contact an Administrator.' });
   }
-  const isMatch = verifyPassword(inputSecret, expectedSecret) || (pinSecret && verifyPassword(inputSecret, pinSecret));
+
   if (!isMatch) {
     const attempt = recordFailedLogin(user.username || idfRaw);
     db.logAudit(user.id, 'LOGIN_FAILED', 'users', user.id, `Failed login attempt for user ${user.name}`, { status: 'FAILED' });
@@ -283,6 +319,18 @@ app.post('/api/auth/login', (req, res) => {
     token: `token-${user.id}-${Date.now()}`,
     must_change_password: mustChangePassword
   });
+});
+
+// Clear account lockout and sync cache with cloud DB
+app.post('/api/auth/unlock', async (req, res) => {
+  const { identifier } = req.body || {};
+  if (identifier) {
+    clearLoginAttempts(identifier);
+  }
+  if (typeof db.refreshFromPostgres === 'function') {
+    await db.refreshFromPostgres();
+  }
+  res.json({ success: true, message: `Account lock cleared and cache refreshed for ${identifier || 'system'}.` });
 });
 
 // Self change password endpoint (used upon forced password reset or normal self-service)

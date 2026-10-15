@@ -749,6 +749,21 @@ class Database {
     }
   }
 
+  async refreshFromPostgres() {
+    if (this.isPostgres && this.pgPool) {
+      try {
+        const res = await this.pgPool.query('SELECT data FROM firex_store WHERE key = $1', ['app_state']);
+        if (res.rows.length > 0 && res.rows[0].data) {
+          this.memoryCache = this.ensureSchema(res.rows[0].data);
+          return this.memoryCache;
+        }
+      } catch (err) {
+        console.error('[FIREX DB] Error refreshing state from PostgreSQL:', err);
+      }
+    }
+    return this.memoryCache;
+  }
+
   ensureSchema(data) {
     if (!data) return data;
     let modified = false;
