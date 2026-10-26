@@ -18,6 +18,7 @@ const initialSeed = {
     arabic_name: "شركة فايركس لأدوات السلامه",
     logo_url: "/logo.png",
     letterhead_url: "/letterhead.png",
+    letterhead_footer_url: "/letterhead_footer.jpg",
     use_custom_letterhead: true,
     cr_number: "96850 1",
     cr_no: "96850 1",

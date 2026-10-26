@@ -548,8 +548,14 @@ export default function PDFReportGenerator({ report, onClose }) {
           </div>
         </div>
 
-        {/* Legal Disclaimer & Footer */}
-        <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-500 leading-relaxed">
+        {/* Legal Disclaimer & Official Footer */}
+        <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-500 leading-relaxed space-y-2">
+          <img
+            src={companySettings?.letterhead_footer_url || '/letterhead_footer.jpg'}
+            alt="FIREX Accreditation and Contacts"
+            className="w-full h-auto object-contain max-h-16 mx-auto mb-1"
+            crossOrigin="anonymous"
+          />
           <div className="font-bold text-slate-800 text-[10px]">
             {companySettings?.company_name || 'FIREX'}
           </div>

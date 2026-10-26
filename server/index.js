@@ -3991,9 +3991,9 @@ app.put('/api/settings', requirePermission('canManageSettings'), (req, res) => {
   res.json(updated);
 });
 
-// Branding upload (Letterhead banner and Logo)
+// Branding upload (Letterhead banner, Footer, and Logo)
 app.post('/api/settings/branding', requirePermission('canManageSettings'), (req, res) => {
-  const { logo, letterhead, use_custom_letterhead } = req.body;
+  const { logo, letterhead, letterhead_footer, use_custom_letterhead } = req.body;
   const updates = {};
   if (use_custom_letterhead !== undefined) {
     updates.use_custom_letterhead = !!use_custom_letterhead;
@@ -4035,6 +4035,22 @@ app.post('/api/settings/branding', requirePermission('canManageSettings'), (req,
       }
     }
     updates.letterhead_url = letterhead;
+  }
+
+  if (letterhead_footer) {
+    if (letterhead_footer.startsWith('data:image')) {
+      try {
+        const base64Data = letterhead_footer.replace(/^data:image\/\w+;base64,/, '');
+        const buf = Buffer.from(base64Data, 'base64');
+        require('fs').writeFileSync(path.join(publicDir, 'letterhead_footer.jpg'), buf);
+        if (require('fs').existsSync(distDir)) {
+          require('fs').writeFileSync(path.join(distDir, 'letterhead_footer.jpg'), buf);
+        }
+      } catch (e) {
+        console.error('Error writing letterhead footer file:', e);
+      }
+    }
+    updates.letterhead_footer_url = letterhead_footer;
   }
 
   const updated = db.updateSettings(updates);

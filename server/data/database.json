@@ -38,7 +38,8 @@
         "visits_per_year": 2
       }
     },
-    "amc_next_service_rule": "from_actual_date"
+    "amc_next_service_rule": "from_actual_date",
+    "letterhead_footer_url": "/letterhead_footer.jpg"
   },
   "users": [
     {
@@ -71,7 +72,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.412Z"
+      "updated_at": "2026-10-14T06:57:58.412Z",
+      "assigned_password": "EJR5W2"
     },
     {
       "name": "Admin",
@@ -103,7 +105,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.477Z"
+      "updated_at": "2026-10-14T06:57:58.477Z",
+      "assigned_password": "FX7B2K"
     },
     {
       "name": "Yaser Zidan",
@@ -136,7 +139,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "U2NMC3"
     },
     {
       "id": "usr-md-1",
@@ -165,7 +169,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "F8B3PU"
     },
     {
       "id": "use-1791204899105-379",
@@ -196,7 +201,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.609Z"
+      "updated_at": "2026-10-14T06:57:58.609Z",
+      "assigned_password": "8WN7AX"
     },
     {
       "id": "use-1791204687871-686",
@@ -227,7 +233,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.654Z"
+      "updated_at": "2026-10-14T06:57:58.654Z",
+      "assigned_password": "NC5ZN7"
     },
     {
       "id": "use-1791204540662-140",
@@ -258,7 +265,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.696Z"
+      "updated_at": "2026-10-14T06:57:58.696Z",
+      "assigned_password": "2QZS2B"
     },
     {
       "id": "use-1791204126179-337",
@@ -289,7 +297,8 @@
       "must_change_password": false,
       "temp_password_active": false,
       "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
-      "updated_at": "2026-10-14T06:57:58.737Z"
+      "updated_at": "2026-10-14T06:57:58.737Z",
+      "assigned_password": "G76JER"
     },
     {
       "id": "use-1791203997733-935",
@@ -320,7 +329,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "PN8GH8"
     },
     {
       "id": "use-1791203919428-75",
@@ -351,7 +361,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "7FB6DK"
     },
     {
       "id": "use-1791203401122-22",
@@ -382,7 +393,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "EX8DS2"
     },
     {
       "id": "usr-gm-1790621464394",
@@ -413,7 +425,8 @@
       "pin": "pbkdf2:73fdbab93bc493f18aac2b1f573aaa1a:3672b90ba2b13207eff4244364ca11ca30c4eebb3c4869a910e904b786db40bcd0e28c48235592999ce90531e054c0b2e58980f9196ae6f6801fb42b242b9375",
       "must_change_password": false,
       "temp_password_active": false,
-      "temp_password_expires_at": "2026-10-21T07:06:24.080Z"
+      "temp_password_expires_at": "2026-10-21T07:06:24.080Z",
+      "assigned_password": "FUHP43"
     }
   ],
   "customers": [

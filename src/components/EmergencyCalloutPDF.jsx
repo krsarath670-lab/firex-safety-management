@@ -127,93 +127,55 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
       >
         
         {/* ========================================================================= */}
-        {/* FIREX COMPANY DETAILS (Strictly as specified in Requirement 5)            */}
+        {/* OFFICIAL APPROVED LETTERHEAD BANNER                                      */}
         {/* ========================================================================= */}
-        <div className="border-b-2 border-red-700 pb-4 mb-5">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-            
-            {/* Company Left Branding */}
-            <div className="flex items-start space-x-3.5">
-              {companySettings?.logo_url ? (
-                <img
-                  src={companySettings.logo_url}
-                  alt="FIREX Logo"
-                  className="w-16 h-16 rounded-xl object-contain bg-white border border-slate-200 shadow-sm p-1 shrink-0"
-                  crossOrigin="anonymous"
-                  onError={(e) => { e.target.src = '/logo.png'; }}
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-red-600 to-orange-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                  <Shield className="w-8 h-8" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-black tracking-tight text-navy-900 leading-tight">
-                  FIREX
-                </h1>
-                <p className="text-xs text-red-600 font-bold" dir="rtl">
-                  شركة فايركس لأدوات السلامه
-                </p>
-                <div className="text-xs text-slate-700 font-semibold mt-1 space-y-0.5">
-                  <p className="font-bold text-slate-800">Villa 13, Building 2373,</p>
-                  <p className="font-bold text-slate-800">Road 2831, Al Seef,</p>
-                  <p className="font-bold text-slate-800">Block 428, Bahrain</p>
-                </div>
-              </div>
-            </div>
+        <div className="w-full mb-4 border-b-2 border-red-600 pb-2">
+          <img
+            src={companySettings?.letterhead_url || '/letterhead.png'}
+            alt="FIREX Fire & Safety"
+            className="w-full h-auto object-contain max-h-28 sm:max-h-32 mx-auto"
+            crossOrigin="anonymous"
+          />
+        </div>
 
-            {/* Document Header Details (Right) */}
-            <div className="sm:text-right shrink-0">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white text-xs font-black rounded-lg uppercase tracking-wider shadow-sm">
+        {/* Document Header Details */}
+        <div className="bg-navy-900 text-white px-4 py-2.5 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shadow-sm">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white text-xs font-black rounded uppercase tracking-wider shadow-sm">
                 <Flame className="w-3.5 h-3.5" />
                 <span>EMERGENCY CALL-OUT REPORT</span>
-              </div>
-              
-              <div className="mt-2 space-y-1 text-xs">
-                <p className="font-mono font-black text-slate-900 text-sm">
-                  Call No: <span className="text-red-700">{call.call_number}</span>
-                </p>
-                <p className="font-mono font-bold text-slate-700">
-                  Report No: <span>{call.report_number || 'ECR-PENDING'}</span>
-                </p>
-                <p className="text-slate-600">
-                  Date: <strong>{call.call_date}</strong> • Time: <strong>{call.call_time}</strong>
-                </p>
-                <div className="flex items-center sm:justify-end gap-1.5 pt-1">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                    call.priority === 'Critical' ? 'bg-red-600 text-white' :
-                    call.priority === 'High' ? 'bg-orange-500 text-white' :
-                    call.priority === 'Medium' ? 'bg-amber-100 text-amber-900' :
-                    'bg-blue-100 text-blue-900'
-                  }`}>
-                    {call.priority} Priority
-                  </span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                    call.report_status === 'Approved' ? 'bg-emerald-600 text-white' :
-                    call.report_status === 'Reviewed' ? 'bg-blue-600 text-white' :
-                    call.report_status === 'Submitted' ? 'bg-purple-600 text-white' :
-                    'bg-slate-200 text-slate-800'
-                  }`}>
-                    {call.report_status || 'Draft'}
-                  </span>
-                </div>
-              </div>
+              </span>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                call.priority === 'Critical' ? 'bg-red-500 text-white' :
+                call.priority === 'High' ? 'bg-orange-500 text-white' :
+                call.priority === 'Medium' ? 'bg-amber-400 text-slate-900' :
+                'bg-blue-400 text-slate-900'
+              }`}>
+                {call.priority} Priority
+              </span>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                call.report_status === 'Approved' ? 'bg-emerald-500 text-white' :
+                call.report_status === 'Reviewed' ? 'bg-blue-500 text-white' :
+                call.report_status === 'Submitted' ? 'bg-purple-500 text-white' :
+                'bg-slate-500 text-white'
+              }`}>
+                {call.report_status || 'Draft'}
+              </span>
             </div>
-
+            <p className="text-[10px] text-slate-300 font-medium mt-1">
+              Immediate Incident Response &bull; Emergency Maintenance &bull; Bahrain Civil Defense Standard
+            </p>
           </div>
 
-          {/* Official Registration Credential Banner */}
-          <div className="mt-3.5 pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-700 font-medium">
-            <span className="font-mono font-bold text-navy-900">
-              CR No.: 96850 1
+          <div className="sm:text-right shrink-0">
+            <span className="text-[9px] font-mono uppercase block text-slate-300">Call / Report No.</span>
+            <span className="text-xs sm:text-sm font-mono font-black text-amber-300 tracking-wider">
+              {call.report_number || call.call_number}
             </span>
-            <span className="font-mono font-bold text-navy-900">
-              VAT No.: 220006271900002
-            </span>
-            <span className="text-slate-600">
-              Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain
-            </span>
-            <span className="font-bold text-navy-900">Tel: +973 1716 2240</span>
+            <p className="text-[10px] text-slate-300 mt-0.5 font-mono">
+              Date: <strong>{call.call_date}</strong> • Time: <strong>{call.call_time}</strong>
+            </p>
           </div>
         </div>
 
@@ -585,8 +547,14 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
           </div>
         </div>
 
-        {/* Formal Report Footer */}
-        <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500 space-y-0.5">
+        {/* Formal Report Footer with Official Letterhead Footer */}
+        <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500 space-y-1.5">
+          <img
+            src={companySettings?.letterhead_footer_url || '/letterhead_footer.jpg'}
+            alt="FIREX Accreditations and Contact Info"
+            className="w-full h-auto object-contain max-h-16 mx-auto mb-1"
+            crossOrigin="anonymous"
+          />
           <p className="font-semibold text-slate-700">
             FIREX • Villa 13, Building 2373, Road 2831, Al Seef, Block 428, Bahrain • CR No.: 96850 1 • VAT No.: 220006271900002
           </p>

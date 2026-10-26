@@ -1022,10 +1022,18 @@ export default function AMCServiceReportModal({ visit, onClose }) {
           </div>
         </div>
 
-        {/* Official Document Footer */}
-        <div className="border-t border-slate-300 pt-2 flex flex-col sm:flex-row items-center justify-between text-[9px] text-slate-500 font-medium">
-          <p>FIREX W.L.L. • Kingdom of Bahrain • CR No: 96850 1 • VAT No: 220006271900002</p>
-          <p className="font-mono">Document: {docNumber} • System-Generated Official Record</p>
+        {/* Official Document Footer with Accreditation Banner */}
+        <div className="border-t border-slate-300 pt-2 space-y-2">
+          <img
+            src={companySettings?.letterhead_footer_url || '/letterhead_footer.jpg'}
+            alt="FIREX Accreditation and Contacts"
+            className="w-full h-auto object-contain max-h-16 mx-auto"
+            crossOrigin="anonymous"
+          />
+          <div className="flex flex-col sm:flex-row items-center justify-between text-[9px] text-slate-500 font-medium">
+            <p>FIREX W.L.L. • Kingdom of Bahrain • CR No: 96850 1 • VAT No: 220006271900002</p>
+            <p className="font-mono">Document: {docNumber} • System-Generated Official Record</p>
+          </div>
         </div>
 
       </div>

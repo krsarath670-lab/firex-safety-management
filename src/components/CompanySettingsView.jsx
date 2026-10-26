@@ -148,6 +148,7 @@ export default function CompanySettingsView() {
     setSettings(prev => ({
       ...prev,
       letterhead_url: '/letterhead.png',
+      letterhead_footer_url: '/letterhead_footer.jpg',
       logo_url: '/logo.png',
       use_custom_letterhead: true
     }));
