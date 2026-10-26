@@ -30,10 +30,15 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // Automatically handle dynamic chunk preload errors caused by new deployments
+      window.addEventListener('vite:preloadError', () => {
+        window.location.reload();
+      });
+
       // Register & force update PWA Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js?v=20260929').then((registration) => {
+          navigator.serviceWorker.register('/sw.js?v=20261026-v4').then((registration) => {
             registration.update();
             console.log('FIREX ServiceWorker active with scope:', registration.scope);
           }).catch((error) => {

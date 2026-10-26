@@ -1,12 +1,13 @@
 // FIREX Fire & Safety Service Management - Production Service Worker
-// Version: 2026.09.29-prod
-const CACHE_NAME = 'firex-safety-v2026-prod';
+// Version: 2026.10.26-v4
+const CACHE_NAME = 'firex-safety-v2026-10-26-v4';
 
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
   '/letterhead.png',
+  '/letterhead_footer.jpg',
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png'
