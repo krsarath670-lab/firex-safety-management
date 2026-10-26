@@ -1231,11 +1231,11 @@ app.delete('/api/customers/:id', (req, res) => {
   const existing = db.getById('customers', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Customer not found' });
 
-  // Access restricted strictly to GM, Managing Director, Engineer, and Supervisor
-  if (!['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  // Access restricted to Admin, GM, CEO, Managing Director, Engineer, and Supervisor
+  if (!['Admin', 'admin', 'GM', 'CEO', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
-      message: 'Access restricted: Only GM, Managing Director, Engineer, and Supervisor can delete customers.'
+      message: 'Access restricted: Only Admin, GM, Managing Director, Engineer, and Supervisor can delete customers.'
     });
   }
 

@@ -52,7 +52,7 @@ export default function CustomerSiteView() {
 
   const isTechnician = currentUser?.role === 'Technician';
   const isSales = currentUser?.role === 'Sales';
-  const isManagement = ['GM', 'Engineer', 'Supervisor'].includes(currentUser?.role);
+  const isManagement = ['Admin', 'admin', 'GM', 'CEO', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(currentUser?.role);
 
   const loadData = async () => {
     try {
@@ -125,11 +125,11 @@ export default function CustomerSiteView() {
     }
   };
 
-  // Handle Delete Customer (Restricted to GM, Engineer, Supervisor)
+  // Handle Delete Customer (Restricted to Admin, GM, MD, Engineer, Supervisor)
   const handleDeleteCustomer = async (customer) => {
     if (!customer?.id) return;
     if (!isManagement) {
-      showToast('Access Denied: Only GM, Engineer, and Supervisor can delete customers.', 'error');
+      showToast('Access Denied: Only Admin, GM, MD, Engineer, and Supervisor can delete customers.', 'error');
       return;
     }
 
