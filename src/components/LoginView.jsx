@@ -390,6 +390,15 @@ export default function LoginView() {
                   </>
                 )}
               </button>
+
+              {/* Skip / Continue to App */}
+              <button
+                type="button"
+                onClick={() => login(mustChangeData.user, mustChangeData.permissions)}
+                className="w-full py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition-colors cursor-pointer text-center"
+              >
+                Skip for now &amp; Continue to App
+              </button>
             </form>
           </div>
         </div>
