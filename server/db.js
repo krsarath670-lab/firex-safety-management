@@ -1730,6 +1730,23 @@ class Database {
       modified = true;
     }
 
+    // Clean up test and orphan AMC visits
+    if (data.amc_visits && Array.isArray(data.amc_visits)) {
+      const validContractIds = new Set((data.amc_contracts || []).map(a => a.id));
+      const validContractNumbers = new Set((data.amc_contracts || []).map(a => a.contract_number));
+      const beforeCount = data.amc_visits.length;
+      data.amc_visits = data.amc_visits.filter(v => {
+        const cId = v.amc_contract_id || v.contract_id || v.amc_id;
+        const cNum = v.contract_number;
+        const isTest = (cNum && cNum.includes('TST')) || JSON.stringify(v).includes('Test Customer');
+        const isOrphan = !validContractIds.has(cId) && !validContractNumbers.has(cNum);
+        return !isTest && !isOrphan;
+      });
+      if (data.amc_visits.length !== beforeCount) {
+        modified = true;
+      }
+    }
+
     if (data.amc_visits && Array.isArray(data.amc_visits)) {
       const todayStr = new Date().toISOString().split('T')[0];
       data.amc_visits.forEach(v => {
