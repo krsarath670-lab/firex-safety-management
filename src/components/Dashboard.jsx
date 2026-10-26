@@ -48,7 +48,7 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
     'Supervisor', 'supervisor',
     'Technician', 'technician',
     'Admin', 'admin'
-  ].includes(currentUser?.role);
+  ].includes(currentUser?.role) && !isSales;
 
 
   // Get active upcoming visits list

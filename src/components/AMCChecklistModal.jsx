@@ -630,14 +630,16 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
             <span className="hidden sm:inline">Save Progress</span>
           </button>
 
-          <button
-            onClick={handleMakeReport}
-            disabled={saving}
-            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-black flex items-center gap-1.5 shadow-lg shadow-red-950/40 transition-all"
-          >
-            <FileText className="w-3.5 h-3.5 text-white" />
-            <span>Generate Report</span>
-          </button>
+          {currentUser?.role !== 'Sales' && (
+            <button
+              onClick={handleMakeReport}
+              disabled={saving}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white text-xs font-black flex items-center gap-1.5 shadow-lg shadow-red-950/40 transition-all"
+            >
+              <FileText className="w-3.5 h-3.5 text-white" />
+              <span>Generate Report</span>
+            </button>
+          )}
         </div>
       </div>
 

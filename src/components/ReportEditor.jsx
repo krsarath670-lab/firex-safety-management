@@ -199,6 +199,30 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     });
   };
 
+  const isSales = currentUser?.role === 'Sales';
+  if (isSales) {
+    return (
+      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm text-center space-y-4 max-w-lg mx-auto mt-6">
+        <div className="w-14 h-14 bg-red-50 text-safety-red rounded-full flex items-center justify-center mx-auto border border-red-200">
+          <Shield className="w-7 h-7" />
+        </div>
+        <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Access Restricted</h2>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          The Sales role does not have access to the Generate Report module. Sales users cannot create, edit, or submit reports.
+        </p>
+        <p className="text-[11px] text-slate-500">
+          Logged in as <strong className="text-slate-800">{currentUser?.name}</strong> (Sales).
+        </p>
+        <button
+          onClick={onCancel}
+          className="px-5 py-2.5 bg-navy-900 text-white rounded-xl text-xs font-bold hover:bg-navy-800 transition-colors shadow-sm"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+
   const canPrepare = [
     'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
     'Engineer', 'engineer',
@@ -235,6 +259,10 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
   }
 
   const handleSubmit = (targetStatus) => {
+    if (isSales) {
+      showToast('Sales users are not permitted to save or submit reports', 'error');
+      return;
+    }
     if (!formData.site_id) {
       showToast('Please select a customer and site', 'error');
       return;

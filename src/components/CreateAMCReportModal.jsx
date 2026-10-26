@@ -226,6 +226,10 @@ export default function CreateAMCReportModal({
 
   const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 
+  if (currentUser?.role === 'Sales') {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden my-auto animate-in fade-in duration-200">

@@ -67,6 +67,39 @@ function AppContent() {
     return <LoginView />;
   }
 
+  // Route guard: Prevent Sales from opening Generate Report or report editor via direct URL
+  useEffect(() => {
+    const handleUrlRouting = () => {
+      const hash = (window.location.hash || '').replace('#', '').trim();
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') || hash;
+      if (tabParam === 'generate_report' || tabParam === 'report_editor') {
+        if (currentUser?.role === 'Sales') {
+          showToast('Sales users are not permitted to access Generate Report', 'error');
+          setActiveTab('dashboard');
+          window.location.hash = '';
+          return;
+        }
+        if (tabParam === 'generate_report') {
+          setIsGenerateReportModalOpen(true);
+        } else if (tabParam === 'report_editor') {
+          setActiveTab('report_editor');
+        }
+      }
+    };
+    handleUrlRouting();
+    window.addEventListener('hashchange', handleUrlRouting);
+    return () => window.removeEventListener('hashchange', handleUrlRouting);
+  }, [currentUser]);
+
+  // Tab guard: Sales can NEVER open report_editor
+  useEffect(() => {
+    if (activeTab === 'report_editor' && currentUser?.role === 'Sales') {
+      showToast('Sales users are not permitted to access Generate Report', 'error');
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, currentUser]);
+
   // Workflow Handlers
   const handleStartInspection = (jobOrVisit) => {
     setActiveJobForInspection(jobOrVisit);
@@ -83,6 +116,10 @@ function AppContent() {
   };
 
   const handleNewReport = (prefillData = null) => {
+    if (currentUser?.role === 'Sales') {
+      showToast('Sales users are not permitted to create reports', 'error');
+      return;
+    }
     if (prefillData && prefillData.report_type) {
       setEditingReport(prefillData);
       setActiveTab('report_editor');
@@ -238,7 +275,7 @@ function AppContent() {
             />
           )}
 
-          {activeTab === 'report_editor' && (
+          {activeTab === 'report_editor' && currentUser?.role !== 'Sales' && (
             <ReportEditor
               initialData={editingReport}
               onSave={handleSaveReport}
@@ -316,15 +353,17 @@ function AppContent() {
         )}
 
         {/* GENERATE REPORT MODAL - Displays ONLY the two permitted options (Part 2 & Part 6) */}
-        <GenerateReportModal
-          isOpen={isGenerateReportModalOpen}
-          onClose={() => setIsGenerateReportModalOpen(false)}
-          onSelectAMC={() => setShowAppCreateAmcModal(true)}
-          onSelectEmergency={() => setShowAppEmergencyModal(true)}
-        />
+        {currentUser?.role !== 'Sales' && (
+          <GenerateReportModal
+            isOpen={isGenerateReportModalOpen}
+            onClose={() => setIsGenerateReportModalOpen(false)}
+            onSelectAMC={() => setShowAppCreateAmcModal(true)}
+            onSelectEmergency={() => setShowAppEmergencyModal(true)}
+          />
+        )}
 
         {/* CREATE AMC REPORT MODAL */}
-        {showAppCreateAmcModal && (
+        {showAppCreateAmcModal && currentUser?.role !== 'Sales' && (
           <CreateAMCReportModal
             onClose={() => setShowAppCreateAmcModal(false)}
             onOpenChecklist={(visit) => {

@@ -53,7 +53,7 @@ export default function MoreMenu({ onSelectView }) {
         {
           id: 'reports',
           label: 'Inspection & Service Reports',
-          description: 'Generate, sign and print standard NFPA reports with official letterhead',
+          description: isSales ? 'View service reports and client service history' : 'Generate, sign and print standard NFPA reports with official letterhead',
           icon: FileText,
           iconColor: 'text-indigo-600 bg-indigo-50',
           badge: null,

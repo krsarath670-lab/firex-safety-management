@@ -2055,6 +2055,13 @@ app.get('/api/amc-visits/:id/checklist', (req, res) => {
 });
 
 app.post('/api/amc-visits/:id/checklist', (req, res) => {
+  const userRole = normalizeRole(req.user?.role || '');
+  if (userRole === 'Sales' || req.user?.role === 'Sales') {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: 'Sales users are not permitted to submit AMC inspection checklists.'
+    });
+  }
   const result = db.saveAmcVisitChecklist(req.params.id, req.body, req.user);
   if (!result) return res.status(404).json({ error: 'Visit not found' });
   res.json(result);
@@ -3103,6 +3110,15 @@ app.get('/api/reports/:id', (req, res) => {
 
 app.post('/api/reports', (req, res) => {
   // STRICT PERMISSION CHECK (Part 1 & Part 5):
+  // Sales is strictly forbidden from creating reports
+  const userRole = normalizeRole(req.user?.role || '');
+  if (userRole === 'Sales' || req.user?.role === 'Sales') {
+    return res.status(403).json({
+      error: 'Permission Denied',
+      message: 'Sales users are not permitted to create reports.'
+    });
+  }
+
   // Only Projects Manager, Engineer, Supervisor, Technician (and Admin) can prepare reports through Generate Report
   const allowedRoles = [
     'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
@@ -3111,10 +3127,10 @@ app.post('/api/reports', (req, res) => {
     'Technician', 'technician',
     'Admin', 'admin'
   ];
-  if (!allowedRoles.includes(req.user.role)) {
+  if (!allowedRoles.includes(req.user.role) && !allowedRoles.includes(userRole)) {
     return res.status(403).json({
       error: 'Permission Denied',
-      message: `Users with role '${req.user.role}' are not permitted to prepare reports.`
+      message: `Users with role '${req.user?.role}' are not permitted to prepare reports.`
     });
   }
 
@@ -3305,6 +3321,15 @@ app.post('/api/reports', (req, res) => {
 
 
 app.put('/api/reports/:id', (req, res) => {
+  // Sales has view-only access where permitted
+  const userRole = normalizeRole(req.user?.role || '');
+  if (userRole === 'Sales' || req.user?.role === 'Sales') {
+    return res.status(403).json({
+      error: 'Access Denied',
+      message: 'Sales users have view-only access to reports and cannot edit or complete them.'
+    });
+  }
+
   const existing = db.getById('reports', req.params.id);
   if (!existing) return res.status(404).json({ error: 'Report not found' });
 
@@ -3313,14 +3338,6 @@ app.put('/api/reports/:id', (req, res) => {
     return res.status(403).json({
       error: 'Access Denied',
       message: 'General Manager has view-only access to operational reports. GM does not approve reports.'
-    });
-  }
-
-  // Sales has view-only access where permitted
-  if (['Sales'].includes(req.user.role)) {
-    return res.status(403).json({
-      error: 'Access Denied',
-      message: 'Sales users have view-only access to reports and cannot edit or complete them.'
     });
   }
 
@@ -3585,6 +3602,14 @@ app.get('/api/emergency-calls/:id', (req, res) => {
 // Create new Emergency Call (Projects Manager, Engineer, Supervisor, Technician, GM, MD, Admin, Accounts)
 app.post('/api/emergency-calls', (req, res) => {
   try {
+    const userRole = normalizeRole(req.user?.role || '');
+    if (userRole === 'Sales' || req.user?.role === 'Sales') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Sales users are not permitted to create Emergency Call-Out Reports.'
+      });
+    }
+
     const allowedRoles = [
       'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
       'Engineer', 'engineer',
@@ -3594,7 +3619,7 @@ app.post('/api/emergency-calls', (req, res) => {
       'Admin', 'admin',
       'Accounts', 'accounts'
     ];
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role) && !allowedRoles.includes(userRole)) {
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You are not authorized to create Emergency Call-Out Reports.'
@@ -3670,6 +3695,14 @@ app.post('/api/emergency-calls', (req, res) => {
 // Update Emergency Call with role-based restriction enforcement
 app.put('/api/emergency-calls/:id', (req, res) => {
   try {
+    const userRole = normalizeRole(req.user?.role || '');
+    if (userRole === 'Sales' || req.user?.role === 'Sales') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Sales representatives have view-only access to Emergency Call-Out technical findings.'
+      });
+    }
+
     const existing = db.getEmergencyCallById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
 
@@ -3678,7 +3711,7 @@ app.put('/api/emergency-calls/:id', (req, res) => {
     const isEngineer = req.user.role === 'Engineer';
     const isSupervisor = req.user.role === 'Supervisor';
     const isTech = req.user.role === 'Technician';
-    const isSales = req.user.role === 'Sales';
+    const isSales = req.user.role === 'Sales' || normalizeRole(req.user?.role) === 'Sales';
     const isAccounts = ['Accounts', 'accounts'].includes(req.user.role);
     const isAdmin = ['Admin', 'admin'].includes(req.user.role);
     const isPM = req.user.role === 'Projects Manager';
@@ -3732,6 +3765,14 @@ app.put('/api/emergency-calls/:id', (req, res) => {
 // Quick action: Record Arrival On Site (Technician / Supervisor / PM / GM / Admin / Accounts)
 app.post('/api/emergency-calls/:id/arrival', (req, res) => {
   try {
+    const userRole = normalizeRole(req.user?.role || '');
+    if (userRole === 'Sales' || req.user?.role === 'Sales') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Sales users are not permitted to update emergency attendance.'
+      });
+    }
+
     const existing = db.getEmergencyCallById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
 
@@ -3754,6 +3795,14 @@ app.post('/api/emergency-calls/:id/arrival', (req, res) => {
 // Submit report for review (Technician, Supervisor, Engineer, GM, Admin, Accounts)
 app.post('/api/emergency-calls/:id/submit', (req, res) => {
   try {
+    const userRole = normalizeRole(req.user?.role || '');
+    if (userRole === 'Sales' || req.user?.role === 'Sales') {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Sales users are not permitted to submit emergency reports.'
+      });
+    }
+
     const existing = db.getEmergencyCallById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Emergency call not found' });
 

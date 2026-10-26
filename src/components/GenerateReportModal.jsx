@@ -22,9 +22,8 @@ export default function GenerateReportModal({
 }) {
   const { currentUser } = useApp();
 
-  if (!isOpen) return null;
-
   const role = currentUser?.role || '';
+  if (!isOpen || role === 'Sales') return null;
   const isAuthorized = [
     'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
     'Engineer', 'engineer',

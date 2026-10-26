@@ -24,6 +24,10 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
   const canEditTechnical = !isLocked && !isSales && !isAccounts;
   const canAssign = isGM || isEngineer || isSupervisor || isPM;
 
+  if (isNew && isSales) {
+    return null;
+  }
+
   // Form State
   const [formData, setFormData] = useState({
     call_number: call?.call_number || '',
@@ -238,6 +242,10 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
   // Save form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSales) {
+      showToast('Sales users are not permitted to create or modify emergency calls', 'error');
+      return;
+    }
     if (!formData.customer_name) {
       showToast('Customer name is required', 'error');
       return;
@@ -593,7 +601,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold text-slate-600">Arrival On Site</label>
-                  {!isLocked && (
+                  {!isLocked && !isSales && (
                     <button
                       type="button"
                       onClick={handleRecordArrivalNow}
@@ -624,7 +632,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold text-slate-600">Completion Time</label>
-                  {!isLocked && (
+                  {!isLocked && !isSales && (
                     <button
                       type="button"
                       onClick={handleRecordCompletionNow}
@@ -733,7 +741,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                           <td className="p-2 font-bold text-slate-900">{m.name}</td>
                           <td className="p-2 font-mono text-[11px] text-slate-600">{m.part_number || '-'}</td>
                           <td className="p-2 text-right font-bold text-slate-900">{m.quantity} {m.unit}</td>
-                          {!isLocked && (
+                          {!isLocked && !isSales && (
                             <td className="p-2 text-center">
                               <button
                                 type="button"
@@ -822,7 +830,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                       }`}>
                         {p.category}
                       </span>
-                      {!isLocked && (
+                      {!isLocked && !isSales && (
                         <button
                           type="button"
                           onClick={() => handleRemovePhoto(p.id)}
@@ -917,7 +925,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                   )}
                 </div>
 
-                {!isLocked && (
+                {!isLocked && !isSales && (
                   <button
                     type="button"
                     onClick={() => {
@@ -946,7 +954,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                   )}
                 </div>
 
-                {!isLocked && (
+                {!isLocked && !isSales && (
                   <button
                     type="button"
                     onClick={() => {
@@ -975,7 +983,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                   )}
                 </div>
 
-                {!isLocked && (isSupervisor || isEngineer || isGM) && (
+                {!isLocked && !isSales && (isSupervisor || isEngineer || isGM) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1002,7 +1010,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               Cancel
             </button>
 
-            {!isLocked && (
+            {!isLocked && !isSales && (
               <div className="w-full sm:w-auto flex items-center gap-2">
                 <button
                   type="submit"

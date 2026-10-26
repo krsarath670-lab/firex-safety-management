@@ -184,7 +184,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
             Official field reports, digital reviews, and FIREX A4 PDFs.
           </p>
         </div>
-        {canPrepareReports ? (
+        {canPrepareReports && !isSales ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowGenerateModal(true)}
@@ -450,15 +450,17 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
       )}
 
       {/* GENERATE REPORT MODAL - Displays ONLY the two permitted options (Part 2 & Part 6) */}
-      <GenerateReportModal
-        isOpen={showGenerateModal}
-        onClose={() => setShowGenerateModal(false)}
-        onSelectAMC={() => setShowCreateAmcModal(true)}
-        onSelectEmergency={() => setShowEmergencyModal(true)}
-      />
+      {!isSales && (
+        <GenerateReportModal
+          isOpen={showGenerateModal}
+          onClose={() => setShowGenerateModal(false)}
+          onSelectAMC={() => setShowCreateAmcModal(true)}
+          onSelectEmergency={() => setShowEmergencyModal(true)}
+        />
+      )}
 
       {/* CREATE AMC REPORT MODAL (Customer -> AMC Contract -> Quarter -> Visit Selection) */}
-      {showCreateAmcModal && (
+      {!isSales && showCreateAmcModal && (
         <CreateAMCReportModal
           onClose={() => setShowCreateAmcModal(false)}
           onOpenChecklist={(visit) => {
@@ -473,7 +475,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
       )}
 
       {/* CREATE EMERGENCY CALL-OUT REPORT MODAL */}
-      {showEmergencyModal && (
+      {!isSales && showEmergencyModal && (
         <EmergencyCalloutModal
           onClose={() => setShowEmergencyModal(false)}
           onSaved={(newCall) => {

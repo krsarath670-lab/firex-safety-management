@@ -293,7 +293,7 @@ const ROLE_PERMISSIONS = {
     canCreateQuotations: true,
     canManageFaults: false,
     canManageMaterials: false,
-    canManageReports: 'own_work',
+    canManageReports: false,
     canPrepareReports: false,
     canViewReports: 'own_work',
     canDeleteReports: false,
