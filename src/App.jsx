@@ -62,13 +62,9 @@ function AppContent() {
   const [appPreviewingVisit, setAppPreviewingVisit] = useState(null);
   const [appPreviewingEmergencyCall, setAppPreviewingEmergencyCall] = useState(null);
 
-  // If not logged in, enforce Password Login Screen
-  if (!isAuthenticated) {
-    return <LoginView />;
-  }
-
   // Route guard: Prevent Sales from opening Generate Report or report editor via direct URL
   useEffect(() => {
+    if (!isAuthenticated) return;
     const handleUrlRouting = () => {
       const hash = (window.location.hash || '').replace('#', '').trim();
       const params = new URLSearchParams(window.location.search);
@@ -90,15 +86,21 @@ function AppContent() {
     handleUrlRouting();
     window.addEventListener('hashchange', handleUrlRouting);
     return () => window.removeEventListener('hashchange', handleUrlRouting);
-  }, [currentUser]);
+  }, [currentUser, isAuthenticated]);
 
   // Tab guard: Sales can NEVER open report_editor
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (activeTab === 'report_editor' && currentUser?.role === 'Sales') {
       showToast('Sales users are not permitted to access Generate Report', 'error');
       setActiveTab('dashboard');
     }
-  }, [activeTab, currentUser]);
+  }, [activeTab, currentUser, isAuthenticated]);
+
+  // If not logged in, enforce Password Login Screen (ALWAYS after all hooks!)
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   // Workflow Handlers
   const handleStartInspection = (jobOrVisit) => {
