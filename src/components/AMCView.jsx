@@ -5,7 +5,7 @@ import { exportAmcToExcel, exportMonthlyScheduleToExcel } from '../utils/excelEx
 import { 
   FileCheck, Calendar, Clock, AlertTriangle, CheckCircle2, 
   Search, Plus, ShieldCheck, ChevronRight, ChevronLeft, Sliders, Bell, 
-  Building2, UserCheck, Flame, Wrench, RefreshCw, Filter, Eye, Grid, List,
+  Building2, UserCheck, MapPin, Flame, Wrench, RefreshCw, Filter, Eye, Grid, List,
   Trash2, Edit, Printer, Download, FileSpreadsheet, X, FileText
 } from 'lucide-react';
 
@@ -37,7 +37,8 @@ export default function AMCView({ onStartInspectionForVisit }) {
   const [activeQuarterTab, setActiveQuarterTab] = useState('Q1'); // 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'overview_table'
   const [quarterSaving, setQuarterSaving] = useState(false);
   // Mark Quarter Finished & Status Management Modal
-  const [quarterStatusModal, setQuarterStatusModal] = useState(null); // { contract, quarterKey, quarterData }
+  const [quarterStatusModal, setQuarterStatusModal] = useState(null);
+  const [showManualSiteEntry, setShowManualSiteEntry] = useState(false); // { contract, quarterKey, quarterData }
 
   // Print Monthly Schedule Modal
   const [showPrintScheduleModal, setShowPrintScheduleModal] = useState(false);
@@ -114,7 +115,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
     return {
       customer_id: '',
+      customer_name: '',
       site_id: '',
+      site_name: '',
+      site_address: '',
       contract_type: 'Comprehensive',
       start_date: todayStr,
       end_date: oneYearLater,
@@ -1325,12 +1329,19 @@ export default function AMCView({ onStartInspectionForVisit }) {
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-bold text-slate-900 mt-1.5">
-                        {c.site_name}
+                      <h3 className="text-sm font-bold text-slate-900 mt-1.5 flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span>{c.customer_name || 'Customer'}</span>
                       </h3>
-                      <p className="text-xs text-slate-500 font-medium">
-                        {c.customer_name}
-                      </p>
+                      <div className="flex items-center gap-1 text-xs text-slate-600 font-semibold mt-0.5">
+                        <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span>{c.site_name || 'Main Facility'}</span>
+                        {c.site_address && (
+                          <span className="text-slate-400 font-normal truncate max-w-xs hidden sm:inline">
+                            • {c.site_address}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Expiry Countdown Tag */}
@@ -2310,8 +2321,18 @@ const qData = c.quarters?.[qKey] || { status: 'Not Started' };
                   value={newContract.customer_id}
                   onChange={(e) => {
                     const cid = e.target.value;
-                    const defaultSite = sites.find((s) => s.customer_id === cid)?.id || '';
-                    setNewContract((prev) => ({ ...prev, customer_id: cid, site_id: defaultSite }));
+                    const cust = customers.find((c) => c.id === cid);
+                    const custSites = sites.filter((s) => s.customer_id === cid);
+                    const defaultSite = custSites[0];
+                    setNewContract((prev) => ({
+                      ...prev,
+                      customer_id: cid,
+                      customer_name: cust ? cust.name : '',
+                      site_id: defaultSite?.id || '',
+                      site_name: defaultSite?.site_name || '',
+                      site_address: defaultSite?.site_address || defaultSite?.address || ''
+                    }));
+                    setShowManualSiteEntry(custSites.length === 0);
                   }}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 text-xs font-medium"
                 >
@@ -2322,22 +2343,79 @@ const qData = c.quarters?.[qKey] || { status: 'Not Started' };
                 </select>
               </div>
 
-              {/* Site Selection */}
+              {/* Site Selection & Address */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Site / Premises *</label>
-                <select
-                  required
-                  value={newContract.site_id}
-                  onChange={(e) => setNewContract((prev) => ({ ...prev, site_id: e.target.value }))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 text-xs font-medium"
-                >
-                  <option value="">-- Select Site --</option>
-                  {sites
-                    .filter((s) => !newContract.customer_id || s.customer_id === newContract.customer_id)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>{s.site_name}</option>
-                    ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Site / Premises *</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualSiteEntry(!showManualSiteEntry)}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{showManualSiteEntry ? 'Select Existing Site' : '+ New Site / Manual Entry'}</span>
+                  </button>
+                </div>
+
+                {!showManualSiteEntry ? (
+                  <select
+                    required
+                    value={newContract.site_id}
+                    onChange={(e) => {
+                      const sid = e.target.value;
+                      const s = sites.find((x) => x.id === sid);
+                      setNewContract((prev) => ({
+                        ...prev,
+                        site_id: sid,
+                        site_name: s ? s.site_name : '',
+                        site_address: s ? (s.site_address || s.address || '') : ''
+                      }));
+                    }}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 text-xs font-medium"
+                  >
+                    <option value="">-- Select Registered Site --</option>
+                    {sites
+                      .filter((s) => !newContract.customer_id || s.customer_id === newContract.customer_id)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.site_name} {s.site_address ? `(${s.site_address})` : ''}
+                        </option>
+                      ))}
+                  </select>
+                ) : (
+                  <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200 space-y-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-blue-900 mb-1">New Site / Facility Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newContract.site_name}
+                        onChange={(e) => setNewContract((prev) => ({ ...prev, site_name: e.target.value }))}
+                        placeholder="e.g. Main Complex / Embassy Chancery / Building B"
+                        className="w-full p-2 bg-white border border-blue-300 rounded-lg text-xs font-bold text-navy-950 shadow-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Site Address Input */}
+                <div className="mt-2">
+                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Site Physical Address *</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newContract.site_address || ''}
+                    onChange={(e) => setNewContract((prev) => ({ ...prev, site_address: e.target.value }))}
+                    placeholder="Building, Road, Block, Area, Kingdom of Bahrain"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Saved directly to the contract, visit schedules, and printed civil defense reports.
+                  </span>
+                </div>
               </div>
 
               {/* Quotation Number & Contract Type */}
@@ -3839,6 +3917,31 @@ const qData = c.quarters?.[qKey] || { status: 'Not Started' };
               {/* TAB 1: OVERVIEW */}
               {detailTab === 'overview' && (
                 <div className="space-y-4">
+                  {/* Site & Address Context Box */}
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Customer:</span>
+                        <span className="font-extrabold text-navy-950 text-sm">{viewingContractDetail.customer_name || 'Customer'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Site / Premises:</span>
+                        <span className="font-bold text-blue-900 flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{viewingContractDetail.site_name || 'Main Facility'}</span>
+                        </span>
+                      </div>
+                      {viewingContractDetail.site_address && (
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Site Address:</span>
+                          <span className="flex items-center gap-1 text-[11px] font-medium">
+                            <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                            <span>{viewingContractDetail.site_address}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   {/* Key Info Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div>

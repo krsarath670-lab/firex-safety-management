@@ -695,11 +695,12 @@ if (!fs.existsSync(DB_FILE)) {
 const { Pool } = require('pg');
 
 class Database {
-  constructor() {
+    constructor() {
     this.filePath = DB_FILE;
     this.isPostgres = !!process.env.DATABASE_URL;
     this.memoryCache = null;
     this.pgPool = null;
+    this.readyPromise = null;
 
     if (this.isPostgres) {
       console.log('[FIREX DB] Persistent PostgreSQL cloud database detected via DATABASE_URL.');
@@ -708,12 +709,22 @@ class Database {
           connectionString: process.env.DATABASE_URL,
           ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
         });
-        this.initPostgres();
+        this.readyPromise = this.initPostgres();
       } catch (err) {
         console.error('[FIREX DB] Failed initializing PostgreSQL pool, using local fallback:', err);
         this.isPostgres = false;
+        this.readyPromise = Promise.resolve();
       }
+    } else {
+      this.readyPromise = Promise.resolve();
     }
+  }
+
+  async ready() {
+    if (this.readyPromise) {
+      await this.readyPromise;
+    }
+    return true;
   }
 
   async initPostgres() {
@@ -2045,10 +2056,24 @@ class Database {
     return data;
   }
 
-  read() {
+    read() {
     let data;
-    if (this.isPostgres && this.memoryCache) {
-      data = this.memoryCache;
+    if (this.isPostgres) {
+      if (this.memoryCache) {
+        data = this.memoryCache;
+        return this.ensureSchema(data);
+      } else {
+        // PostgreSQL is configured but memoryCache has not loaded yet.
+        // Return read-only data from local fallback WITHOUT calling ensureSchema or triggering write()
+        console.warn('[FIREX DB] Warning: read() called while PostgreSQL memoryCache is still loading. Serving read-only fallback.');
+        try {
+          const raw = fs.readFileSync(this.filePath, 'utf8');
+          data = JSON.parse(raw);
+        } catch (e) {
+          data = initialSeed;
+        }
+        return data;
+      }
     } else {
       try {
         const raw = fs.readFileSync(this.filePath, 'utf8');
@@ -2058,8 +2083,8 @@ class Database {
         this.write(initialSeed);
         data = initialSeed;
       }
+      return this.ensureSchema(data);
     }
-    return this.ensureSchema(data);
   }
 
   write(data) {
@@ -3407,6 +3432,8 @@ class Database {
         matched.day_of_week = item.day;
         matched.sales_person_id = contract.sales_person_id || matched.sales_person_id;
         matched.sales_person_name = salesPersonName;
+        matched.site_name = contract.site_name || matched.site_name;
+        matched.site_address = contract.site_address || matched.site_address;
         matched.services_status = matched.services_status || {};
         item.systems.forEach(s => {
           if (!matched.services_status[s]) {
@@ -3432,6 +3459,7 @@ class Database {
           customer_name: contract.customer_name || 'Customer',
           site_id: contract.site_id,
           site_name: contract.site_name || 'Site',
+          site_address: contract.site_address || '',
           sales_person_id: contract.sales_person_id || null,
           sales_person_name: salesPersonName,
           visit_number: item.visit_number,

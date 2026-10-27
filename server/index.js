@@ -1471,6 +1471,16 @@ const getAmcContractsHandler = (req, res) => {
     const sp = users.find(u => u.id === contract.sales_person_id);
     const spName = sp ? sp.name : (contract.sales_person_name || 'Unassigned');
 
+    const customerName = customer ? customer.name : (contract.customer_name || 'Customer Not Specified');
+    const siteName = site ? site.site_name : (contract.site_name || 'Site Not Specified');
+    const siteAddress = site ? (site.site_address || site.address || '') : (contract.site_address || '');
+
+    const supervisorUser = users.find(u => u.id === contract.supervisor_id);
+    const supervisorName = supervisorUser ? supervisorUser.name : (contract.supervisor_name || contract.assigned_supervisor || 'Unassigned Supervisor');
+
+    const techUser = users.find(u => u.id === contract.technician_id);
+    const technicianName = techUser ? techUser.name : (contract.technician_name || contract.assigned_technician || 'Unassigned Technician');
+
     const numVal = Number(contract.contract_value) || 0;
     const vatPct = contract.vat_percent !== undefined ? Number(contract.vat_percent) : 10;
     const vatAmt = contract.vat_amount !== undefined ? Number(contract.vat_amount) : Math.round(numVal * (vatPct / 100) * 1000) / 1000;
@@ -1502,8 +1512,15 @@ const getAmcContractsHandler = (req, res) => {
       services_due: servicesDue,
       service_start_date: contract.service_start_date || contract.start_date,
       extinguisher_start_date: contract.extinguisher_start_date || contract.service_start_date || contract.start_date,
-      customer_name: customer ? customer.name : 'Unknown Customer',
-      site_name: site ? site.site_name : 'Unknown Site',
+      customer_name: customerName,
+      site_name: siteName,
+      site_address: siteAddress,
+      supervisor_id: contract.supervisor_id || supervisorUser?.id || null,
+      supervisor_name: supervisorName,
+      assigned_supervisor: supervisorName,
+      technician_id: contract.technician_id || techUser?.id || null,
+      technician_name: technicianName,
+      assigned_technician: technicianName,
       sales_person_id: contract.sales_person_id,
       sales_person_name: spName,
       contract_start_date: contract.start_date,
@@ -1574,8 +1591,15 @@ const getAmcContractByIdHandler = (req, res) => {
 
   res.json({
     ...sanitized,
-    customer_name: customer ? customer.name : 'Unknown Customer',
-    site_name: site ? site.site_name : 'Unknown Site',
+    customer_name: customer ? customer.name : (contract.customer_name || 'Unknown Customer'),
+    site_name: site ? site.site_name : (contract.site_name || 'Unknown Site'),
+    site_address: site ? (site.site_address || site.address || '') : (contract.site_address || ''),
+    supervisor_id: contract.supervisor_id || null,
+    supervisor_name: contract.supervisor_name || contract.assigned_supervisor || 'Unassigned Supervisor',
+    assigned_supervisor: contract.assigned_supervisor || contract.supervisor_name || 'Unassigned Supervisor',
+    technician_id: contract.technician_id || null,
+    technician_name: contract.technician_name || contract.assigned_technician || 'Unassigned Technician',
+    assigned_technician: contract.assigned_technician || contract.technician_name || 'Unassigned Technician',
     sales_person_id: contract.sales_person_id,
     sales_person_name: spName,
     contract_start_date: contract.start_date,
@@ -1629,8 +1653,8 @@ const postAmcContractHandler = (req, res) => {
     assigned_supervisor
   } = req.body;
 
-  if (!customer_id || !site_id || !start_date || !end_date) {
-    return res.status(400).json({ error: 'Customer, Site, Start Date and End Date are required.' });
+  if (!customer_id || (!site_id && !req.body.site_name) || !start_date || !end_date) {
+    return res.status(400).json({ error: 'Customer, Site (or Site Name), Start Date and End Date are required.' });
   }
 
   const isSales = req.user.role === 'Sales';
@@ -1670,10 +1694,45 @@ const postAmcContractHandler = (req, res) => {
   const finalTechnicianId = req.body.technician_id || techUser?.id || null;
   const finalTechnicianName = req.body.assigned_technician || techUser?.name || 'Unassigned Technician';
 
+  const customers = db.get('customers') || [];
+  const sites = db.get('sites') || [];
+  const customer = customers.find(c => c.id === customer_id);
+  const resolvedCustomerName = customer ? customer.name : (req.body.customer_name || 'Customer Not Specified');
+
+  let resolvedSiteId = site_id;
+  let resolvedSiteName = (req.body.site_name || '').trim();
+  let resolvedSiteAddress = (req.body.site_address || '').trim();
+
+  let existingSite = sites.find(s => s.id === site_id);
+  if (existingSite) {
+    resolvedSiteName = resolvedSiteName || existingSite.site_name;
+    resolvedSiteAddress = resolvedSiteAddress || existingSite.site_address || existingSite.address || '';
+  } else if (resolvedSiteName && customer_id) {
+    const duplicateSite = sites.find(s => s.customer_id === customer_id && s.site_name.toLowerCase() === resolvedSiteName.toLowerCase());
+    if (duplicateSite) {
+      resolvedSiteId = duplicateSite.id;
+      resolvedSiteName = duplicateSite.site_name;
+      resolvedSiteAddress = resolvedSiteAddress || duplicateSite.site_address || duplicateSite.address || '';
+    } else {
+      const newSite = db.insert('sites', {
+        customer_id,
+        site_name: resolvedSiteName,
+        site_address: resolvedSiteAddress,
+        created_at: new Date().toISOString()
+      });
+      resolvedSiteId = newSite.id;
+      resolvedSiteName = newSite.site_name;
+      resolvedSiteAddress = newSite.site_address;
+    }
+  }
+
   const newContract = db.insert('amc_contracts', {
     contract_number,
     customer_id,
-    site_id,
+    customer_name: resolvedCustomerName,
+    site_id: resolvedSiteId,
+    site_name: resolvedSiteName,
+    site_address: resolvedSiteAddress,
     sales_person_id,
     sales_person_name,
     contract_type: contract_type || 'Comprehensive',
@@ -1725,7 +1784,7 @@ const putAmcContractHandler = (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Contract not found' });
 
   // Access restricted strictly to GM, Managing Director, Engineer, and Supervisor
-  if (!['GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(req.user.role)) {
+  if (!['Admin', 'CEO', 'GM', 'Managing Director (MD)', 'Managing Director', 'managing_director', 'Engineer', 'Supervisor'].includes(req.user.role)) {
     return res.status(403).json({
       error: 'Access Denied',
       message: 'Access restricted: Only GM, Managing Director, Engineer, and Supervisor can edit AMC contracts.'
@@ -4313,9 +4372,24 @@ if (require('fs').existsSync(distPath)) {
   });
 }
 
-if (require.main === module) {
+async function startServer() {
+  try {
+    if (typeof db.ready === 'function') {
+      await db.ready();
+      console.log('[FIREX SERVER] Database is ready and fully initialized.');
+    }
+  } catch (err) {
+    console.error('[FIREX SERVER] Warning during db.ready():', err);
+  }
   app.listen(PORT, () => {
     console.log(`Fire & Safety Management API running on port ${PORT}`);
+  });
+}
+
+if (require.main === module) {
+  startServer().catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   });
 }
 
