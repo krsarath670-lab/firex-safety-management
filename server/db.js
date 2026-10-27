@@ -2800,8 +2800,11 @@ class Database {
       const scheduledDate = firstVisit?.scheduled_date || defaultDate;
 
       // Existing stored quarter inspection data (e.g. from manual technician/supervisor submission)
-      const savedQuarter = contract.quarters?.[q];
+            const savedQuarter = contract.quarters?.[q];
       const isManualUpdate = savedQuarter && (
+        savedQuarter.status ||
+        savedQuarter.status_changed_at ||
+        savedQuarter.finished_at ||
         savedQuarter.updated_at ||
         (savedQuarter.checklist && Object.keys(savedQuarter.checklist).length > 0 && !['2026-02-15', '2026-05-18', '2026-08-20', '2026-11-15'].includes(savedQuarter.scheduled_date))
       );
@@ -2824,7 +2827,13 @@ class Database {
           scheduled_date: (savedQuarter.scheduled_date && !['2026-02-15', '2026-05-18', '2026-08-20', '2026-11-15'].includes(savedQuarter.scheduled_date))
             ? savedQuarter.scheduled_date
             : scheduledDate,
-          actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (savedQuarter.status === 'Completed' ? scheduledDate : null),
+          is_historical_finished: savedQuarter.is_historical_finished || (!reportId && (savedQuarter.status === 'Finished' || savedQuarter.status === 'Completed')),
+          finished_at: savedQuarter.finished_at || null,
+          finished_by: savedQuarter.finished_by || null,
+          status_changed_at: savedQuarter.status_changed_at || null,
+          status_changed_by: savedQuarter.status_changed_by || null,
+          status_notes: savedQuarter.status_notes || savedQuarter.notes || '',
+          actual_visit_date: savedQuarter.actual_visit_date || firstVisit?.actual_service_date || (['Finished', 'Completed'].includes(savedQuarter.status) ? scheduledDate : null),
           systems_inspected: systemsInspected,
           systems_label: systemsLabel,
           report_id: reportId,
@@ -2899,6 +2908,106 @@ class Database {
     this.logAudit(user ? user.id : 'system', 'UPDATE_QUARTER_INSPECTION', 'amc_contracts', contractId, `Updated ${quarterKey} inspection for AMC ${contract.contract_number}. Status: ${contract.quarters[quarterKey].status}`);
     return contract.quarters[quarterKey];
   }
+
+  // Mark or update quarter status (Finished, Pending, In Progress, Not Required)
+  setQuarterStatus(contractId, quarterKey, statusData = {}, user = null) {
+    const db = this.read();
+    if (!db.amc_contracts) return null;
+
+    const index = db.amc_contracts.findIndex(c => c.id === contractId);
+    if (index === -1) return null;
+
+    const contract = db.amc_contracts[index];
+    contract.quarters = contract.quarters || this.getContractQuarters(contractId) || {};
+
+    const rawStatus = (statusData.status || 'Finished').trim();
+    let status = 'Finished';
+    if (['finished', 'completed', 'done'].includes(rawStatus.toLowerCase())) {
+      status = 'Finished';
+    } else if (['pending', 'scheduled', 'not started'].includes(rawStatus.toLowerCase())) {
+      status = 'Pending';
+    } else if (['in progress', 'inprogress'].includes(rawStatus.toLowerCase())) {
+      status = 'In Progress';
+    } else if (['not required', 'waived', 'cancelled', 'exempt'].includes(rawStatus.toLowerCase())) {
+      status = 'Not Required';
+    } else {
+      status = rawStatus;
+    }
+
+    const nowIso = new Date().toISOString();
+    const userName = user?.name || (user?.email ? user.email.split('@')[0] : 'Authorized User');
+    const actualDate = statusData.actual_date || (status === 'Finished' ? new Date().toISOString().split('T')[0] : null);
+
+    const existingQuarter = contract.quarters[quarterKey] || {};
+    const oldStatus = existingQuarter.status || 'Pending';
+
+    const updatedQuarter = {
+      ...existingQuarter,
+      quarter: quarterKey,
+      status,
+      status_changed_at: nowIso,
+      status_changed_by: userName,
+      status_notes: statusData.notes || existingQuarter.status_notes || '',
+      updated_at: nowIso
+    };
+
+    if (status === 'Finished') {
+      updatedQuarter.finished_at = existingQuarter.finished_at || nowIso;
+      updatedQuarter.finished_by = existingQuarter.finished_by || userName;
+      if (actualDate) updatedQuarter.actual_visit_date = actualDate;
+      if (!existingQuarter.report_id) {
+        updatedQuarter.is_historical_finished = true;
+      }
+    } else if (status === 'Pending') {
+      delete updatedQuarter.finished_at;
+      delete updatedQuarter.finished_by;
+      updatedQuarter.is_historical_finished = false;
+    }
+
+    contract.quarters[quarterKey] = updatedQuarter;
+    db.amc_contracts[index] = contract;
+
+    // Synchronize corresponding visit in db.amc_visits so schedule and pending lists stay accurate
+    const qIndexMap = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
+    const qSeq = qIndexMap[quarterKey] || 1;
+
+    if (Array.isArray(db.amc_visits)) {
+      const visitIdx = db.amc_visits.findIndex(v => 
+        (v.amc_contract_id === contractId || v.amc_id === contractId || v.contract_id === contractId) &&
+        (v.quarter === quarterKey || v.service_cycle === quarterKey || v.service_sequence === qSeq || v.visit_number === qSeq)
+      );
+
+      if (visitIdx !== -1) {
+        const visit = { ...db.amc_visits[visitIdx] };
+        if (status === 'Finished') {
+          visit.status = 'Completed';
+          if (actualDate) visit.actual_service_date = actualDate;
+          if (!visit.report_id) visit.is_historical_finished = true;
+        } else if (status === 'In Progress') {
+          visit.status = 'In Progress';
+        } else if (status === 'Pending') {
+          visit.status = 'Scheduled';
+        } else if (status === 'Not Required') {
+          visit.status = 'Cancelled';
+          visit.is_not_required = true;
+        }
+        visit.updated_at = nowIso;
+        db.amc_visits[visitIdx] = visit;
+      }
+    }
+
+    this.write(db);
+    this.logAudit(
+      user ? user.id : 'system',
+      'UPDATE_QUARTER_STATUS',
+      'amc_contracts',
+      contractId,
+      `Changed AMC ${contract.contract_number} ${quarterKey} status from '${oldStatus}' to '${status}' by ${userName}`
+    );
+
+    return { quarter: updatedQuarter, contract };
+  }
+
 
   // Financial KPI Summary for Accounts & GM
   getFinancialSummary(user = null) {

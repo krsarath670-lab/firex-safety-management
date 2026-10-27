@@ -826,12 +826,31 @@ app.get('/api/dashboard/stats', (req, res) => {
   });
 
   let q1Done = 0, q2Done = 0, q3Done = 0, q4Done = 0;
+  let finishedQuartersCount = 0, pendingQuartersCount = 0, inProgressQuartersCount = 0, notRequiredQuartersCount = 0, contractsAllFinishedCount = 0;
   amcsList.forEach(a => {
     const q = a.quarters || db.getContractQuarters(a.id);
-    if (q?.Q1?.status === 'Completed' || q?.Q1?.status === 'Report Approved') q1Done++;
-    if (q?.Q2?.status === 'Completed' || q?.Q2?.status === 'Report Approved') q2Done++;
-    if (q?.Q3?.status === 'Completed' || q?.Q3?.status === 'Report Approved') q3Done++;
-    if (q?.Q4?.status === 'Completed' || q?.Q4?.status === 'Report Approved') q4Done++;
+    let reqCount = 0, finCount = 0;
+    ['Q1', 'Q2', 'Q3', 'Q4'].forEach(qk => {
+      const st = q?.[qk]?.status || 'Pending';
+      if (['Completed', 'Finished', 'Report Approved', 'Approved'].includes(st)) {
+        finishedQuartersCount++;
+        reqCount++;
+        finCount++;
+        if (qk === 'Q1') q1Done++;
+        if (qk === 'Q2') q2Done++;
+        if (qk === 'Q3') q3Done++;
+        if (qk === 'Q4') q4Done++;
+      } else if (['In Progress'].includes(st)) {
+        inProgressQuartersCount++;
+        reqCount++;
+      } else if (['Not Required'].includes(st)) {
+        notRequiredQuartersCount++;
+      } else {
+        pendingQuartersCount++;
+        reqCount++;
+      }
+    });
+    if (reqCount > 0 && finCount === reqCount) contractsAllFinishedCount++;
   });
 
   const quarters_count = {
@@ -880,6 +899,14 @@ app.get('/api/dashboard/stats', (req, res) => {
       q3Done: quarters_count.q3,
       q4Done: quarters_count.q4,
       totalContracts: amcsList.length
+    },
+    amcQuarterStats: {
+      totalContracts: amcsList.length,
+      finishedQuarters: finishedQuartersCount,
+      pendingQuarters: pendingQuartersCount,
+      inProgressQuarters: inProgressQuartersCount,
+      notRequiredQuarters: notRequiredQuartersCount,
+      contractsAllFinished: contractsAllFinishedCount
     },
     // AMC Service Cards & Radar (Requirement 9)
     amc_service_cards: db.getAmcDashboardCards(null),
@@ -2643,6 +2670,33 @@ app.post('/api/amc-contracts/:id/quarters/:quarter/schedule', (req, res) => {
 app.post('/api/amc-contracts/:id/quarters/:quarter/report', (req, res) => {
   const contract = db.getById('amc_contracts', req.params.id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
+
+// Update Quarter Status directly (Mark as Finished, Pending, In Progress, Not Required)
+app.put('/api/amc-contracts/:id/quarters/:quarter/status', requireRole('Admin', 'CEO', 'Managing Director', 'Managing Director (MD)', 'managing_director', 'GM', 'Engineer', 'Supervisor'), (req, res) => {
+  try {
+    const { id, quarter } = req.params;
+    const { status, actual_date, notes } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    const result = db.setQuarterStatus(id, quarter, { status, actual_date, notes }, req.user);
+    if (!result) {
+      return res.status(404).json({ error: 'AMC contract not found' });
+    }
+
+    res.json({
+      success: true,
+      message: `${quarter} status updated to ${result.quarter.status}`,
+      quarter: result.quarter,
+      contract: result.contract
+    });
+  } catch (err) {
+    console.error('Error updating quarter status:', err);
+    res.status(500).json({ error: 'Failed to update quarter status: ' + err.message });
+  }
+});
 
   const { action, report_data } = req.body;
   const qKey = req.params.quarter;
