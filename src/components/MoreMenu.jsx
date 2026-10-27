@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, Building2, Wrench, Package, Sparkles, 
   Settings, Users, WifiOff, RefreshCw, ChevronRight, Bell, Shield, Receipt, Flame,
-  Briefcase, FileText, ShieldAlert
+  Briefcase, FileText, ShieldAlert, Database
 } from 'lucide-react';
 
 export default function MoreMenu({ onSelectView }) {
@@ -136,6 +136,16 @@ export default function MoreMenu({ onSelectView }) {
           badge: canManageStaff ? (isAdmin ? 'Admin' : 'Manage') : null,
           badgeColor: 'bg-purple-100 text-purple-800',
           hide: !canManageStaff
+        },
+        {
+          id: 'backups',
+          label: 'System Backups & Recovery',
+          description: 'Durable cloud database snapshots, disaster recovery & permanent restore points',
+          icon: Database,
+          iconColor: 'text-blue-700 bg-blue-50',
+          badge: 'Permanent',
+          badgeColor: 'bg-emerald-100 text-emerald-800 font-bold',
+          hide: !canAccessAudit
         },
         {
           id: 'audit_logs',

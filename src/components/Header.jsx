@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut, Flame, FileText } from 'lucide-react';
+import { Shield, Bell, Wifi, WifiOff, Smartphone, Monitor, Tablet, UserCheck, ChevronDown, CheckCircle, AlertTriangle, Lock, Key, LogOut, Flame, FileText, RotateCw } from 'lucide-react';
 
 export default function Header() {
   const {
@@ -19,7 +19,9 @@ export default function Header() {
     companySettings,
     logout,
     setIsLoginModalOpen,
-    dashboardStats
+    dashboardStats,
+    isRefreshing,
+    refreshAllData
   } = useApp();
 
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
@@ -147,6 +149,23 @@ export default function Header() {
                 <span className="hidden xs:inline">Online</span>
               </>
             )}
+          </button>
+
+          {/* In-App Real-Time Data Refresh Button */}
+          <button
+            onClick={refreshAllData}
+            disabled={isRefreshing}
+            title="Refresh application data from database without closing app or logging out"
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${
+              isRefreshing
+                ? 'bg-blue-600/40 text-blue-200 border-blue-400/50 cursor-wait'
+                : 'bg-blue-600/20 hover:bg-blue-600/35 active:bg-blue-600/50 text-blue-300 hover:text-white border-blue-500/40 active:scale-95'
+            }`}
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-200' : 'text-blue-400'}`} />
+            <span className="inline text-[11px] sm:text-xs">
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </span>
           </button>
 
           {/* Emergency Call-Out Quick Button */}

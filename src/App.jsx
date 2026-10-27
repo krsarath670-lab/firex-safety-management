@@ -20,6 +20,7 @@ import MoreMenu from './components/MoreMenu';
 import EmergencyCalloutView from './components/EmergencyCalloutView';
 import ProjectsView from './components/ProjectsView';
 import AuditLogView from './components/AuditLogView';
+import BackupsView from './components/BackupsView';
 import AIAssistantModal from './components/AIAssistantModal';
 import LoginModal from './components/LoginModal';
 import LoginView from './components/LoginView';
@@ -311,6 +312,8 @@ function AppContent() {
           {activeTab === 'emergency' && <EmergencyCalloutView />}
 
           {activeTab === 'audit_logs' && <AuditLogView />}
+
+          {activeTab === 'backups' && <BackupsView />}
 
           {activeTab === 'more' && (
             <MoreMenu

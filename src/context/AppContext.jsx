@@ -25,6 +25,8 @@ export function AppProvider({ children }) {
   const [toast, setToast] = useState(null);
   const [activeModal, setActiveModal] = useState(null); // { type, data }
   const [projectsFilter, setProjectsFilter] = useState('All'); // 'All' | 'Active' | 'Starting Soon' | 'Due Soon' | 'Completed' | 'Delayed' | 'Defects'
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dataRevision, setDataRevision] = useState(0);
 
   // Show temporary toast message
   const showToast = (message, type = 'success') => {
@@ -297,6 +299,46 @@ export function AppProvider({ children }) {
     showToast(`Saved to device offline storage (${type})`, 'info');
   };
 
+  // Real-time complete data refresh from database
+  const refreshAllData = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      // 1. Tell backend to refresh from Postgres if connected
+      try {
+        await fetch('/api/app/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': currentUser?.id || '',
+            'x-user-role': currentUser?.role || ''
+          }
+        });
+      } catch (e) {
+        // Non-blocking if network issue
+      }
+
+      // 2. Fetch all core context statistics and records in parallel
+      await Promise.allSettled([
+        fetchStats(),
+        fetchNotifications(),
+        fetchCompanySettings(),
+        fetchAllUsers()
+      ]);
+
+      // 3. Increment revision and broadcast event to all mounted views
+      setDataRevision(prev => prev + 1);
+      window.dispatchEvent(new CustomEvent('firex-refresh-all-data'));
+
+      showToast('Data refreshed successfully', 'success');
+    } catch (err) {
+      console.error('[FIREX] Data refresh error:', err);
+      showToast(`Refresh failed: ${err.message || 'Network error'}`, 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -316,6 +358,9 @@ export function AppProvider({ children }) {
         offlineQueue,
         syncOfflineData,
         queueOfflineItem,
+        isRefreshing,
+        dataRevision,
+        refreshAllData,
         toast,
         showToast,
         activeModal,

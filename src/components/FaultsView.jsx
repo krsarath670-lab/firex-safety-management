@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 export default function FaultsView() {
-  const { currentUser, showToast } = useApp();
+  const { currentUser, showToast, dataRevision } = useApp();
   const [faults, setFaults] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);
@@ -54,7 +54,7 @@ export default function FaultsView() {
 
   useEffect(() => {
     loadData();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   // Compress photo
   const compressImage = (file, callback) => {

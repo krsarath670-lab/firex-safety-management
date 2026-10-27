@@ -13,7 +13,7 @@ import {
 
 export default function ProjectsView({ initialFilter = null }) {
   const { 
-    currentUser, showToast, allUsers, fetchAllUsers, 
+    currentUser, showToast, allUsers, fetchAllUsers, dataRevision, 
     projectsFilter, setProjectsFilter, setActiveTab, companySettings 
   } = useApp();
 

@@ -8,7 +8,7 @@ import {
 import { exportAuditLogsToExcel } from '../utils/excelExport';
 
 export default function AuditLogView() {
-  const { currentUser, showToast } = useApp();
+  const { currentUser, showToast, dataRevision } = useApp();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +45,7 @@ export default function AuditLogView() {
 
   useEffect(() => {
     fetchLogs();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   // Unique filter choices
   const modulesList = ['ALL', ...Array.from(new Set(logs.map(l => l.resource || l.module).filter(Boolean)))];

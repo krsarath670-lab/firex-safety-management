@@ -75,7 +75,7 @@ export default function EmergencyCalloutView() {
 
   useEffect(() => {
     loadCalls();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   // Fast Arrival Recording
   const handleRecordArrival = async (callId) => {

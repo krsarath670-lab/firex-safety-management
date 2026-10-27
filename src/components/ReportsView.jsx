@@ -69,7 +69,7 @@ export default function ReportsView({ onNewReport, onEditReport, onPreviewReport
 
   useEffect(() => {
     loadReports();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   // Handle Status Pipeline transitions: Draft -> Submitted -> Reviewed -> Completed
   const handleTransitionStatus = async (reportId, nextStatus) => {

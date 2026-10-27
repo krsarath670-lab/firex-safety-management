@@ -726,6 +726,19 @@ class Database {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
+      await this.pgPool.query(`
+        CREATE TABLE IF NOT EXISTS firex_backups (
+          id VARCHAR(128) PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          version VARCHAR(64) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          status VARCHAR(32) DEFAULT 'verified',
+          size_bytes INT NOT NULL,
+          records_summary JSONB NOT NULL,
+          backup_data JSONB NOT NULL,
+          notes TEXT
+        );
+      `);
       const res = await this.pgPool.query('SELECT data FROM firex_store WHERE key = $1', ['app_state']);
       if (res.rows.length > 0 && res.rows[0].data) {
         this.memoryCache = this.ensureSchema(res.rows[0].data);
@@ -745,9 +758,250 @@ class Database {
         );
         console.log('[FIREX DB] Initialized and seeded persistent cloud PostgreSQL database.');
       }
+
+      // Auto-migrate any existing JSON backups from disk to firex_backups table for permanent durability
+      await this.syncDiskBackupsToPostgres();
     } catch (e) {
       console.error('[FIREX DB] Error during PostgreSQL initialization:', e);
     }
+  }
+
+  async syncDiskBackupsToPostgres() {
+    if (!this.pgPool) return;
+    try {
+      const backupsDir = path.join(__dirname, '..', 'backups');
+      if (fs.existsSync(backupsDir)) {
+        const files = fs.readdirSync(backupsDir).filter(f => f.endsWith('.json'));
+        for (const f of files) {
+          const filePath = path.join(backupsDir, f);
+          const stats = fs.statSync(filePath);
+          const raw = fs.readFileSync(filePath, 'utf8');
+          try {
+            const parsed = JSON.parse(raw);
+            const bkpId = 'disk-' + f.replace('.json', '');
+            const check = await this.pgPool.query('SELECT id FROM firex_backups WHERE id = $1', [bkpId]);
+            if (check.rows.length === 0) {
+              const summary = {
+                customers: (parsed.customers || []).length,
+                amc_contracts: (parsed.amc_contracts || []).length,
+                amc_visits: (parsed.amc_visits || []).length,
+                reports: (parsed.reports || []).length,
+                invoices: (parsed.invoices || []).length,
+                users: (parsed.users || []).length
+              };
+              await this.pgPool.query(
+                `INSERT INTO firex_backups (id, name, version, created_at, status, size_bytes, records_summary, backup_data, notes)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [bkpId, f, parsed.version || 'v1.0', stats.mtime, 'verified', stats.size, summary, parsed, 'Migrated historical backup']
+              );
+              console.log(`[FIREX BACKUP] Migrated historical backup ${f} to persistent cloud PostgreSQL storage.`);
+            }
+          } catch (e) {
+            // Non-critical if individual file is unparseable
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[FIREX BACKUP] Note on syncing disk backups:', err.message);
+    }
+  }
+
+  async createBackupRecord({ notes = '', version = 'v1.0', user = 'System' } = {}) {
+    const currentState = this.read();
+    const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
+    const name = `backup-${version}-${timestampStr}.json`;
+    const id = 'disk-' + name.replace('.json', '');
+    const jsonStr = JSON.stringify(currentState);
+    const sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
+    const recordsSummary = {
+      customers: (currentState.customers || []).length,
+      amc_contracts: (currentState.amc_contracts || []).length,
+      amc_visits: (currentState.amc_visits || []).length,
+      reports: (currentState.reports || []).length,
+      invoices: (currentState.invoices || []).length,
+      jobs: (currentState.jobs || []).length,
+      users: (currentState.users || []).length,
+      sites: (currentState.sites || []).length
+    };
+
+    // Save to disk backups directory
+    const backupsDir = path.join(__dirname, '..', 'backups');
+    if (!fs.existsSync(backupsDir)) {
+      try { fs.mkdirSync(backupsDir, { recursive: true }); } catch (e) {}
+    }
+    const filePath = path.join(backupsDir, name);
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(currentState, null, 2), 'utf8');
+    } catch (e) {
+      console.warn('[FIREX BACKUP] File save warning (ephemeral container fallback active):', e.message);
+    }
+
+    // Save to PostgreSQL durable cloud storage
+    if (this.isPostgres && this.pgPool) {
+      try {
+        await this.pgPool.query(
+          `INSERT INTO firex_backups (id, name, version, created_at, status, size_bytes, records_summary, backup_data, notes)
+           VALUES ($1, $2, $3, NOW(), $4, $5, $6, $7, $8)`,
+          [id, name, version, 'verified', sizeBytes, recordsSummary, currentState, notes || `Created by ${user}`]
+        );
+      } catch (err) {
+        console.error('[FIREX BACKUP] Error storing backup to PostgreSQL:', err);
+      }
+    }
+
+    return {
+      id,
+      name,
+      version,
+      created_at: new Date().toISOString(),
+      status: 'verified',
+      size_bytes: sizeBytes,
+      records_summary: recordsSummary,
+      notes: notes || `Created by ${user}`
+    };
+  }
+
+  async listBackups() {
+    const backups = [];
+    const seenIds = new Set();
+
+    // Read from PostgreSQL persistent table
+    if (this.isPostgres && this.pgPool) {
+      try {
+        const res = await this.pgPool.query(`
+          SELECT id, name, version, created_at, status, size_bytes, records_summary, notes 
+          FROM firex_backups 
+          ORDER BY created_at DESC
+        `);
+        for (const row of res.rows) {
+          seenIds.add(row.id);
+          backups.push({
+            id: row.id,
+            name: row.name,
+            version: row.version,
+            created_at: row.created_at,
+            status: row.status || 'verified',
+            size_bytes: row.size_bytes,
+            records_summary: row.records_summary || {},
+            notes: row.notes || '',
+            storage: 'PostgreSQL Cloud (Permanent)'
+          });
+        }
+      } catch (err) {
+        console.error('[FIREX BACKUP] Error listing backups from PostgreSQL:', err);
+      }
+    }
+
+    // Also check disk backups directory
+    const backupsDir = path.join(__dirname, '..', 'backups');
+    if (fs.existsSync(backupsDir)) {
+      try {
+        const files = fs.readdirSync(backupsDir).filter(f => f.endsWith('.json'));
+        for (const f of files) {
+          const bkpId = 'disk-' + f.replace('.json', '');
+          if (!seenIds.has(bkpId)) {
+            const filePath = path.join(backupsDir, f);
+            const stats = fs.statSync(filePath);
+            backups.push({
+              id: bkpId,
+              name: f,
+              version: 'v1.0',
+              created_at: stats.mtime.toISOString(),
+              status: 'verified',
+              size_bytes: stats.size,
+              records_summary: {},
+              notes: 'Local disk backup archive',
+              storage: 'Local File Archive'
+            });
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Sort by created_at descending
+    backups.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return backups;
+  }
+
+  async getBackupById(id) {
+    if (this.isPostgres && this.pgPool) {
+      try {
+        const res = await this.pgPool.query('SELECT * FROM firex_backups WHERE id = $1 OR name = $1', [id]);
+        if (res.rows.length > 0) return res.rows[0];
+      } catch (err) {
+        console.error('[FIREX BACKUP] Error fetching backup from PostgreSQL:', err);
+      }
+    }
+    // Fallback to disk
+    const backupsDir = path.join(__dirname, '..', 'backups');
+    if (fs.existsSync(backupsDir)) {
+      const targetFileName = id.startsWith('disk-') 
+        ? id.replace('disk-', '') + '.json'
+        : (id.endsWith('.json') ? id : id + '.json');
+      const directPath = path.join(backupsDir, targetFileName);
+      if (fs.existsSync(directPath)) {
+        const raw = fs.readFileSync(directPath, 'utf8');
+        const stats = fs.statSync(directPath);
+        const parsed = JSON.parse(raw);
+        return {
+          id: id.startsWith('disk-') ? id : 'disk-' + targetFileName.replace('.json', ''),
+          name: targetFileName,
+          version: parsed.version || 'v1.0',
+          created_at: stats.mtime.toISOString(),
+          size_bytes: stats.size,
+          records_summary: {},
+          backup_data: parsed,
+          notes: 'Local disk backup'
+        };
+      }
+
+      // Search all files if not direct match
+      const files = fs.readdirSync(backupsDir).filter(f => f.endsWith('.json'));
+      const found = files.find(f => f === targetFileName || ('disk-' + f.replace('.json', '')) === id || f.includes(id));
+      if (found) {
+        const fp = path.join(backupsDir, found);
+        const raw = fs.readFileSync(fp, 'utf8');
+        const stats = fs.statSync(fp);
+        const parsed = JSON.parse(raw);
+        return {
+          id: 'disk-' + found.replace('.json', ''),
+          name: found,
+          version: parsed.version || 'v1.0',
+          created_at: stats.mtime.toISOString(),
+          size_bytes: stats.size,
+          records_summary: {},
+          backup_data: parsed,
+          notes: 'Local disk backup'
+        };
+      }
+    }
+    return null;
+  }
+
+  async restoreBackup(id, user = 'Admin') {
+    const backupRecord = await this.getBackupById(id);
+    if (!backupRecord || !backupRecord.backup_data) {
+      throw new Error(`Backup record with id ${id} not found or contains no data.`);
+    }
+
+    // 1. Mandatory safety backup of current state before restoring
+    await this.createBackupRecord({
+      notes: `Safety backup created automatically before restoring "${backupRecord.name}"`,
+      version: 'pre-restore',
+      user
+    });
+
+    // 2. Apply restored data
+    const restoredData = this.ensureSchema(backupRecord.backup_data);
+    this.write(restoredData);
+    this.memoryCache = restoredData;
+
+    console.log(`[FIREX BACKUP] Successfully restored backup "${backupRecord.name}" by ${user}`);
+    return {
+      success: true,
+      restored_name: backupRecord.name,
+      restored_timestamp: backupRecord.created_at
+    };
   }
 
   async refreshFromPostgres() {

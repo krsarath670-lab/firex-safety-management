@@ -12,7 +12,7 @@ import AMCServiceReportModal from './AMCServiceReportModal';
 import AMCChecklistModal from './AMCChecklistModal';
 
 export default function CustomerSiteView() {
-  const { currentUser, showToast, setActiveTab } = useApp();
+  const { currentUser, showToast, setActiveTab, dataRevision } = useApp();
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);

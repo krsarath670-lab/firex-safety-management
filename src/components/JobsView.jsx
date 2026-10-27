@@ -12,7 +12,7 @@ import { exportJobsToExcel, exportFitoutToExcel, exportProjectToExcel } from '..
 import QuickAddCustomerModal from './QuickAddCustomerModal';
 
 export default function JobsView({ onStartJob, onStartInspectionForJob, onNewReportForJob, initialJobType = null }) {
-  const { currentUser, showToast, allUsers } = useApp();
+  const { currentUser, showToast, allUsers, dataRevision } = useApp();
   const canPrepareReports = [
     'Projects Manager', 'projects_manager', 'Project Manager', 'PM',
     'Engineer', 'engineer',
@@ -115,7 +115,7 @@ export default function JobsView({ onStartJob, onStartInspectionForJob, onNewRep
 
   useEffect(() => {
     loadData();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   const handleCreateJob = async (e) => {
     e.preventDefault();

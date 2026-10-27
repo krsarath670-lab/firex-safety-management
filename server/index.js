@@ -4102,6 +4102,86 @@ app.post('/api/sync', (req, res) => {
   });
 });
 
+// --- REAL-TIME APP DATA REFRESH ---
+app.all('/api/app/refresh', async (req, res) => {
+  try {
+    if (typeof db.refreshFromPostgres === 'function') {
+      await db.refreshFromPostgres();
+    }
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      database: db.isPostgres ? (db.pgPool ? 'postgres-connected' : 'postgres-connecting') : 'local-storage'
+    });
+  } catch (err) {
+    console.error('Error during app data refresh:', err);
+    res.status(500).json({ error: 'Failed to refresh data: ' + err.message });
+  }
+});
+
+// --- PERMANENT BACKUP PROTECTION & SYSTEM RECOVERY ---
+app.get('/api/backups', requireRole('Admin', 'CEO', 'Managing Director', 'GM'), async (req, res) => {
+  try {
+    const list = await db.listBackups();
+    res.json(list);
+  } catch (err) {
+    console.error('Error listing backups:', err);
+    res.status(500).json({ error: 'Failed to list backups: ' + err.message });
+  }
+});
+
+app.post('/api/backups', requireRole('Admin', 'CEO', 'Managing Director', 'GM'), async (req, res) => {
+  try {
+    const { notes, version } = req.body || {};
+    const backup = await db.createBackupRecord({
+      notes,
+      version: version || 'v1.0',
+      user: req.user?.name || req.user?.role || 'Admin'
+    });
+    db.logAudit(req.user?.id || 'admin', 'CREATE_BACKUP', 'backups', backup.id, `Created permanent backup "${backup.name}"`);
+    res.json({ success: true, backup });
+  } catch (err) {
+    console.error('Error creating backup:', err);
+    res.status(500).json({ error: 'Failed to create backup: ' + err.message });
+  }
+});
+
+app.get('/api/backups/:id/download', requireRole('Admin', 'CEO', 'Managing Director', 'GM'), async (req, res) => {
+  try {
+    const backup = await db.getBackupById(req.params.id);
+    if (!backup || !backup.backup_data) {
+      return res.status(404).json({ error: 'Backup not found or contains no data' });
+    }
+    const filename = (backup.name || `backup-${req.params.id}`).endsWith('.json') ? (backup.name || `backup-${req.params.id}`) : `${backup.name || req.params.id}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(JSON.stringify(backup.backup_data, null, 2));
+  } catch (err) {
+    console.error('Error downloading backup:', err);
+    res.status(500).json({ error: 'Failed to download backup: ' + err.message });
+  }
+});
+
+app.post('/api/backups/:id/restore', requireRole('Admin', 'CEO'), async (req, res) => {
+  try {
+    const { confirmation } = req.body || {};
+    if (confirmation !== 'CONFIRM_RESTORE') {
+      return res.status(400).json({ error: 'Explicit confirmation required to restore database. Must submit confirmation: "CONFIRM_RESTORE"' });
+    }
+    const result = await db.restoreBackup(req.params.id, req.user?.name || req.user?.role || 'Admin');
+    db.logAudit(req.user?.id || 'admin', 'RESTORE_BACKUP', 'backups', req.params.id, `CRITICAL: Database restored to backup "${result.restored_name}"`);
+    res.json({
+      success: true,
+      message: `Database successfully restored to ${result.restored_name}`,
+      restored_name: result.restored_name,
+      timestamp: result.restored_timestamp
+    });
+  } catch (err) {
+    console.error('Error restoring backup:', err);
+    res.status(500).json({ error: 'Failed to restore backup: ' + err.message });
+  }
+});
+
 // Serve User Roles and Jobs Guide PDF (Official System Documentation)
 app.get('/api/guide-pdf', (req, res) => {
   const filePath = path.join(__dirname, '..', 'public', 'FIREX_User_Roles_and_Jobs_Guide.pdf');

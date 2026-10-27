@@ -16,7 +16,7 @@ import AMCServiceReportModal from './AMCServiceReportModal';
 import CreateAMCReportModal from './CreateAMCReportModal';
 
 export default function AMCView({ onStartInspectionForVisit }) {
-  const { currentUser, showToast, allUsers, fetchMonthlyAmcSchedule, companySettings } = useApp();
+  const { currentUser, showToast, allUsers, fetchMonthlyAmcSchedule, companySettings, dataRevision } = useApp();
   const [contracts, setContracts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [sites, setSites] = useState([]);
@@ -388,7 +388,10 @@ export default function AMCView({ onStartInspectionForVisit }) {
 
   useEffect(() => {
     loadData();
-  }, [currentUser]);
+    if (tab === 'schedule') {
+      loadMonthlySchedule();
+    }
+  }, [currentUser, dataRevision]);
 
   useEffect(() => {
     if (tab === 'schedule') {

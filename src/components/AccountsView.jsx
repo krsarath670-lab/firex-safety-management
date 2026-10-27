@@ -120,7 +120,7 @@ export default function AccountsView() {
 
   useEffect(() => {
     loadData();
-  }, [currentUser]);
+  }, [currentUser, dataRevision]);
 
   // Load customer statement
   const loadCustomerStatement = async (customerId) => {

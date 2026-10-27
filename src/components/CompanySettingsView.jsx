@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Settings, Shield, Save, Upload, Image as ImageIcon, 
-  CheckCircle, RotateCcw, Eye, FileText, Check, AlertCircle, Calendar, Layers 
+  CheckCircle, RotateCcw, Eye, FileText, Check, AlertCircle, Calendar, Layers, Database 
 } from 'lucide-react';
 import ChecklistTemplateSettings from './ChecklistTemplateSettings';
+import BackupsView from './BackupsView';
 
 export default function CompanySettingsView() {
   const { currentUser, showToast, fetchCompanySettings } = useApp();
@@ -263,10 +264,25 @@ export default function CompanySettingsView() {
           <Layers className="w-4 h-4 text-amber-500" />
           <span>Checklist Templates (10 Systems)</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setMainTab('backups')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+            mainTab === 'backups'
+              ? 'bg-navy-950 text-white shadow-md'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Database className="w-4 h-4 text-blue-500" />
+          <span>System Backups &amp; Recovery</span>
+        </button>
       </div>
 
       {mainTab === 'checklists' ? (
         <ChecklistTemplateSettings />
+      ) : mainTab === 'backups' ? (
+        <BackupsView />
       ) : (
         <>
           {/* SECTION 1: Letterhead & Logo Upload Center */}
