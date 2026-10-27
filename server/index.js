@@ -2671,32 +2671,8 @@ app.post('/api/amc-contracts/:id/quarters/:quarter/report', (req, res) => {
   const contract = db.getById('amc_contracts', req.params.id);
   if (!contract) return res.status(404).json({ error: 'Contract not found' });
 
-// Update Quarter Status directly (Mark as Finished, Pending, In Progress, Not Required)
-app.put('/api/amc-contracts/:id/quarters/:quarter/status', requireRole('Admin', 'CEO', 'Managing Director', 'Managing Director (MD)', 'managing_director', 'GM', 'Engineer', 'Supervisor'), (req, res) => {
-  try {
-    const { id, quarter } = req.params;
-    const { status, actual_date, notes } = req.body;
 
-    if (!status) {
-      return res.status(400).json({ error: 'Status is required' });
-    }
 
-    const result = db.setQuarterStatus(id, quarter, { status, actual_date, notes }, req.user);
-    if (!result) {
-      return res.status(404).json({ error: 'AMC contract not found' });
-    }
-
-    res.json({
-      success: true,
-      message: `${quarter} status updated to ${result.quarter.status}`,
-      quarter: result.quarter,
-      contract: result.contract
-    });
-  } catch (err) {
-    console.error('Error updating quarter status:', err);
-    res.status(500).json({ error: 'Failed to update quarter status: ' + err.message });
-  }
-});
 
   const { action, report_data } = req.body;
   const qKey = req.params.quarter;
@@ -2724,6 +2700,33 @@ app.put('/api/amc-contracts/:id/quarters/:quarter/status', requireRole('Admin', 
   }, req.user);
 
   res.json({ success: true, quarter: updatedQuarter });
+});
+
+// Update Quarter Status directly (Mark as Finished, Pending, In Progress, Not Required)
+app.put('/api/amc-contracts/:id/quarters/:quarter/status', requireRole('Admin', 'CEO', 'Managing Director', 'Managing Director (MD)', 'managing_director', 'GM', 'Engineer', 'Supervisor'), (req, res) => {
+  try {
+    const { id, quarter } = req.params;
+    const { status, actual_date, notes } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    const result = db.setQuarterStatus(id, quarter, { status, actual_date, notes }, req.user);
+    if (!result) {
+      return res.status(404).json({ error: 'AMC contract not found' });
+    }
+
+    res.json({
+      success: true,
+      message: `${quarter} status updated to ${result.quarter.status}`,
+      quarter: result.quarter,
+      contract: result.contract
+    });
+  } catch (err) {
+    console.error('Error updating quarter status:', err);
+    res.status(500).json({ error: 'Failed to update quarter status: ' + err.message });
+  }
 });
 
 // --- INVOICES & PAYMENTS (Dedicated ACCOUNTS Module - Requirements 8, 11, 12, 13, 19, 28, 29) ---
