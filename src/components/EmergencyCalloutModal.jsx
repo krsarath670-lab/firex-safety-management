@@ -804,6 +804,24 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               <span>3. Technical Findings, Cause &amp; Rectification</span>
             </h4>
 
+            {/* System Make / Manufacturer of Inspected / Repaired System */}
+            <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+              <label className="block font-bold text-slate-700 text-xs mb-1">
+                System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                disabled={!canEditTechnical}
+                placeholder="Enter manufacturer of system being inspected or repaired (leave blank if unknown)..."
+                value={formData.system_make}
+                onChange={(e) => setFormData(p => ({ ...p, system_make: e.target.value }))}
+                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-red-500"
+              />
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                Leave blank until entered. No default brand name is prefilled.
+              </span>
+            </div>
+
             <div>
               <label className="block font-bold text-slate-700 mb-1">Inspection Findings on Arrival</label>
               <textarea

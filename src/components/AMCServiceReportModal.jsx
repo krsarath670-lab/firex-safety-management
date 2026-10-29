@@ -363,30 +363,50 @@ export default function AMCServiceReportModal({ visit, onClose }) {
 
               <div className="pt-1 border-t border-slate-200 mt-1">
                 <span className="text-[9.5px] uppercase font-bold text-slate-500 block">System Make / Manufacturer</span>
-                <span className="font-bold text-slate-900">
+                <div className="font-bold text-slate-900">
                   {(() => {
-                    const makes = [];
-                    const visitMakes = visit.system_makes || chk.system_makes || {};
-                    Object.entries(visitMakes).forEach(([k, v]) => {
-                      if (v) makes.push(`${k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`);
+                    const entries = [];
+                    reportBuildings.forEach((bld, idx) => {
+                      const bLabel = bld.building_name || `Building ${bld.building_number || idx + 1}`;
+                      if (bld.system_makes) {
+                        Object.entries(bld.system_makes).forEach(([sysKey, makeVal]) => {
+                          if (makeVal) {
+                            const sysName = sysKey === 'fire_alarm' ? 'Fire Alarm Panel' :
+                                            sysKey === 'fire_fighting' ? 'Fire Fighting System' :
+                                            sysKey === 'fire_extinguishers' ? 'Fire Extinguishers' :
+                                            sysKey === 'fire_hose_reels' ? 'Fire Hose Reel' :
+                                            sysKey === 'landing_valves' ? 'Landing Valve' :
+                                            sysKey === 'fm200_suppression' ? 'FM200 System' :
+                                            sysKey === 'lpg_detection' ? 'LPG Detection System' :
+                                            sysKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            entries.push(`${bLabel} – ${sysName} – System Make: ${makeVal}`);
+                          }
+                        });
+                      }
                     });
-                    if (makes.length === 0) {
-                      reportBuildings.forEach(b => {
-                        if (b.system_makes) {
-                          Object.entries(b.system_makes).forEach(([k, v]) => {
-                            if (v && !makes.some(m => m.includes(v))) {
-                              makes.push(`${k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`);
-                            }
-                          });
+                    if (entries.length === 0) {
+                      const visitMakes = visit.system_makes || chk.system_makes || {};
+                      Object.entries(visitMakes).forEach(([sysKey, makeVal]) => {
+                        if (makeVal) {
+                          const sysName = sysKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          entries.push(`${sysName} – System Make: ${makeVal}`);
                         }
                       });
                     }
                     const generalMake = visit.system_make || chk.system_make || '';
-                    if (makes.length > 0) return makes.join(' • ');
+                    if (entries.length > 0) {
+                      return (
+                        <div className="space-y-0.5 mt-0.5">
+                          {entries.map((e, i) => (
+                            <div key={i} className="text-slate-900 font-semibold text-[10.5px]">{e}</div>
+                          ))}
+                        </div>
+                      );
+                    }
                     if (generalMake) return generalMake;
                     return '-';
                   })()}
-                </span>
+                </div>
               </div>
             </div>
           </div>

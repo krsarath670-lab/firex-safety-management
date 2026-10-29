@@ -970,45 +970,61 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
             <div className="space-y-4 animate-in fade-in duration-150">
               
               {/* System Header Card */}
-              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-navy-100 text-navy-800 px-2 py-0.5 rounded">
-                      Building {currentBuilding?.building_number}: {currentBuilding?.building_name}
-                    </span>
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${currentSystemConfig.badgeColor}`}>
-                      {currentSystemConfig.label}
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-navy-100 text-navy-800 px-2 py-0.5 rounded">
+                        Building {currentBuilding?.building_number}: {currentBuilding?.building_name}
+                      </span>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${currentSystemConfig.badgeColor}`}>
+                        {currentSystemConfig.label}
+                      </span>
+                    </div>
+                    <h2 className="text-base sm:text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+                      <span>{currentSystemConfig.label} Inspection</span>
+                      <span className="text-xs font-mono font-bold text-slate-500">
+                        ({currentItems.length} items recorded)
+                      </span>
+                    </h2>
                   </div>
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
-                    <span>{currentSystemConfig.label} Inspection</span>
-                    <span className="text-xs font-mono font-bold text-slate-500">
-                      ({currentItems.length} items recorded)
-                    </span>
-                  </h2>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-slate-600">System Make / Manufacturer:</span>
-                    <input
-                      type="text"
-                      value={(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) || ''}
-                      onChange={(e) => updateSystemMake(activeTab, e.target.value)}
-                      placeholder={`Enter make for ${currentSystemConfig.short} (optional)`}
-                      className="p-1 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-red-500 w-56 sm:w-72"
-                    />
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setNewItemIdentifier('');
+                        setShowAddItemModal(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Add {currentSystemConfig.short} Unit</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setNewItemIdentifier('');
-                      setShowAddItemModal(true);
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Add {currentSystemConfig.short} Unit</span>
-                  </button>
+                {/* Direct System Make / Manufacturer Field */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) || ''}
+                        onChange={(e) => updateSystemMake(activeTab, e.target.value)}
+                        placeholder={`Enter manufacturer for ${currentSystemConfig.label} (e.g. Honeywell, Patterson, Kidde, NAFFCO...)`}
+                        className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1.5">
+                    <span>
+                      Building {currentBuilding?.building_number} – {currentSystemConfig.label} – System Make: {(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) ? <strong className="text-slate-800">{currentBuilding.system_makes[activeTab]}</strong> : <span className="text-slate-400 italic">Not entered (blank)</span>}
+                    </span>
+                    <span className="text-slate-400">Blank by default. No default brand.</span>
+                  </div>
                 </div>
               </div>
 
@@ -1402,6 +1418,20 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                                 </div>
                               </>
                             )}
+
+                            {/* Panel / Equipment Make & Model field */}
+                            <div className="col-span-2 sm:col-span-4 mt-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center gap-2">
+                              <span className="text-[11px] font-bold text-slate-700 whitespace-nowrap">
+                                Panel / Equipment Make:
+                              </span>
+                              <input
+                                type="text"
+                                value={item.make || ''}
+                                onChange={(e) => updateChecklistItem(activeTab, item.id, 'make', e.target.value)}
+                                placeholder="Enter specific panel / item make (leave blank if unknown)..."
+                                className="w-full text-xs rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-800 placeholder:text-slate-400 focus:border-red-500 focus:outline-none"
+                              />
+                            </div>
 
                           </div>
 

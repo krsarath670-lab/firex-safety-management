@@ -307,8 +307,13 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
 
           {/* Technical Findings */}
           <div className="border border-slate-200 rounded-xl p-3 bg-white">
-            <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px] mb-1 text-navy-900">
-              2. On-Site Inspection &amp; Technical Findings
+            <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px] mb-1 text-navy-900 flex items-center justify-between">
+              <span>2. On-Site Inspection &amp; Technical Findings</span>
+              {call.system_make && (
+                <span className="font-mono text-[10px] text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded">
+                  System Make: {call.system_make}
+                </span>
+              )}
             </h4>
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
               {call.findings || 'Technician conducted initial visual inspection and diagnostic loop / hydraulic testing on arrival.'}
