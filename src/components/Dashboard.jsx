@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onNewReport }) {
-  const { dashboardStats, currentUser, setActiveTab, setActiveModal, fetchStats, setProjectsFilter } = useApp();
+  const { dashboardStats, currentUser, setActiveTab, setActiveModal, fetchStats, setProjectsFilter, companySettings } = useApp();
 
   const [upcomingTab, setUpcomingTab] = useState('next7Days'); // 'today' | 'next7Days' | 'next30Days'
   const [showSalesMonthlyReport, setShowSalesMonthlyReport] = useState(false);
@@ -1743,8 +1743,13 @@ export default function Dashboard({ onStartJob, onStartInspection, onNewAMC, onN
                 : "Operational overview of fire alarm & firefighting contracts and site teams."}
             </p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-navy-800/80 border border-navy-700 flex items-center justify-center shadow-inner">
-            <Flame className="w-6 h-6 text-safety-red animate-pulse" />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white p-1 flex items-center justify-center shadow-md border border-navy-700 shrink-0 overflow-hidden">
+            <img
+              src={companySettings?.logo_url || '/logo.png'}
+              alt="FireX Fire & Safety"
+              className="w-full h-full object-contain"
+              onError={(e) => { e.target.src = '/logo.png'; }}
+            />
           </div>
         </div>
 
