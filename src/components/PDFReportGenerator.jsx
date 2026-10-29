@@ -205,10 +205,16 @@ export default function PDFReportGenerator({ report, onClose }) {
         </div>
 
         {/* Technical Job Overview Meta Box */}
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs mb-3">
+        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-xs mb-3">
           <div>
             <span className="text-[9px] font-bold uppercase text-slate-400 block">System Type</span>
             <span className="font-bold text-slate-900">{report.system || 'Fire Alarm & Firefighting'}</span>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold uppercase text-slate-400 block">System Make / Manufacturer</span>
+            <span className="font-bold text-slate-900">
+              {report.system_make || (report.system_makes && Object.entries(report.system_makes).filter(([_, m]) => m).map(([s, m]) => `${s}: ${m}`).join(', ')) || '-'}
+            </span>
           </div>
           <div>
             <span className="text-[9px] font-bold uppercase text-slate-400 block">Job Reference #</span>
@@ -223,6 +229,26 @@ export default function PDFReportGenerator({ report, onClose }) {
             <span className="font-bold text-slate-800">{report.sales_person_name || 'Unassigned'}</span>
           </div>
         </div>
+
+        {/* System Types & Manufacturers Breakdown (if multiple systems specified) */}
+        {((report.systems_detail && report.systems_detail.length > 0) || (report.system_makes && Object.keys(report.system_makes).length > 1)) && (
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs mb-3">
+            <span className="text-[9.5px] font-black uppercase text-slate-500 block mb-1 tracking-wider">
+              System Types &amp; Manufacturers Breakdown
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {(report.systems_detail && report.systems_detail.length > 0
+                ? report.systems_detail
+                : Object.entries(report.system_makes || {}).map(([s, m]) => ({ system_type: s, make: m }))
+              ).map((item, idx) => (
+                <div key={idx} className="bg-white px-2 py-1 rounded border border-slate-200 text-xs flex items-center gap-1.5">
+                  <span className="font-bold text-slate-700">{item.system_type}:</span>
+                  <span className="text-slate-900 font-semibold">{item.make || '-'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* AMC AUTOMATIC CONTRACT DATES & PERIOD (Requirements 23 & 36) */}
         {isAMC && (

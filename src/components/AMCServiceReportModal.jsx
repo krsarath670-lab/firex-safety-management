@@ -360,6 +360,34 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                   {reportBuildings.length} Building(s) inspected ({reportBuildings.map(b => b.building_name).join(', ')})
                 </span>
               </div>
+
+              <div className="pt-1 border-t border-slate-200 mt-1">
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">System Make / Manufacturer</span>
+                <span className="font-bold text-slate-900">
+                  {(() => {
+                    const makes = [];
+                    const visitMakes = visit.system_makes || chk.system_makes || {};
+                    Object.entries(visitMakes).forEach(([k, v]) => {
+                      if (v) makes.push(`${k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`);
+                    });
+                    if (makes.length === 0) {
+                      reportBuildings.forEach(b => {
+                        if (b.system_makes) {
+                          Object.entries(b.system_makes).forEach(([k, v]) => {
+                            if (v && !makes.some(m => m.includes(v))) {
+                              makes.push(`${k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`);
+                            }
+                          });
+                        }
+                      });
+                    }
+                    const generalMake = visit.system_make || chk.system_make || '';
+                    if (makes.length > 0) return makes.join(' • ');
+                    if (generalMake) return generalMake;
+                    return '-';
+                  })()}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -381,6 +409,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                 <th className="p-2 border-r border-slate-200">Building Name</th>
                 <th className="p-2 border-r border-slate-200">Location</th>
                 <th className="p-2 border-r border-slate-200">Inspected Systems</th>
+                <th className="p-2 border-r border-slate-200">System Make / Manufacturer</th>
                 <th className="p-2 border-r border-slate-200 text-center">Items</th>
                 <th className="p-2 text-center">Defects</th>
               </tr>
@@ -410,6 +439,16 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                     </td>
                     <td className="p-2 border-r border-slate-200 text-slate-700 font-semibold">
                       {(bld.selected_systems || []).map(s => s.replace(/_/g, ' ')).join(', ')}
+                    </td>
+                    <td className="p-2 border-r border-slate-200 text-slate-700 font-medium">
+                      {(() => {
+                        const bMakes = bld.system_makes || {};
+                        const entries = Object.entries(bMakes).filter(([_, m]) => m);
+                        if (entries.length > 0) {
+                          return entries.map(([s, m]) => `${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${m}`).join(', ');
+                        }
+                        return bld.system_make || visit.system_make || '-';
+                      })()}
                     </td>
                     <td className="p-2 border-r border-slate-200 text-center font-mono font-bold text-slate-800">
                       {bldItemsCount}
@@ -471,7 +510,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Flame className="w-3.5 h-3.5 text-red-600" />
                         <span>1. FIRE ALARM &amp; DETECTION SYSTEM CHECKLIST</span>
                       </span>
-                      <span className="text-[10px] text-slate-600 font-normal">Civil Defense Routine Inspection</span>
+                      <span className="text-[10px] text-slate-600 font-normal">
+                        Civil Defense Routine Inspection{(bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm) ? ` • Make: ${bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm}` : ''}
+                      </span>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
@@ -516,6 +557,11 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Shield className="w-3.5 h-3.5 text-blue-600" />
                         <span>2. FIRE FIGHTING SYSTEM (PUMPS, TANK &amp; SPRINKLERS)</span>
                       </span>
+                      {(bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting) && (
+                        <span className="text-[10px] text-blue-800 font-normal">
+                          Make: {bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting}
+                        </span>
+                      )}
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
@@ -719,6 +765,11 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Shield className="w-3.5 h-3.5 text-purple-600" />
                         <span>6. FM200 / CLEAN AGENT SUPPRESSION SYSTEM CHECKLIST</span>
                       </span>
+                      {(bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression) && (
+                        <span className="text-[10px] text-purple-800 font-normal">
+                          Make: {bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression}
+                        </span>
+                      )}
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
@@ -765,6 +816,11 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <AlertTriangle className="w-3.5 h-3.5 text-yellow-600" />
                         <span>7. LPG / GAS DETECTION SYSTEM CHECKLIST</span>
                       </span>
+                      {(bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection) && (
+                        <span className="text-[10px] text-yellow-900 font-normal">
+                          Make: {bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection}
+                        </span>
+                      )}
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">

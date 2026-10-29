@@ -3772,6 +3772,9 @@ app.post('/api/emergency-calls', (req, res) => {
         site_name: newCall.site_name,
         date: newCall.call_date,
         system: newCall.system || 'Fire Alarm & Safety Systems',
+        system_make: newCall.system_make || '',
+        system_makes: newCall.system_makes || {},
+        systems_detail: newCall.systems_detail || [],
         work_description: newCall.action_taken || newCall.emergency_description || newCall.reported_problem,
         faults_found: newCall.findings || newCall.reported_problem,
         rectifications: newCall.rectification || newCall.action_taken,
@@ -3878,6 +3881,21 @@ app.put('/api/emergency-calls/:id', (req, res) => {
     }
 
     const updated = db.updateEmergencyCall(existing.id, allowedUpdates, req.user);
+
+    // Sync updates to corresponding report if it exists
+    const reports = db.get('reports') || [];
+    const repIndex = reports.findIndex(r => r.emergency_call_id === existing.id || r.report_number === existing.report_number);
+    if (repIndex !== -1) {
+      if (updated.system_make !== undefined) reports[repIndex].system_make = updated.system_make;
+      if (updated.system_makes !== undefined) reports[repIndex].system_makes = updated.system_makes;
+      if (updated.systems_detail !== undefined) reports[repIndex].systems_detail = updated.systems_detail;
+      if (updated.system !== undefined) reports[repIndex].system = updated.system;
+      if (updated.report_status !== undefined) reports[repIndex].status = updated.report_status;
+      const allDb = db.read();
+      allDb.reports = reports;
+      db.write(allDb);
+    }
+
     res.json(updated);
   } catch (err) {
     console.error('Error updating emergency call:', err);

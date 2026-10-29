@@ -27,6 +27,9 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
     amc_end_date: initialData?.amc_end_date || '',
     visit_number: initialData?.visit_number || 'Visit #3 of 4',
     system: initialData?.system || 'Fire Alarm & Firefighting Systems',
+    system_make: initialData?.system_make || '',
+    system_makes: initialData?.system_makes || {},
+    systems_detail: Array.isArray(initialData?.systems_detail) ? initialData.systems_detail : (initialData?.system_makes ? Object.entries(initialData.system_makes).map(([s, m]) => ({ system_type: s, make: m })) : []),
     work_description: initialData?.work_description || '',
     faults_found: initialData?.faults_found || '',
     rectifications: initialData?.rectifications || '',
@@ -46,6 +49,29 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
 
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState('customer'); // 'customer' | 'supervisor'
+  const [showMultiSystemMakes, setShowMultiSystemMakes] = useState(Array.isArray(initialData?.systems_detail) && initialData.systems_detail.length > 0);
+
+  const handleAddSystemDetail = () => {
+    setFormData(p => ({
+      ...p,
+      systems_detail: [...(p.systems_detail || []), { system_type: 'Fire Alarm System', make: '' }]
+    }));
+  };
+
+  const handleUpdateSystemDetail = (index, field, value) => {
+    setFormData(p => {
+      const next = [...(p.systems_detail || [])];
+      next[index] = { ...next[index], [field]: value };
+      return { ...p, systems_detail: next };
+    });
+  };
+
+  const handleRemoveSystemDetail = (index) => {
+    setFormData(p => ({
+      ...p,
+      systems_detail: (p.systems_detail || []).filter((_, i) => i !== index)
+    }));
+  };
 
   const [docNumberPreview, setDocNumberPreview] = useState(
     initialData?.document_number || initialData?.report_number || ''
@@ -267,8 +293,15 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
       showToast('Please select a customer and site', 'error');
       return;
     }
+    const makesObj = {};
+    (formData.systems_detail || []).forEach(item => {
+      if (item.system_type && item.make) {
+        makesObj[item.system_type] = item.make;
+      }
+    });
     const finalReport = {
       ...formData,
+      system_makes: Object.keys(makesObj).length > 0 ? makesObj : (initialData?.system_makes || {}),
       status: targetStatus,
       document_number: initialData?.document_number || docNumberPreview || undefined,
       report_number: initialData?.report_number || docNumberPreview || undefined,
@@ -583,6 +616,102 @@ export default function ReportEditor({ initialData, onSave, onCancel }) {
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono"
             />
           </div>
+        </div>
+
+        {/* System Make / Manufacturer Field & Multi-System Details */}
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex-1">
+              <label className="block font-bold text-slate-700 mb-1">
+                System Make / Manufacturer <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.system_make}
+                onChange={(e) => setFormData((p) => ({ ...p, system_make: e.target.value }))}
+                placeholder="Enter manufacturer / brand (leave blank if unknown)"
+                className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+              <span className="text-[10px] text-slate-400 mt-0.5 block">
+                Blank by default. No default brand is applied.
+              </span>
+            </div>
+            <div className="sm:self-center pt-1 sm:pt-0">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!showMultiSystemMakes) {
+                    setShowMultiSystemMakes(true);
+                    if (!formData.systems_detail || formData.systems_detail.length === 0) {
+                      handleAddSystemDetail();
+                    }
+                  } else {
+                    setShowMultiSystemMakes(false);
+                  }
+                }}
+                className="w-full sm:w-auto px-3 py-2 text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-300 transition-colors shadow-sm"
+              >
+                {showMultiSystemMakes ? '▲ Hide System Types' : '▼ Separate System Types'}
+              </button>
+            </div>
+          </div>
+
+          {showMultiSystemMakes && (
+            <div className="pt-2.5 border-t border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700">Manufacturers by System Type:</span>
+                <button
+                  type="button"
+                  onClick={handleAddSystemDetail}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add System Type
+                </button>
+              </div>
+
+              {(formData.systems_detail || []).map((detail, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">System Type</label>
+                    <select
+                      value={detail.system_type}
+                      onChange={(e) => handleUpdateSystemDetail(idx, 'system_type', e.target.value)}
+                      className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 font-medium"
+                    >
+                      <option value="Fire Alarm System">Fire Alarm System</option>
+                      <option value="Fire Fighting System">Fire Fighting System</option>
+                      <option value="Fire Extinguisher System">Fire Extinguisher System</option>
+                      <option value="FM200 System">FM200 System</option>
+                      <option value="LPG Detection System">LPG Detection System</option>
+                      <option value="Sprinkler System">Sprinkler System</option>
+                      <option value="Fire Hose Reel System">Fire Hose Reel System</option>
+                      <option value="Emergency & Exit Lighting">Emergency &amp; Exit Lighting</option>
+                      <option value="Voice Evacuation System">Voice Evacuation System</option>
+                      <option value="Other System">Other System</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">System Make / Manufacturer</label>
+                    <input
+                      type="text"
+                      value={detail.make}
+                      onChange={(e) => handleUpdateSystemDetail(idx, 'make', e.target.value)}
+                      placeholder="Type manufacturer brand manually..."
+                      className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSystemDetail(idx)}
+                    className="self-end sm:self-center p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                    title="Remove entry"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Work Description with AI Assistant Shortcut */}

@@ -72,7 +72,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
   const [newItemFloor, setNewItemFloor] = useState('');
   const [newItemLocation, setNewItemLocation] = useState('');
   const [newItemType, setNewItemType] = useState('');
-  const [newItemMake, setNewItemMake] = useState('FireX');
+  const [newItemMake, setNewItemMake] = useState('');
   const [newItemCapacity, setNewItemCapacity] = useState('6 kg');
 
   // Load visit and checklist data
@@ -92,7 +92,11 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
           const chk = data.checklist || {};
           
           if (Array.isArray(chk.buildings) && chk.buildings.length > 0) {
-            setBuildings(chk.buildings);
+            setBuildings(chk.buildings.map(b => ({
+              ...b,
+              system_makes: b.system_makes || chk.system_makes || (visit.system_makes || {}),
+              system_make: b.system_make || chk.system_make || visit.system_make || ''
+            })));
           } else {
             // Create default building 1
             const defaultBld = {
@@ -101,6 +105,8 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
               building_name: visit.site_name ? `${visit.site_name} - Tower A` : 'Building 1 - Main Tower',
               location: visit.site_address || 'Main Site',
               selected_systems: ['fire_alarm', 'fire_fighting', 'fire_hose_reels', 'landing_valves', 'fire_extinguishers'],
+              system_makes: chk.system_makes || visit.system_makes || {},
+              system_make: chk.system_make || visit.system_make || '',
               checklists: {
                 fire_alarm: chk.fire_alarm_items || [],
                 fire_fighting: chk.fire_fighting_items || [],
@@ -173,6 +179,17 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     setBuildings(prev => prev.map((bld, idx) => {
       if (idx === activeBuildingIndex) {
         return { ...bld, [field]: value };
+      }
+      return bld;
+    }));
+  };
+
+  // Update system make / manufacturer for current building
+  const updateSystemMake = (sysKey, makeVal) => {
+    setBuildings(prev => prev.map((bld, idx) => {
+      if (idx === activeBuildingIndex) {
+        const nextMakes = { ...(bld.system_makes || {}), [sysKey]: makeVal };
+        return { ...bld, system_makes: nextMakes, system_make: makeVal || bld.system_make || '' };
       }
       return bld;
     }));
@@ -257,7 +274,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       newItem.floor = newItemFloor || 'Ground Floor';
       newItem.location = newItemLocation || 'Corridor';
       newItem.type = newItemType || 'Manual Swing Arm Drum';
-      newItem.make = newItemMake || 'FireX';
+      newItem.make = newItemMake || '';
       newItem.cabinet_condition = 'OK';
       newItem.hose_condition = 'OK';
       newItem.nozzle_operation = 'OK';
@@ -281,7 +298,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       newItem.serial_number = newItemIdentifier || `FX-${Date.now().toString().slice(-4)}`;
       newItem.type = newItemType || 'ABC Dry Chemical Powder';
       newItem.capacity = newItemCapacity || '6 kg';
-      newItem.make = newItemMake || 'FireX';
+      newItem.make = newItemMake || '';
       newItem.floor = newItemFloor || 'Ground Floor';
       newItem.location = newItemLocation || 'Corridor';
       newItem.condition = 'OK';
@@ -493,6 +510,14 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
 
     try {
       setSaving(true);
+      const aggregatedMakes = {};
+      buildings.forEach(bld => {
+        if (bld.system_makes) {
+          Object.assign(aggregatedMakes, bld.system_makes);
+        }
+      });
+      const primaryMake = Object.values(aggregatedMakes).filter(Boolean)[0] || '';
+
       const payload = {
         actual_service_date: actualServiceDate,
         supervisor_id: assignedSupervisorId,
@@ -500,6 +525,8 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
         technician_id: assignedTechnicianId,
         technician_name: assignedTechnicianName,
         buildings: buildings,
+        system_make: primaryMake,
+        system_makes: aggregatedMakes,
         customer_signature: customerSignature,
         technician_notes: technicianNotes,
         submit: isSubmit,
@@ -888,6 +915,42 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                 })}
               </div>
 
+              {/* System Make / Manufacturer per Inspected System */}
+              {selectedSystems.length > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">
+                        System Make / Manufacturer (Per Inspected System)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Enter the actual manufacturer or brand installed at the site for each system. Leave blank if unknown. No default brand is applied.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                    {selectedSystems.map(sysKey => {
+                      const cfg = SYSTEM_CONFIGS.find(s => s.key === sysKey);
+                      const currentMake = (currentBuilding?.system_makes && currentBuilding.system_makes[sysKey]) || '';
+                      return (
+                        <div key={sysKey} className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1">
+                          <label className="block text-[11px] font-bold text-slate-700">
+                            {cfg?.label || sysKey} Make / Manufacturer
+                          </label>
+                          <input
+                            type="text"
+                            value={currentMake}
+                            onChange={(e) => updateSystemMake(sysKey, e.target.value)}
+                            placeholder={`Enter make for ${cfg?.short || sysKey}...`}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {selectedSystems.length > 0 && (
                 <div className="pt-3 border-t border-slate-200 flex justify-end">
                   <button
@@ -923,6 +986,16 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                       ({currentItems.length} items recorded)
                     </span>
                   </h2>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-600">System Make / Manufacturer:</span>
+                    <input
+                      type="text"
+                      value={(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) || ''}
+                      onChange={(e) => updateSystemMake(activeTab, e.target.value)}
+                      placeholder={`Enter make for ${currentSystemConfig.short} (optional)`}
+                      className="p-1 px-2.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-red-500 w-56 sm:w-72"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">

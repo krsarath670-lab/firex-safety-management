@@ -42,6 +42,8 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
     call_time: call?.call_time || new Date().toTimeString().slice(0, 5),
     emergency_type: call?.emergency_type || 'Main Fire Pump Controller Malfunction',
     system: call?.system || 'Fire Alarm',
+    system_make: call?.system_make || '',
+    systems_detail: Array.isArray(call?.systems_detail) ? call.systems_detail : (call?.system_makes ? Object.entries(call.system_makes).map(([s, m]) => ({ system_type: s, make: m })) : []),
     priority: call?.priority || 'High',
     emergency_description: call?.emergency_description || '',
     reported_problem: call?.reported_problem || '',
@@ -81,6 +83,29 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState('customer'); // 'customer' | 'technician' | 'supervisor'
   const [submitting, setSubmitting] = useState(false);
+  const [showMultiSystemMakes, setShowMultiSystemMakes] = useState(Array.isArray(call?.systems_detail) && call.systems_detail.length > 0);
+
+  const handleAddSystemDetail = () => {
+    setFormData(p => ({
+      ...p,
+      systems_detail: [...(p.systems_detail || []), { system_type: 'Fire Alarm System', make: '' }]
+    }));
+  };
+
+  const handleUpdateSystemDetail = (index, field, value) => {
+    setFormData(p => {
+      const next = [...(p.systems_detail || [])];
+      next[index] = { ...next[index], [field]: value };
+      return { ...p, systems_detail: next };
+    });
+  };
+
+  const handleRemoveSystemDetail = (index) => {
+    setFormData(p => ({
+      ...p,
+      systems_detail: (p.systems_detail || []).filter((_, i) => i !== index)
+    }));
+  };
 
   // Material item draft state
   const [newMaterial, setNewMaterial] = useState({ name: '', part_number: '', quantity: 1, unit: 'pcs' });
@@ -256,6 +281,17 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
       const url = isNew ? '/api/emergency-calls' : `/api/emergency-calls/${call.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
+      const makesObj = {};
+      (formData.systems_detail || []).forEach(item => {
+        if (item.system_type && item.make) {
+          makesObj[item.system_type] = item.make;
+        }
+      });
+      const payload = {
+        ...formData,
+        system_makes: Object.keys(makesObj).length > 0 ? makesObj : (call?.system_makes || {})
+      };
+
       const res = await fetch(url, {
         method,
         headers: {
@@ -263,7 +299,7 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
           'x-user-role': currentUser.role,
           'x-user-id': currentUser.id
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
@@ -410,6 +446,105 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                   {isGM && <option value="Cancelled">Cancelled</option>}
                 </select>
               </div>
+            </div>
+
+            {/* System Make / Manufacturer & Multi-System Details */}
+            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex-1">
+                  <label className="block font-bold text-slate-700 mb-1">
+                    System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    disabled={isLocked}
+                    value={formData.system_make}
+                    onChange={(e) => setFormData(p => ({ ...p, system_make: e.target.value }))}
+                    placeholder="Enter manufacturer / brand (leave blank if unknown)"
+                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    No default brand is prefilled. Leave blank if unknown or record specific system makes below.
+                  </span>
+                </div>
+                <div className="sm:self-center pt-1 sm:pt-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!showMultiSystemMakes) {
+                        setShowMultiSystemMakes(true);
+                        if (!formData.systems_detail || formData.systems_detail.length === 0) {
+                          handleAddSystemDetail();
+                        }
+                      } else {
+                        setShowMultiSystemMakes(false);
+                      }
+                    }}
+                    className="w-full sm:w-auto px-3 py-2 text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-300 transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <span>{showMultiSystemMakes ? '▲ Hide System Types' : '▼ Separate System Types'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {showMultiSystemMakes && (
+                <div className="pt-2.5 border-t border-slate-200 space-y-2 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700">Different Manufacturers by System Type:</span>
+                    <button
+                      type="button"
+                      onClick={handleAddSystemDetail}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add System Type
+                    </button>
+                  </div>
+
+                  {(formData.systems_detail || []).map((detail, idx) => (
+                    <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">System Type</label>
+                        <select
+                          disabled={isLocked}
+                          value={detail.system_type}
+                          onChange={(e) => handleUpdateSystemDetail(idx, 'system_type', e.target.value)}
+                          className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 font-medium"
+                        >
+                          <option value="Fire Alarm System">Fire Alarm System</option>
+                          <option value="Fire Fighting System">Fire Fighting System</option>
+                          <option value="Fire Extinguisher System">Fire Extinguisher System</option>
+                          <option value="FM200 System">FM200 System</option>
+                          <option value="LPG Detection System">LPG Detection System</option>
+                          <option value="Sprinkler System">Sprinkler System</option>
+                          <option value="Fire Hose Reel System">Fire Hose Reel System</option>
+                          <option value="Emergency & Exit Lighting">Emergency &amp; Exit Lighting</option>
+                          <option value="Voice Evacuation System">Voice Evacuation System</option>
+                          <option value="Other System">Other System</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">System Make / Manufacturer</label>
+                        <input
+                          type="text"
+                          disabled={isLocked}
+                          value={detail.make}
+                          onChange={(e) => handleUpdateSystemDetail(idx, 'make', e.target.value)}
+                          placeholder="Type manufacturer brand manually..."
+                          className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSystemDetail(idx)}
+                        className="self-end sm:self-center p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                        title="Remove system make entry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Customer & Site Pickers */}

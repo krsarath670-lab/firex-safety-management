@@ -247,7 +247,7 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
         </div>
 
         {/* System & Emergency Classification Bar */}
-        <div className="p-3 bg-red-50/70 border border-red-200 rounded-xl mb-5 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="p-3 bg-red-50/70 border border-red-200 rounded-xl mb-3 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div>
             <span className="text-slate-500 font-semibold">Emergency Type: </span>
             <strong className="text-red-900 font-black">{call.emergency_type}</strong>
@@ -257,10 +257,38 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
             <strong className="text-navy-900 font-bold">{call.system}</strong>
           </div>
           <div>
+            <span className="text-slate-500 font-semibold">System Make / Manufacturer: </span>
+            <strong className="text-slate-900 font-bold">
+              {call.system_make || (call.systems_detail && call.systems_detail.length > 0 ? call.systems_detail.map(s => s.make).filter(Boolean).join(', ') : '') || 'Not specified'}
+            </strong>
+          </div>
+          <div>
             <span className="text-slate-500 font-semibold">Status: </span>
             <strong className="text-slate-900 font-bold">{call.status}</strong>
           </div>
         </div>
+
+        {/* Detailed System Types & Makes Table (if multiple systems specified) */}
+        {((call.systems_detail && call.systems_detail.length > 0) || (call.system_makes && Object.keys(call.system_makes).length > 0)) && (
+          <div className="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+            <span className="text-[10px] font-black uppercase text-slate-500 block mb-1.5 tracking-wider">
+              Installed System Types &amp; Manufacturers at Site
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {(call.systems_detail && call.systems_detail.length > 0
+                ? call.systems_detail
+                : Object.entries(call.system_makes || {}).map(([s, m]) => ({ system_type: s, make: m }))
+              ).map((item, idx) => (
+                <div key={idx} className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span className="font-semibold text-slate-700 text-[11px]">{item.system_type}</span>
+                  <span className="font-bold text-red-900 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10.5px]">
+                    {item.make || 'Not specified'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* WORK DETAILS (Reported Problem, Findings, Cause, Action, Rectification)    */}

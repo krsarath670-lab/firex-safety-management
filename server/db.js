@@ -4401,6 +4401,9 @@ class Database {
       call_time: callData.call_time || new Date().toTimeString().slice(0, 5),
       emergency_type: callData.emergency_type || 'General Fire Safety Emergency',
       system: callData.system || 'Fire Alarm',
+      system_make: callData.system_make || '',
+      system_makes: callData.system_makes || {},
+      systems_detail: Array.isArray(callData.systems_detail) ? callData.systems_detail : [],
       emergency_description: callData.emergency_description || '',
       reported_problem: callData.reported_problem || '',
       priority: callData.priority || 'High',
@@ -4784,11 +4787,21 @@ class Database {
 
     const buildings = payload.buildings || visit.checklist_data?.buildings || [];
 
+    // System Make / Manufacturer support
+    if (payload.system_make !== undefined) {
+      visit.system_make = payload.system_make;
+    }
+    if (payload.system_makes !== undefined) {
+      visit.system_makes = payload.system_makes;
+    }
+
     visit.checklist_data = {
       status,
       submitted_at: isSubmitting ? new Date().toISOString() : (visit.checklist_data?.submitted_at || null),
       submitted_by: isSubmitting ? currentUser.name : (visit.checklist_data?.submitted_by || null),
       buildings: buildings,
+      system_make: visit.system_make || payload.system_make || '',
+      system_makes: visit.system_makes || payload.system_makes || {},
       fire_alarm_items: payload.fire_alarm_items || visit.checklist_data?.fire_alarm_items || (buildings[0]?.checklists?.fire_alarm || []),
       fire_fighting_items: payload.fire_fighting_items || visit.checklist_data?.fire_fighting_items || (buildings[0]?.checklists?.fire_fighting || []),
       extinguisher_items: payload.extinguisher_items || visit.checklist_data?.extinguisher_items || (buildings[0]?.checklists?.fire_extinguishers || []),
@@ -4920,6 +4933,8 @@ class Database {
       prepared_by_user_id: currentUser?.id || visit.technician_id,
       prepared_date: new Date().toISOString().slice(0, 10),
       systems: visit.systems || contract?.systems_covered || ['Fire Alarm', 'Fire Fighting'],
+      system_make: visit.system_make || payload.system_make || '',
+      system_makes: visit.system_makes || payload.system_makes || {},
       buildings: buildings,
       checklist_data: visit.checklist_data,
       status: reportStatus,

@@ -613,7 +613,7 @@ export default function EmergencyCalloutView() {
                   {/* Middle: Emergency Nature & Problem */}
                   <div className="space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-wider text-red-700 block">
-                      {c.system} • {c.emergency_type}
+                      {c.system}{c.system_make ? ` (${c.system_make})` : ''} • {c.emergency_type}
                     </span>
                     <p className="text-slate-700 line-clamp-2 leading-relaxed">
                       {c.reported_problem || c.emergency_description}
