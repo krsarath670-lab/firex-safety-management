@@ -263,6 +263,12 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
             </strong>
           </div>
           <div>
+            <span className="text-slate-500 font-semibold">Quantity (QTY): </span>
+            <strong className="text-slate-900 font-bold font-mono">
+              {call.system_qty || (call.systems_detail && call.systems_detail.length > 0 ? call.systems_detail.map(s => s.quantity).filter(Boolean).join(', ') : '') || '-'}
+            </strong>
+          </div>
+          <div>
             <span className="text-slate-500 font-semibold">Status: </span>
             <strong className="text-slate-900 font-bold">{call.status}</strong>
           </div>
@@ -272,18 +278,25 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
         {((call.systems_detail && call.systems_detail.length > 0) || (call.system_makes && Object.keys(call.system_makes).length > 0)) && (
           <div className="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
             <span className="text-[10px] font-black uppercase text-slate-500 block mb-1.5 tracking-wider">
-              Installed System Types &amp; Manufacturers at Site
+              Installed System Types, Manufacturers &amp; Quantities at Site
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {(call.systems_detail && call.systems_detail.length > 0
                 ? call.systems_detail
-                : Object.entries(call.system_makes || {}).map(([s, m]) => ({ system_type: s, make: m }))
+                : Object.entries(call.system_makes || {}).map(([s, m]) => ({ system_type: s, make: m, quantity: (call.system_qtys && call.system_qtys[s]) || '' }))
               ).map((item, idx) => (
                 <div key={idx} className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between">
                   <span className="font-semibold text-slate-700 text-[11px]">{item.system_type}</span>
-                  <span className="font-bold text-red-900 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10.5px]">
-                    {item.make || 'Not specified'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-red-900 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[10.5px]">
+                      {item.make || 'Make: -'}
+                    </span>
+                    {item.quantity && (
+                      <span className="font-mono font-bold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10.5px]">
+                        QTY: {item.quantity}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -307,13 +320,20 @@ export default function EmergencyCalloutPDF({ call, onClose }) {
 
           {/* Technical Findings */}
           <div className="border border-slate-200 rounded-xl p-3 bg-white">
-            <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px] mb-1 text-navy-900 flex items-center justify-between">
+            <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px] mb-1 text-navy-900 flex items-center justify-between flex-wrap gap-2">
               <span>2. On-Site Inspection &amp; Technical Findings</span>
-              {call.system_make && (
-                <span className="font-mono text-[10px] text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded">
-                  System Make: {call.system_make}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {call.system_make && (
+                  <span className="font-mono text-[10px] text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded">
+                    Make: {call.system_make}
+                  </span>
+                )}
+                {call.system_qty && (
+                  <span className="font-mono text-[10px] text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded">
+                    QTY: {call.system_qty}
+                  </span>
+                )}
+              </div>
             </h4>
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
               {call.findings || 'Technician conducted initial visual inspection and diagnostic loop / hydraulic testing on arrival.'}

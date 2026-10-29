@@ -73,6 +73,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
   const [newItemLocation, setNewItemLocation] = useState('');
   const [newItemType, setNewItemType] = useState('');
   const [newItemMake, setNewItemMake] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemCapacity, setNewItemCapacity] = useState('6 kg');
 
   // Load visit and checklist data
@@ -95,7 +96,9 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
             setBuildings(chk.buildings.map(b => ({
               ...b,
               system_makes: b.system_makes || chk.system_makes || (visit.system_makes || {}),
-              system_make: b.system_make || chk.system_make || visit.system_make || ''
+              system_make: b.system_make || chk.system_make || visit.system_make || '',
+              system_qtys: b.system_qtys || chk.system_qtys || (visit.system_qtys || {}),
+              system_qty: b.system_qty || chk.system_qty || visit.system_qty || ''
             })));
           } else {
             // Create default building 1
@@ -107,6 +110,8 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
               selected_systems: ['fire_alarm', 'fire_fighting', 'fire_hose_reels', 'landing_valves', 'fire_extinguishers'],
               system_makes: chk.system_makes || visit.system_makes || {},
               system_make: chk.system_make || visit.system_make || '',
+              system_qtys: chk.system_qtys || visit.system_qtys || {},
+              system_qty: chk.system_qty || visit.system_qty || '',
               checklists: {
                 fire_alarm: chk.fire_alarm_items || [],
                 fire_fighting: chk.fire_fighting_items || [],
@@ -184,12 +189,29 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     }));
   };
 
+  // Helper for positive whole number validation
+  const isValidPositiveInt = (val) => {
+    if (val === '' || val === null || val === undefined) return true;
+    return /^[1-9]\d*$/.test(String(val).trim());
+  };
+
   // Update system make / manufacturer for current building
   const updateSystemMake = (sysKey, makeVal) => {
     setBuildings(prev => prev.map((bld, idx) => {
       if (idx === activeBuildingIndex) {
         const nextMakes = { ...(bld.system_makes || {}), [sysKey]: makeVal };
         return { ...bld, system_makes: nextMakes, system_make: makeVal || bld.system_make || '' };
+      }
+      return bld;
+    }));
+  };
+
+  // Update system quantity (QTY) for current building
+  const updateSystemQty = (sysKey, qtyVal) => {
+    setBuildings(prev => prev.map((bld, idx) => {
+      if (idx === activeBuildingIndex) {
+        const nextQtys = { ...(bld.system_qtys || {}), [sysKey]: qtyVal };
+        return { ...bld, system_qtys: nextQtys, system_qty: qtyVal || bld.system_qty || '' };
       }
       return bld;
     }));
@@ -264,6 +286,8 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     let newItem = {
       id: `${sysKey.slice(0, 3)}-${bNumber}-${Date.now()}`,
       building_number: bNumber,
+      make: newItemMake || '',
+      quantity: newItemQuantity || '',
       status: 'OK',
       remarks: '',
       photos: []
@@ -358,7 +382,7 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
       newItem.item = newItemIdentifier || `Safety Equipment Device`;
       newItem.make = newItemMake || '';
       newItem.type = newItemType || '';
-      newItem.quantity = '1';
+      newItem.quantity = newItemQuantity || '';
     }
 
     setBuildings(prev => prev.map((bld, idx) => {
@@ -511,12 +535,17 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
     try {
       setSaving(true);
       const aggregatedMakes = {};
+      const aggregatedQtys = {};
       buildings.forEach(bld => {
         if (bld.system_makes) {
           Object.assign(aggregatedMakes, bld.system_makes);
         }
+        if (bld.system_qtys) {
+          Object.assign(aggregatedQtys, bld.system_qtys);
+        }
       });
       const primaryMake = Object.values(aggregatedMakes).filter(Boolean)[0] || '';
+      const primaryQty = Object.values(aggregatedQtys).filter(Boolean)[0] || '';
 
       const payload = {
         actual_service_date: actualServiceDate,
@@ -527,6 +556,8 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
         buildings: buildings,
         system_make: primaryMake,
         system_makes: aggregatedMakes,
+        system_qty: primaryQty,
+        system_qtys: aggregatedQtys,
         customer_signature: customerSignature,
         technician_notes: technicianNotes,
         submit: isSubmit,
@@ -915,35 +946,74 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                 })}
               </div>
 
-              {/* System Make / Manufacturer per Inspected System */}
+              {/* System Make / Manufacturer & Quantity (QTY) per Inspected System */}
               {selectedSystems.length > 0 && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">
-                        System Make / Manufacturer (Per Inspected System)
+                        System Specifications (Make / Manufacturer &amp; QTY)
                       </h3>
                       <p className="text-[11px] text-slate-500">
-                        Enter the actual manufacturer or brand installed at the site for each system. Leave blank if unknown. No default brand is applied.
+                        Enter the actual manufacturer and inspected quantity for each system. Leave blank if unknown. No default brand or quantity is prefilled.
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3 pt-1">
                     {selectedSystems.map(sysKey => {
                       const cfg = SYSTEM_CONFIGS.find(s => s.key === sysKey);
                       const currentMake = (currentBuilding?.system_makes && currentBuilding.system_makes[sysKey]) || '';
+                      const currentQty = (currentBuilding?.system_qtys && currentBuilding.system_qtys[sysKey]) || '';
+                      const isQtyValid = isValidPositiveInt(currentQty);
                       return (
-                        <div key={sysKey} className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1">
-                          <label className="block text-[11px] font-bold text-slate-700">
-                            {cfg?.label || sysKey} Make / Manufacturer
-                          </label>
-                          <input
-                            type="text"
-                            value={currentMake}
-                            onChange={(e) => updateSystemMake(sysKey, e.target.value)}
-                            placeholder={`Enter make for ${cfg?.short || sysKey}...`}
-                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                          />
+                        <div key={sysKey} className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                            <span className="text-xs font-black text-slate-900">{cfg?.label || sysKey}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${cfg?.badgeColor}`}>
+                              {cfg?.short}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10.5px] font-bold text-slate-700 mb-0.5">
+                                Make / Manufacturer
+                              </label>
+                              <input
+                                type="text"
+                                value={currentMake}
+                                onChange={(e) => updateSystemMake(sysKey, e.target.value)}
+                                placeholder="Type manufacturer manually..."
+                                className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between mb-0.5">
+                                <label className="block text-[10.5px] font-bold text-slate-700">
+                                  Quantity (QTY)
+                                </label>
+                                {!isQtyValid && (
+                                  <span className="text-[9.5px] font-bold text-red-600">Whole number</span>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={currentQty}
+                                onChange={(e) => updateSystemQty(sysKey, e.target.value)}
+                                placeholder="e.g. 1, 4, 25..."
+                                className={`w-full p-2 border rounded text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none ${
+                                  !isQtyValid
+                                    ? 'border-red-500 bg-red-50/50'
+                                    : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          {!isQtyValid && (
+                            <p className="text-[10px] text-red-600 font-medium">
+                              Invalid quantity: Please enter a valid positive whole number (e.g. 1, 4, 12).
+                            </p>
+                          )}
                         </div>
                       );
                     })}
@@ -1003,27 +1073,58 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                   </div>
                 </div>
 
-                {/* Direct System Make / Manufacturer Field */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex-1">
+                {/* Direct System Make / Manufacturer & Quantity (QTY) Field */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
                       <label className="block text-xs font-bold text-slate-800 mb-1">
-                        System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                        {currentSystemConfig.label} Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
                         value={(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) || ''}
                         onChange={(e) => updateSystemMake(activeTab, e.target.value)}
-                        placeholder={`Enter manufacturer for ${currentSystemConfig.label} (e.g. Honeywell, Patterson, Kidde, NAFFCO...)`}
+                        placeholder={`Enter manufacturer for ${currentSystemConfig.short} (leave blank if unknown)...`}
                         className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                       />
                     </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-800">
+                          {currentSystemConfig.label} Quantity (QTY) <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        {(currentBuilding?.system_qtys && currentBuilding.system_qtys[activeTab]) && !isValidPositiveInt(currentBuilding.system_qtys[activeTab]) && (
+                          <span className="text-[10px] font-bold text-red-600 animate-pulse">
+                            Must be a positive whole number
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={(currentBuilding?.system_qtys && currentBuilding.system_qtys[activeTab]) || ''}
+                        onChange={(e) => updateSystemQty(activeTab, e.target.value)}
+                        placeholder={`Enter total quantity for ${currentSystemConfig.short} (e.g. 1, 4, 25)...`}
+                        className={`w-full p-2 bg-white border rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none ${
+                          (currentBuilding?.system_qtys && currentBuilding.system_qtys[activeTab]) && !isValidPositiveInt(currentBuilding.system_qtys[activeTab])
+                            ? 'border-red-500 bg-red-50/50 focus:ring-2 focus:ring-red-500/20'
+                            : 'border-slate-300 focus:ring-2 focus:ring-red-500/20 focus:border-red-500'
+                        }`}
+                      />
+                      {(currentBuilding?.system_qtys && currentBuilding.system_qtys[activeTab]) && !isValidPositiveInt(currentBuilding.system_qtys[activeTab]) && (
+                        <p className="text-[10px] text-red-600 mt-1 font-medium">
+                          Invalid quantity: Please enter a valid positive whole number (e.g. 1, 4, 12).
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1.5">
+
+                  <div className="flex items-center justify-between text-[10.5px] text-slate-500 pt-1 border-t border-slate-200">
                     <span>
-                      Building {currentBuilding?.building_number} – {currentSystemConfig.label} – System Make: {(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) ? <strong className="text-slate-800">{currentBuilding.system_makes[activeTab]}</strong> : <span className="text-slate-400 italic">Not entered (blank)</span>}
+                      Building {currentBuilding?.building_number} – {currentSystemConfig.label} – Make: {(currentBuilding?.system_makes && currentBuilding.system_makes[activeTab]) ? <strong className="text-slate-800">{currentBuilding.system_makes[activeTab]}</strong> : <span className="text-slate-400 italic">Blank</span>} • QTY: {(currentBuilding?.system_qtys && currentBuilding.system_qtys[activeTab]) ? <strong className="text-slate-800">{currentBuilding.system_qtys[activeTab]}</strong> : <span className="text-slate-400 italic">Blank</span>}
                     </span>
-                    <span className="text-slate-400">Blank by default. No default brand.</span>
+                    <span className="text-slate-400">Blank by default. Manual typing only.</span>
                   </div>
                 </div>
               </div>
@@ -1419,18 +1520,52 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                               </>
                             )}
 
-                            {/* Panel / Equipment Make & Model field */}
-                            <div className="col-span-2 sm:col-span-4 mt-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center gap-2">
-                              <span className="text-[11px] font-bold text-slate-700 whitespace-nowrap">
-                                Panel / Equipment Make:
-                              </span>
-                              <input
-                                type="text"
-                                value={item.make || ''}
-                                onChange={(e) => updateChecklistItem(activeTab, item.id, 'make', e.target.value)}
-                                placeholder="Enter specific panel / item make (leave blank if unknown)..."
-                                className="w-full text-xs rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-800 placeholder:text-slate-400 focus:border-red-500 focus:outline-none"
-                              />
+                            {/* System Make / Manufacturer & Quantity (QTY) Fields for Every Item */}
+                            <div className="col-span-2 sm:col-span-4 mt-1 bg-slate-50/90 p-2.5 rounded-xl border border-slate-200 space-y-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
+                                    Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={item.make || ''}
+                                    onChange={(e) => updateChecklistItem(activeTab, item.id, 'make', e.target.value)}
+                                    placeholder="Type manufacturer manually (leave blank if unknown)..."
+                                    className="w-full text-xs rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-slate-800 placeholder:text-slate-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+                                  />
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <label className="block text-[11px] font-bold text-slate-700">
+                                      Quantity (QTY) <span className="text-slate-400 font-normal">(Optional)</span>
+                                    </label>
+                                    {item.quantity && !isValidPositiveInt(item.quantity) && (
+                                      <span className="text-[10px] font-bold text-red-600 animate-pulse">
+                                        Must be a whole number
+                                      </span>
+                                    )}
+                                  </div>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={item.quantity !== undefined && item.quantity !== null && item.quantity !== 'N/A' ? item.quantity : ''}
+                                    onChange={(e) => updateChecklistItem(activeTab, item.id, 'quantity', e.target.value)}
+                                    placeholder="e.g. 1, 2, 5, 20..."
+                                    className={`w-full text-xs rounded-lg border px-2.5 py-1.5 text-slate-800 placeholder:text-slate-400 focus:outline-none ${
+                                      item.quantity && !isValidPositiveInt(item.quantity)
+                                        ? 'border-red-500 bg-red-50/50 focus:ring-1 focus:ring-red-500'
+                                        : 'border-slate-200 bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                              {item.quantity && !isValidPositiveInt(item.quantity) && (
+                                <p className="text-[10px] text-red-600 font-medium">
+                                  Invalid quantity: Please enter a valid positive whole number (e.g. 1, 4, 12).
+                                </p>
+                              )}
                             </div>
 
                           </div>
@@ -1783,6 +1918,42 @@ export default function AMCChecklistModal({ visit, onClose, onRefresh, onViewRep
                   </div>
                 </div>
               )}
+
+              {/* Make / Manufacturer & Quantity (QTY) Fields */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newItemMake}
+                    onChange={(e) => setNewItemMake(e.target.value)}
+                    placeholder="e.g. Honeywell, FireX..."
+                    className="w-full text-xs rounded-xl border-slate-300 p-2.5 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Quantity (QTY) <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={newItemQuantity}
+                    onChange={(e) => setNewItemQuantity(e.target.value)}
+                    placeholder="e.g. 1, 2, 5..."
+                    className={`w-full text-xs rounded-xl border p-2.5 font-medium focus:outline-none ${
+                      newItemQuantity && !isValidPositiveInt(newItemQuantity)
+                        ? 'border-red-500 bg-red-50/50'
+                        : 'border-slate-300 focus:border-red-500'
+                    }`}
+                  />
+                  {newItemQuantity && !isValidPositiveInt(newItemQuantity) && (
+                    <span className="text-[10px] text-red-600 block mt-0.5">Must be a whole number</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">

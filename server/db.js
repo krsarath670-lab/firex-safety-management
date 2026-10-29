@@ -4402,7 +4402,9 @@ class Database {
       emergency_type: callData.emergency_type || 'General Fire Safety Emergency',
       system: callData.system || 'Fire Alarm',
       system_make: callData.system_make || '',
+      system_qty: callData.system_qty || '',
       system_makes: callData.system_makes || {},
+      system_qtys: callData.system_qtys || {},
       systems_detail: Array.isArray(callData.systems_detail) ? callData.systems_detail : [],
       emergency_description: callData.emergency_description || '',
       reported_problem: callData.reported_problem || '',
@@ -4795,6 +4797,14 @@ class Database {
       visit.system_makes = payload.system_makes;
     }
 
+    // System Quantity (QTY) support
+    if (payload.system_qty !== undefined) {
+      visit.system_qty = payload.system_qty;
+    }
+    if (payload.system_qtys !== undefined) {
+      visit.system_qtys = payload.system_qtys;
+    }
+
     visit.checklist_data = {
       status,
       submitted_at: isSubmitting ? new Date().toISOString() : (visit.checklist_data?.submitted_at || null),
@@ -4802,6 +4812,8 @@ class Database {
       buildings: buildings,
       system_make: visit.system_make || payload.system_make || '',
       system_makes: visit.system_makes || payload.system_makes || {},
+      system_qty: visit.system_qty || payload.system_qty || '',
+      system_qtys: visit.system_qtys || payload.system_qtys || {},
       fire_alarm_items: payload.fire_alarm_items || visit.checklist_data?.fire_alarm_items || (buildings[0]?.checklists?.fire_alarm || []),
       fire_fighting_items: payload.fire_fighting_items || visit.checklist_data?.fire_fighting_items || (buildings[0]?.checklists?.fire_fighting || []),
       extinguisher_items: payload.extinguisher_items || visit.checklist_data?.extinguisher_items || (buildings[0]?.checklists?.fire_extinguishers || []),
@@ -4935,6 +4947,8 @@ class Database {
       systems: visit.systems || contract?.systems_covered || ['Fire Alarm', 'Fire Fighting'],
       system_make: visit.system_make || payload.system_make || '',
       system_makes: visit.system_makes || payload.system_makes || {},
+      system_qty: visit.system_qty || payload.system_qty || '',
+      system_qtys: visit.system_qtys || payload.system_qtys || {},
       buildings: buildings,
       checklist_data: visit.checklist_data,
       status: reportStatus,

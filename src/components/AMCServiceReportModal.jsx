@@ -362,38 +362,54 @@ export default function AMCServiceReportModal({ visit, onClose }) {
               </div>
 
               <div className="pt-1 border-t border-slate-200 mt-1">
-                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">System Make / Manufacturer</span>
+                <span className="text-[9.5px] uppercase font-bold text-slate-500 block">System Specifications (Make &amp; QTY)</span>
                 <div className="font-bold text-slate-900">
                   {(() => {
                     const entries = [];
                     reportBuildings.forEach((bld, idx) => {
                       const bLabel = bld.building_name || `Building ${bld.building_number || idx + 1}`;
-                      if (bld.system_makes) {
-                        Object.entries(bld.system_makes).forEach(([sysKey, makeVal]) => {
-                          if (makeVal) {
-                            const sysName = sysKey === 'fire_alarm' ? 'Fire Alarm Panel' :
-                                            sysKey === 'fire_fighting' ? 'Fire Fighting System' :
-                                            sysKey === 'fire_extinguishers' ? 'Fire Extinguishers' :
-                                            sysKey === 'fire_hose_reels' ? 'Fire Hose Reel' :
-                                            sysKey === 'landing_valves' ? 'Landing Valve' :
-                                            sysKey === 'fm200_suppression' ? 'FM200 System' :
-                                            sysKey === 'lpg_detection' ? 'LPG Detection System' :
-                                            sysKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                            entries.push(`${bLabel} – ${sysName} – System Make: ${makeVal}`);
-                          }
-                        });
-                      }
+                      const bMakes = bld.system_makes || {};
+                      const bQtys = bld.system_qtys || {};
+                      const allKeys = new Set([...Object.keys(bMakes), ...Object.keys(bQtys)]);
+                      allKeys.forEach((sysKey) => {
+                        const makeVal = bMakes[sysKey];
+                        const qtyVal = bQtys[sysKey];
+                        if (makeVal || qtyVal) {
+                          const sysName = sysKey === 'fire_alarm' ? 'Fire Alarm Panel' :
+                                          sysKey === 'fire_fighting' ? 'Fire Fighting System' :
+                                          sysKey === 'fire_extinguishers' ? 'Fire Extinguishers' :
+                                          sysKey === 'fire_hose_reels' ? 'Fire Hose Reel' :
+                                          sysKey === 'landing_valves' ? 'Landing Valve' :
+                                          sysKey === 'fm200_suppression' ? 'FM200 System' :
+                                          sysKey === 'lpg_detection' ? 'LPG Detection System' :
+                                          sysKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          const details = [
+                            makeVal ? `Make: ${makeVal}` : null,
+                            qtyVal ? `QTY: ${qtyVal}` : null
+                          ].filter(Boolean).join(' • ');
+                          entries.push(`${bLabel} – ${sysName} – ${details}`);
+                        }
+                      });
                     });
                     if (entries.length === 0) {
                       const visitMakes = visit.system_makes || chk.system_makes || {};
-                      Object.entries(visitMakes).forEach(([sysKey, makeVal]) => {
-                        if (makeVal) {
+                      const visitQtys = visit.system_qtys || chk.system_qtys || {};
+                      const allKeys = new Set([...Object.keys(visitMakes), ...Object.keys(visitQtys)]);
+                      allKeys.forEach((sysKey) => {
+                        const makeVal = visitMakes[sysKey];
+                        const qtyVal = visitQtys[sysKey];
+                        if (makeVal || qtyVal) {
                           const sysName = sysKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                          entries.push(`${sysName} – System Make: ${makeVal}`);
+                          const details = [
+                            makeVal ? `Make: ${makeVal}` : null,
+                            qtyVal ? `QTY: ${qtyVal}` : null
+                          ].filter(Boolean).join(' • ');
+                          entries.push(`${sysName} – ${details}`);
                         }
                       });
                     }
                     const generalMake = visit.system_make || chk.system_make || '';
+                    const generalQty = visit.system_qty || chk.system_qty || '';
                     if (entries.length > 0) {
                       return (
                         <div className="space-y-0.5 mt-0.5">
@@ -403,7 +419,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         </div>
                       );
                     }
-                    if (generalMake) return generalMake;
+                    if (generalMake || generalQty) {
+                      return `${generalMake ? `Make: ${generalMake}` : ''}${generalQty ? ` • QTY: ${generalQty}` : ''}`;
+                    }
                     return '-';
                   })()}
                 </div>
@@ -429,7 +447,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                 <th className="p-2 border-r border-slate-200">Building Name</th>
                 <th className="p-2 border-r border-slate-200">Location</th>
                 <th className="p-2 border-r border-slate-200">Inspected Systems</th>
-                <th className="p-2 border-r border-slate-200">System Make / Manufacturer</th>
+                <th className="p-2 border-r border-slate-200">System Make / Manufacturer &amp; QTY</th>
                 <th className="p-2 border-r border-slate-200 text-center">Items</th>
                 <th className="p-2 text-center">Defects</th>
               </tr>
@@ -463,9 +481,19 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                     <td className="p-2 border-r border-slate-200 text-slate-700 font-medium">
                       {(() => {
                         const bMakes = bld.system_makes || {};
-                        const entries = Object.entries(bMakes).filter(([_, m]) => m);
+                        const bQtys = bld.system_qtys || {};
+                        const allKeys = new Set([...Object.keys(bMakes), ...Object.keys(bQtys)]);
+                        const entries = [];
+                        allKeys.forEach((s) => {
+                          const m = bMakes[s];
+                          const q = bQtys[s];
+                          if (m || q) {
+                            const sName = s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            entries.push(`${sName}: ${[m ? `Make: ${m}` : null, q ? `QTY: ${q}` : null].filter(Boolean).join(', ')}`);
+                          }
+                        });
                         if (entries.length > 0) {
-                          return entries.map(([s, m]) => `${s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${m}`).join(', ');
+                          return entries.join(' • ');
                         }
                         return bld.system_make || visit.system_make || '-';
                       })()}
@@ -531,7 +559,7 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <span>1. FIRE ALARM &amp; DETECTION SYSTEM CHECKLIST</span>
                       </span>
                       <span className="text-[10px] text-slate-600 font-normal">
-                        Civil Defense Routine Inspection{(bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm) ? ` • Make: ${bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm}` : ''}
+                        Civil Defense Routine Inspection{(bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm) ? ` • Make: ${bld.system_makes?.fire_alarm || visit.system_makes?.fire_alarm}` : ''}{(bld.system_qtys?.fire_alarm || visit.system_qtys?.fire_alarm) ? ` • QTY: ${bld.system_qtys?.fire_alarm || visit.system_qtys?.fire_alarm}` : ''}
                       </span>
                     </div>
 
@@ -540,8 +568,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
                           <th className="p-1.5 border-r border-slate-200 w-10 text-center">No.</th>
                           <th className="p-1.5 border-r border-slate-200">Device / Component</th>
-                          <th className="p-1.5 border-r border-slate-200">Type / Make</th>
-                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
+                          <th className="p-1.5 border-r border-slate-200">Type</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
                           <th className="p-1.5">Observations / Findings</th>
                         </tr>
@@ -551,8 +580,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={item.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 text-center font-mono">{idx + 1}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{item.item}</td>
-                            <td className="p-1.5 border-r border-slate-200 text-slate-600">{item.type || item.make || '-'}</td>
-                            <td className="p-1.5 border-r border-slate-200 text-center font-mono">{item.quantity || '1'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-600">{item.type || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 font-medium text-slate-800">{item.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{item.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center font-bold">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] ${
                                 item.status === 'OK' ? 'bg-emerald-100 text-emerald-800' :
@@ -577,9 +607,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Shield className="w-3.5 h-3.5 text-blue-600" />
                         <span>2. FIRE FIGHTING SYSTEM (PUMPS, TANK &amp; SPRINKLERS)</span>
                       </span>
-                      {(bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting) && (
+                      {((bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting) || (bld.system_qtys?.fire_fighting || visit.system_qtys?.fire_fighting)) && (
                         <span className="text-[10px] text-blue-800 font-normal">
-                          Make: {bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting}
+                          {[bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting ? `Make: ${bld.system_makes?.fire_fighting || visit.system_makes?.fire_fighting}` : null, bld.system_qtys?.fire_fighting || visit.system_qtys?.fire_fighting ? `QTY: ${bld.system_qtys?.fire_fighting || visit.system_qtys?.fire_fighting}` : null].filter(Boolean).join(' • ')}
                         </span>
                       )}
                     </div>
@@ -589,8 +619,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
                           <th className="p-1.5 border-r border-slate-200 w-10 text-center">No.</th>
                           <th className="p-1.5 border-r border-slate-200">Equipment Description</th>
-                          <th className="p-1.5 border-r border-slate-200">Specification / Make</th>
-                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
+                          <th className="p-1.5 border-r border-slate-200">Specification</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
                           <th className="p-1.5">Operational Observations</th>
                         </tr>
@@ -600,8 +631,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={item.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 text-center font-mono">{idx + 1}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{item.item}</td>
-                            <td className="p-1.5 border-r border-slate-200 text-slate-600">{item.type || item.make || '-'}</td>
-                            <td className="p-1.5 border-r border-slate-200 text-center font-mono">{item.quantity || '1'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-600">{item.type || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 font-medium text-slate-800">{item.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{item.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center font-bold">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] ${
                                 item.status === 'OK' ? 'bg-emerald-100 text-emerald-800' :
@@ -626,20 +658,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Wrench className="w-3.5 h-3.5 text-amber-600" />
                         <span>3. FIRE HOSE REEL SYSTEM DEDICATED CHECKLIST</span>
                       </span>
-                      <span className="text-[10px] text-amber-800 font-bold font-mono">
-                        {chks.fire_hose_reels.length} Unit(s)
-                      </span>
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.fire_hose_reels || visit.system_makes?.fire_hose_reels) || (bld.system_qtys?.fire_hose_reels || visit.system_qtys?.fire_hose_reels)) && (
+                          <span className="text-[10px] text-amber-900 font-normal">
+                            {[bld.system_makes?.fire_hose_reels || visit.system_makes?.fire_hose_reels ? `Make: ${bld.system_makes?.fire_hose_reels || visit.system_makes?.fire_hose_reels}` : null, bld.system_qtys?.fire_hose_reels || visit.system_qtys?.fire_hose_reels ? `QTY: ${bld.system_qtys?.fire_hose_reels || visit.system_qtys?.fire_hose_reels}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-amber-800 font-bold font-mono">
+                          {chks.fire_hose_reels.length} Unit(s)
+                        </span>
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-16">Reel ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14">Reel ID</th>
                           <th className="p-1.5 border-r border-slate-200">Floor &amp; Location</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200">Cabinet</th>
                           <th className="p-1.5 border-r border-slate-200">Hose &amp; Nozzle</th>
                           <th className="p-1.5 border-r border-slate-200">Valve &amp; Flow</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations</th>
                         </tr>
                       </thead>
@@ -648,6 +689,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={hr.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-amber-800">{hr.reel_id}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{hr.floor} • {hr.location}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{hr.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{hr.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">{hr.cabinet_condition || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">Hose: {hr.hose_condition || 'OK'} / Nozzle: {hr.nozzle_operation || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">Leakage: {hr.leakage_test || 'OK'}</td>
@@ -675,20 +718,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Wrench className="w-3.5 h-3.5 text-orange-600" />
                         <span>4. LANDING VALVE (DRY/WET RISER) DEDICATED CHECKLIST</span>
                       </span>
-                      <span className="text-[10px] text-orange-800 font-bold font-mono">
-                        {chks.landing_valves.length} Unit(s)
-                      </span>
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.landing_valves || visit.system_makes?.landing_valves) || (bld.system_qtys?.landing_valves || visit.system_qtys?.landing_valves)) && (
+                          <span className="text-[10px] text-orange-900 font-normal">
+                            {[bld.system_makes?.landing_valves || visit.system_makes?.landing_valves ? `Make: ${bld.system_makes?.landing_valves || visit.system_makes?.landing_valves}` : null, bld.system_qtys?.landing_valves || visit.system_qtys?.landing_valves ? `QTY: ${bld.system_qtys?.landing_valves || visit.system_qtys?.landing_valves}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-orange-800 font-bold font-mono">
+                          {chks.landing_valves.length} Unit(s)
+                        </span>
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-16">Valve ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14">Valve ID</th>
                           <th className="p-1.5 border-r border-slate-200">Floor &amp; Location</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200">Handwheel &amp; Spindle</th>
                           <th className="p-1.5 border-r border-slate-200">Blank Cap &amp; Chain</th>
                           <th className="p-1.5 border-r border-slate-200">Coupling &amp; Leakage</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations</th>
                         </tr>
                       </thead>
@@ -697,6 +749,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={lv.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-orange-800">{lv.valve_id}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{lv.floor} • {lv.location}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{lv.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{lv.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">{lv.handwheel_operation || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">{lv.cap_chain || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">{lv.coupling_condition || 'OK'}</td>
@@ -724,21 +778,30 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Flame className="w-3.5 h-3.5 text-rose-600" />
                         <span>5. PORTABLE FIRE EXTINGUISHERS REGISTER &amp; INSPECTION</span>
                       </span>
-                      <span className="text-[10px] text-rose-800 font-bold font-mono">
-                        {chks.fire_extinguishers.length} Cylinder(s)
-                      </span>
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.fire_extinguishers || visit.system_makes?.fire_extinguishers) || (bld.system_qtys?.fire_extinguishers || visit.system_qtys?.fire_extinguishers)) && (
+                          <span className="text-[10px] text-rose-900 font-normal">
+                            {[bld.system_makes?.fire_extinguishers || visit.system_makes?.fire_extinguishers ? `Make: ${bld.system_makes?.fire_extinguishers || visit.system_makes?.fire_extinguishers}` : null, bld.system_qtys?.fire_extinguishers || visit.system_qtys?.fire_extinguishers ? `QTY: ${bld.system_qtys?.fire_extinguishers || visit.system_qtys?.fire_extinguishers}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-rose-800 font-bold font-mono">
+                          {chks.fire_extinguishers.length} Cylinder(s)
+                        </span>
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-16">Tag ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14">Tag ID</th>
                           <th className="p-1.5 border-r border-slate-200">Type &amp; Capacity</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Brand</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200">Serial No.</th>
                           <th className="p-1.5 border-r border-slate-200">Floor &amp; Location</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Pressure</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Weight</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations / Next Due</th>
                         </tr>
                       </thead>
@@ -746,6 +809,9 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         {chks.fire_extinguishers.map((ext, idx) => (
                           <tr key={idx} className={ext.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-rose-800">{ext.ext_id || `EXT-${idx+1}`}</td>
+                            <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{ext.type} ({ext.capacity})</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{ext.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{ext.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{ext.type} ({ext.capacity})</td>
                             <td className="p-1.5 border-r border-slate-200 font-mono text-slate-600">{ext.serial_number || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-slate-700">{ext.floor} • {ext.location}</td>
@@ -785,22 +851,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Shield className="w-3.5 h-3.5 text-purple-600" />
                         <span>6. FM200 / CLEAN AGENT SUPPRESSION SYSTEM CHECKLIST</span>
                       </span>
-                      {(bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression) && (
-                        <span className="text-[10px] text-purple-800 font-normal">
-                          Make: {bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression}
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression) || (bld.system_qtys?.fm200_suppression || visit.system_qtys?.fm200_suppression)) && (
+                          <span className="text-[10px] text-purple-800 font-normal">
+                            {[bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression ? `Make: ${bld.system_makes?.fm200_suppression || visit.system_makes?.fm200_suppression}` : null, bld.system_qtys?.fm200_suppression || visit.system_qtys?.fm200_suppression ? `QTY: ${bld.system_qtys?.fm200_suppression || visit.system_qtys?.fm200_suppression}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-purple-800 font-bold font-mono">
+                          {chks.fm200_suppression.length} Unit(s)
                         </span>
-                      )}
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-24">System Tag</th>
+                          <th className="p-1.5 border-r border-slate-200 w-20">System Tag</th>
                           <th className="p-1.5 border-r border-slate-200">Protected Room / Area</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Pressure</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Abort Switch</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Room Integrity</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations</th>
                         </tr>
                       </thead>
@@ -809,6 +882,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={fm.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-purple-800">{fm.system_tag}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{fm.room_name} ({fm.floor})</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{fm.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{fm.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center font-bold text-emerald-700">{fm.cylinder_pressure || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{fm.abort_switch || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{fm.room_integrity_enclosure || 'OK'}</td>
@@ -836,22 +911,29 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <AlertTriangle className="w-3.5 h-3.5 text-yellow-600" />
                         <span>7. LPG / GAS DETECTION SYSTEM CHECKLIST</span>
                       </span>
-                      {(bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection) && (
-                        <span className="text-[10px] text-yellow-900 font-normal">
-                          Make: {bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection}
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection) || (bld.system_qtys?.lpg_detection || visit.system_qtys?.lpg_detection)) && (
+                          <span className="text-[10px] text-yellow-900 font-normal">
+                            {[bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection ? `Make: ${bld.system_makes?.lpg_detection || visit.system_makes?.lpg_detection}` : null, bld.system_qtys?.lpg_detection || visit.system_qtys?.lpg_detection ? `QTY: ${bld.system_qtys?.lpg_detection || visit.system_qtys?.lpg_detection}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-yellow-900 font-bold font-mono">
+                          {chks.lpg_detection.length} Unit(s)
                         </span>
-                      )}
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-24">Detector ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-20">Detector ID</th>
                           <th className="p-1.5 border-r border-slate-200">Location</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Panel Status</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Solenoid Trip</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Fan Interlock</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Calibration / Notes</th>
                         </tr>
                       </thead>
@@ -860,6 +942,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={lpg.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-yellow-800">{lpg.detector_id}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{lpg.location} ({lpg.floor})</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{lpg.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{lpg.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{lpg.panel_status || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{lpg.shutoff_valve || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{lpg.fan_interlock || 'OK'}</td>
@@ -887,16 +971,28 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                         <span>8. EMERGENCY LIGHTING SYSTEM INSPECTION</span>
                       </span>
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.emergency_lights || visit.system_makes?.emergency_lights) || (bld.system_qtys?.emergency_lights || visit.system_qtys?.emergency_lights)) && (
+                          <span className="text-[10px] text-emerald-900 font-normal">
+                            {[bld.system_makes?.emergency_lights || visit.system_makes?.emergency_lights ? `Make: ${bld.system_makes?.emergency_lights || visit.system_makes?.emergency_lights}` : null, bld.system_qtys?.emergency_lights || visit.system_qtys?.emergency_lights ? `QTY: ${bld.system_qtys?.emergency_lights || visit.system_qtys?.emergency_lights}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-emerald-800 font-bold font-mono">
+                          {chks.emergency_lights.length} Unit(s)
+                        </span>
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-20">Unit ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-16">Unit ID</th>
                           <th className="p-1.5 border-r border-slate-200">Location</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">AC Indicator</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Duration Test</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations</th>
                         </tr>
                       </thead>
@@ -905,6 +1001,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={em.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-emerald-800">{em.light_id}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{em.floor} • {em.location}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{em.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{em.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{em.ac_power_indicator || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{em.duration_test_passed || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center font-bold">
@@ -931,16 +1029,28 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                         <Sparkles className="w-3.5 h-3.5 text-teal-600" />
                         <span>9. EXIT SIGN LUMINAIRES INSPECTION</span>
                       </span>
+                      <div className="flex items-center gap-3">
+                        {((bld.system_makes?.exit_lights || visit.system_makes?.exit_lights) || (bld.system_qtys?.exit_lights || visit.system_qtys?.exit_lights)) && (
+                          <span className="text-[10px] text-teal-900 font-normal">
+                            {[bld.system_makes?.exit_lights || visit.system_makes?.exit_lights ? `Make: ${bld.system_makes?.exit_lights || visit.system_makes?.exit_lights}` : null, bld.system_qtys?.exit_lights || visit.system_qtys?.exit_lights ? `QTY: ${bld.system_qtys?.exit_lights || visit.system_qtys?.exit_lights}` : null].filter(Boolean).join(' • ')}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-teal-800 font-bold font-mono">
+                          {chks.exit_lights.length} Unit(s)
+                        </span>
+                      </div>
                     </div>
 
                     <table className="w-full border-collapse text-[10px]">
                       <thead>
                         <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-left font-bold">
-                          <th className="p-1.5 border-r border-slate-200 w-20">Sign ID</th>
+                          <th className="p-1.5 border-r border-slate-200 w-16">Sign ID</th>
                           <th className="p-1.5 border-r border-slate-200">Location</th>
+                          <th className="p-1.5 border-r border-slate-200">Make / Manufacturer</th>
+                          <th className="p-1.5 border-r border-slate-200 w-12 text-center">Qty</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Illumination</th>
                           <th className="p-1.5 border-r border-slate-200 text-center">Pictogram &amp; Arrows</th>
-                          <th className="p-1.5 border-r border-slate-200 w-16 text-center">Status</th>
+                          <th className="p-1.5 border-r border-slate-200 w-14 text-center">Status</th>
                           <th className="p-1.5">Observations</th>
                         </tr>
                       </thead>
@@ -949,6 +1059,8 @@ export default function AMCServiceReportModal({ visit, onClose }) {
                           <tr key={idx} className={ex.status === 'NOT OK' ? 'bg-red-50/70' : ''}>
                             <td className="p-1.5 border-r border-slate-200 font-mono font-bold text-teal-800">{ex.sign_id}</td>
                             <td className="p-1.5 border-r border-slate-200 font-bold text-slate-900">{ex.floor} • {ex.location}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-slate-800 font-medium">{ex.make || '-'}</td>
+                            <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">{ex.quantity || '-'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{ex.illumination || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center text-slate-700">{ex.pictogram_condition || 'OK'}</td>
                             <td className="p-1.5 border-r border-slate-200 text-center font-bold">

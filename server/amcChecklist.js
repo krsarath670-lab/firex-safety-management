@@ -18,43 +18,43 @@ const SYSTEM_DEFINITIONS = [
 ];
 
 const DEFAULT_FIRE_ALARM_ITEMS = [
-  { item_no: 1, item: "Main Fire Alarm Control Panel (FACP)", make: "", type: "Addressable FACP", quantity: "1", status: "OK", remarks: "Standby normal, zero active faults" },
-  { item_no: 2, item: "No. of Zones / Addressable Loops", make: "", type: "Addressable Loop", quantity: "4", status: "OK", remarks: "All loops reporting normal communication" },
-  { item_no: 3, item: "Loop Circuit Continuity & Isolators", make: "", type: "Loop Isolators", quantity: "4", status: "OK", remarks: "Full loop continuity confirmed" },
-  { item_no: 4, item: "Protocol & Polling Speed", make: "", type: "FlashScan / CLIP", quantity: "1", status: "OK", remarks: "Polling speed normal" },
-  { item_no: 5, item: "A/C Primary Mains Power Supply", make: "", type: "230V AC Dedicated Supply", quantity: "1", status: "OK", remarks: "Mains healthy, breaker locked ON" },
-  { item_no: 6, item: "Standby Battery Backup & Charger", make: "", type: "12V 17Ah SLA Standby", quantity: "2", status: "OK", remarks: "Float voltage 27.4V, load test passed" },
-  { item_no: 7, item: "Optical Smoke Detectors", make: "", type: "Optical Smoke Detector", quantity: "45", status: "OK", remarks: "Sample aerosol response within 10s" },
-  { item_no: 8, item: "Thermal / Heat Detectors", make: "", type: "Rate-of-Rise / Fixed Temp", quantity: "12", status: "OK", remarks: "Kitchen and plant room sensors tested" },
-  { item_no: 9, item: "Multi-Criteria Optical/Heat Sensors", make: "", type: "Optical / Heat Multi", quantity: "8", status: "OK", remarks: "Clean, sensitivity verified" },
-  { item_no: 10, item: "Manual Call Points / Break Glass", make: "", type: "Manual Call Point (Resettable)", quantity: "16", status: "OK", remarks: "Tested with key, alarm initiated at FACP" },
-  { item_no: 11, item: "Monitor & Control Modules", make: "", type: "I/O Interface Modules", quantity: "10", status: "OK", remarks: "Interlock signals verified" },
-  { item_no: 12, item: "Electronic Alarm Sounders", make: "", type: "Electronic Sounder 24V", quantity: "20", status: "OK", remarks: "Sound level > 85 dB(A) at 3m" },
-  { item_no: 13, item: "Sounder Beacon / Strobe Lights", make: "", type: "Sounder Beacon VAD", quantity: "8", status: "OK", remarks: "Audible & flashing synchronized" },
-  { item_no: 14, item: "Motorized Fire Alarm Bells", make: "", type: "Motorized 6\" / 8\" Fire Bell", quantity: "4", status: "OK", remarks: "Clear audible strike confirmed" },
-  { item_no: 15, item: "Auxiliary Warning Devices / Horns", make: "", type: "Aux Voice / Warning Device", quantity: "2", status: "OK", remarks: "Auxiliary warning horn operational" },
-  { item_no: 16, item: "Optical Beam Smoke Detectors", make: "", type: "Reflective Optical Beam", quantity: "2", status: "OK", remarks: "Atrium beam alignment and obscuration test passed" },
-  { item_no: 17, item: "Auxiliary Contacts (AHU / Elevator / Doors)", make: "", type: "Interlock Contacts", quantity: "6", status: "OK", remarks: "AHU trip and elevator grounding interlocks tested" },
-  { item_no: 18, item: "Civil Defense Auto-Dialer Link", make: "", type: "24/7 Transmitter Link", quantity: "1", status: "OK", remarks: "Civil Defense communication line healthy" },
-  { item_no: 19, item: "Network Link to Master Panel / Repeater", make: "", type: "RS-485 / Fiber Optic Link", quantity: "1", status: "OK", remarks: "Repeater receiving events normally" },
-  { item_no: 20, item: "FACP LEDs, Buzzer & Display", make: "", type: "LED Status Bar & Backlit LCD", quantity: "1", status: "OK", remarks: "Lamp test function executed, zero dead pixels" },
-  { item_no: 21, item: "Fire Resistant Cabling & Conduits", make: "", type: "2-Core 1.5mm Fire Resistant", quantity: "N/A", status: "OK", remarks: "Insulation and conduit sound" }
+  { item_no: 1, item: "Main Fire Alarm Control Panel (FACP)", make: "", type: "Addressable FACP", quantity: "", status: "OK", remarks: "Standby normal, zero active faults" },
+  { item_no: 2, item: "No. of Zones / Addressable Loops", make: "", type: "Addressable Loop", quantity: "", status: "OK", remarks: "All loops reporting normal communication" },
+  { item_no: 3, item: "Loop Circuit Continuity & Isolators", make: "", type: "Loop Isolators", quantity: "", status: "OK", remarks: "Full loop continuity confirmed" },
+  { item_no: 4, item: "Protocol & Polling Speed", make: "", type: "FlashScan / CLIP", quantity: "", status: "OK", remarks: "Polling speed normal" },
+  { item_no: 5, item: "A/C Primary Mains Power Supply", make: "", type: "230V AC Dedicated Supply", quantity: "", status: "OK", remarks: "Mains healthy, breaker locked ON" },
+  { item_no: 6, item: "Standby Battery Backup & Charger", make: "", type: "12V 17Ah SLA Standby", quantity: "", status: "OK", remarks: "Float voltage 27.4V, load test passed" },
+  { item_no: 7, item: "Optical Smoke Detectors", make: "", type: "Optical Smoke Detector", quantity: "", status: "OK", remarks: "Sample aerosol response within 10s" },
+  { item_no: 8, item: "Thermal / Heat Detectors", make: "", type: "Rate-of-Rise / Fixed Temp", quantity: "", status: "OK", remarks: "Kitchen and plant room sensors tested" },
+  { item_no: 9, item: "Multi-Criteria Optical/Heat Sensors", make: "", type: "Optical / Heat Multi", quantity: "", status: "OK", remarks: "Clean, sensitivity verified" },
+  { item_no: 10, item: "Manual Call Points / Break Glass", make: "", type: "Manual Call Point (Resettable)", quantity: "", status: "OK", remarks: "Tested with key, alarm initiated at FACP" },
+  { item_no: 11, item: "Monitor & Control Modules", make: "", type: "I/O Interface Modules", quantity: "", status: "OK", remarks: "Interlock signals verified" },
+  { item_no: 12, item: "Electronic Alarm Sounders", make: "", type: "Electronic Sounder 24V", quantity: "", status: "OK", remarks: "Sound level > 85 dB(A) at 3m" },
+  { item_no: 13, item: "Sounder Beacon / Strobe Lights", make: "", type: "Sounder Beacon VAD", quantity: "", status: "OK", remarks: "Audible & flashing synchronized" },
+  { item_no: 14, item: "Motorized Fire Alarm Bells", make: "", type: "Motorized 6\" / 8\" Fire Bell", quantity: "", status: "OK", remarks: "Clear audible strike confirmed" },
+  { item_no: 15, item: "Auxiliary Warning Devices / Horns", make: "", type: "Aux Voice / Warning Device", quantity: "", status: "OK", remarks: "Auxiliary warning horn operational" },
+  { item_no: 16, item: "Optical Beam Smoke Detectors", make: "", type: "Reflective Optical Beam", quantity: "", status: "OK", remarks: "Atrium beam alignment and obscuration test passed" },
+  { item_no: 17, item: "Auxiliary Contacts (AHU / Elevator / Doors)", make: "", type: "Interlock Contacts", quantity: "", status: "OK", remarks: "AHU trip and elevator grounding interlocks tested" },
+  { item_no: 18, item: "Civil Defense Auto-Dialer Link", make: "", type: "24/7 Transmitter Link", quantity: "", status: "OK", remarks: "Civil Defense communication line healthy" },
+  { item_no: 19, item: "Network Link to Master Panel / Repeater", make: "", type: "RS-485 / Fiber Optic Link", quantity: "", status: "OK", remarks: "Repeater receiving events normally" },
+  { item_no: 20, item: "FACP LEDs, Buzzer & Display", make: "", type: "LED Status Bar & Backlit LCD", quantity: "", status: "OK", remarks: "Lamp test function executed, zero dead pixels" },
+  { item_no: 21, item: "Fire Resistant Cabling & Conduits", make: "", type: "2-Core 1.5mm Fire Resistant", quantity: "", status: "OK", remarks: "Insulation and conduit sound" }
 ];
 
 const DEFAULT_FIRE_FIGHTING_ITEMS = [
-  { item_no: 1, item: "Main Electric Fire Pump", make: "", type: "Centrifugal 750 GPM @ 10 Bar", quantity: "1", status: "OK", remarks: "Bearing temperature & auto-start normal" },
-  { item_no: 2, item: "Standby Diesel Fire Pump", make: "", type: "Emergency Diesel Backup Pump", quantity: "1", status: "OK", remarks: "Battery cranking normal, fuel & coolant level 100%" },
-  { item_no: 3, item: "Jockey Pressure-Maintenance Pump", make: "", type: "Vertical Multistage 15 GPM", quantity: "1", status: "OK", remarks: "Cut-in at 8.5 bar, cut-out at 10.5 bar" },
-  { item_no: 4, item: "UL/FM Dual Pump Controller", make: "", type: "Automatic Electric/Diesel Controller", quantity: "1", status: "OK", remarks: "Phase monitoring & auto-transfer switch tested" },
-  { item_no: 5, item: "Dedicated Fire Water Storage Tank", make: "", type: "10,000 Gallon Water Tank", quantity: "1", status: "OK", remarks: "Water level 100%, float valve operational" },
-  { item_no: 6, item: "Suction & Discharge OS&Y Gate Valves", make: "", type: "OS&Y Gate & Butterfly Valves", quantity: "12", status: "OK", remarks: "All valves supervised and locked in OPEN position" },
-  { item_no: 7, item: "Glycerin-Filled Pressure Gauges", make: "", type: "0-25 bar Dial Gauges", quantity: "6", status: "OK", remarks: "Zero calibration verified, readable dials" },
-  { item_no: 8, item: "Automatic Fire Sprinkler System", make: "", type: "Pendent Glass Bulb 68°C", quantity: "120", status: "OK", remarks: "Glass bulbs intact, deflectors unobstructed" },
-  { item_no: 9, item: "Sprinkler Alarm Check Valve & Water Gong", make: "", type: "Alarm Check Valve & Motor Gong", quantity: "2", status: "OK", remarks: "Retard chamber & water motor gong tested" },
-  { item_no: 10, item: "Outdoor Pillar Fire Hydrants 2.5\"", make: "", type: "Pillar Hydrant 2-Way 2.5\"", quantity: "2", status: "OK", remarks: "Valve spindle lubricated, caps greased" },
-  { item_no: 11, item: "4-Way Dry/Wet Riser Breeching Inlet", make: "", type: "4-Way Breeching Inlet", quantity: "1", status: "OK", remarks: "Drain valve clear, clack valves seated properly" },
-  { item_no: 12, item: "Fire Brigade Connection (FBC)", make: "", type: "Storz FBC 4\" Inlet", quantity: "1", status: "OK", remarks: "Caps chained, clear access from road" },
-  { item_no: 13, item: "Heavy Duty Fire Blankets", make: "", type: "Fiberglass 1.2m x 1.8m", quantity: "4", status: "OK", remarks: "Pouch clean, release straps accessible" }
+  { item_no: 1, item: "Main Electric Fire Pump", make: "", type: "Centrifugal 750 GPM @ 10 Bar", quantity: "", status: "OK", remarks: "Bearing temperature & auto-start normal" },
+  { item_no: 2, item: "Standby Diesel Fire Pump", make: "", type: "Emergency Diesel Backup Pump", quantity: "", status: "OK", remarks: "Battery cranking normal, fuel & coolant level 100%" },
+  { item_no: 3, item: "Jockey Pressure-Maintenance Pump", make: "", type: "Vertical Multistage 15 GPM", quantity: "", status: "OK", remarks: "Cut-in at 8.5 bar, cut-out at 10.5 bar" },
+  { item_no: 4, item: "UL/FM Dual Pump Controller", make: "", type: "Automatic Electric/Diesel Controller", quantity: "", status: "OK", remarks: "Phase monitoring & auto-transfer switch tested" },
+  { item_no: 5, item: "Dedicated Fire Water Storage Tank", make: "", type: "10,000 Gallon Water Tank", quantity: "", status: "OK", remarks: "Water level 100%, float valve operational" },
+  { item_no: 6, item: "Suction & Discharge OS&Y Gate Valves", make: "", type: "OS&Y Gate & Butterfly Valves", quantity: "", status: "OK", remarks: "All valves supervised and locked in OPEN position" },
+  { item_no: 7, item: "Glycerin-Filled Pressure Gauges", make: "", type: "0-25 bar Dial Gauges", quantity: "", status: "OK", remarks: "Zero calibration verified, readable dials" },
+  { item_no: 8, item: "Automatic Fire Sprinkler System", make: "", type: "Pendent Glass Bulb 68°C", quantity: "", status: "OK", remarks: "Glass bulbs intact, deflectors unobstructed" },
+  { item_no: 9, item: "Sprinkler Alarm Check Valve & Water Gong", make: "", type: "Alarm Check Valve & Motor Gong", quantity: "", status: "OK", remarks: "Retard chamber & water motor gong tested" },
+  { item_no: 10, item: "Outdoor Pillar Fire Hydrants 2.5\"", make: "", type: "Pillar Hydrant 2-Way 2.5\"", quantity: "", status: "OK", remarks: "Valve spindle lubricated, caps greased" },
+  { item_no: 11, item: "4-Way Dry/Wet Riser Breeching Inlet", make: "", type: "4-Way Breeching Inlet", quantity: "", status: "OK", remarks: "Drain valve clear, clack valves seated properly" },
+  { item_no: 12, item: "Fire Brigade Connection (FBC)", make: "", type: "Storz FBC 4\" Inlet", quantity: "", status: "OK", remarks: "Caps chained, clear access from road" },
+  { item_no: 13, item: "Heavy Duty Fire Blankets", make: "", type: "Fiberglass 1.2m x 1.8m", quantity: "", status: "OK", remarks: "Pouch clean, release straps accessible" }
 ];
 
 const DEFAULT_HOSE_REELS = [
@@ -337,83 +337,62 @@ const DEFAULT_VOICE_EVACUATION = [
  * Returns default items for a specific system key
  */
 function getDefaultSystemItems(systemKey, buildingNumber = "1") {
+  const ensureDefaults = (item, extra = {}) => ({
+    ...item,
+    make: item.make !== undefined ? item.make : "",
+    quantity: item.quantity !== undefined ? item.quantity : "",
+    building_number: buildingNumber,
+    photos: item.photos || [],
+    ...extra
+  });
+
   switch (systemKey) {
     case 'fire_alarm':
-      return DEFAULT_FIRE_ALARM_ITEMS.map((item, idx) => ({
-        ...item,
-        id: `fa-${buildingNumber}-${idx + 1}`,
-        building_number: buildingNumber,
-        photos: []
+      return DEFAULT_FIRE_ALARM_ITEMS.map((item, idx) => ensureDefaults(item, {
+        id: `fa-${buildingNumber}-${idx + 1}`
       }));
     case 'fire_fighting':
-      return DEFAULT_FIRE_FIGHTING_ITEMS.map((item, idx) => ({
-        ...item,
-        id: `ff-${buildingNumber}-${idx + 1}`,
-        building_number: buildingNumber,
-        photos: []
+      return DEFAULT_FIRE_FIGHTING_ITEMS.map((item, idx) => ensureDefaults(item, {
+        id: `ff-${buildingNumber}-${idx + 1}`
       }));
     case 'fire_hose_reels':
-      return DEFAULT_HOSE_REELS.map((item, idx) => ({
-        ...item,
+      return DEFAULT_HOSE_REELS.map((item, idx) => ensureDefaults(item, {
         id: `hr-${buildingNumber}-${idx + 1}`,
-        reel_id: `HR-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        reel_id: `HR-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'landing_valves':
-      return DEFAULT_LANDING_VALVES.map((item, idx) => ({
-        ...item,
+      return DEFAULT_LANDING_VALVES.map((item, idx) => ensureDefaults(item, {
         id: `lv-${buildingNumber}-${idx + 1}`,
-        valve_id: `LV-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        valve_id: `LV-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'fire_extinguishers':
-      return DEFAULT_EXTINGUISHERS.map((item, idx) => ({
-        ...item,
+      return DEFAULT_EXTINGUISHERS.map((item, idx) => ensureDefaults(item, {
         id: `ext-${buildingNumber}-${idx + 1}`,
-        ext_id: `EXT-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        ext_id: `EXT-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'fm200_suppression':
-      return DEFAULT_FM200.map((item, idx) => ({
-        ...item,
+      return DEFAULT_FM200.map((item, idx) => ensureDefaults(item, {
         id: `fm-${buildingNumber}-${idx + 1}`,
-        system_tag: `FM200-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        system_tag: `FM200-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'lpg_detection':
-      return DEFAULT_LPG.map((item, idx) => ({
-        ...item,
+      return DEFAULT_LPG.map((item, idx) => ensureDefaults(item, {
         id: `lpg-${buildingNumber}-${idx + 1}`,
-        detector_id: `LPG-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        detector_id: `LPG-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'emergency_lights':
-      return DEFAULT_EMERGENCY_LIGHTS.map((item, idx) => ({
-        ...item,
+      return DEFAULT_EMERGENCY_LIGHTS.map((item, idx) => ensureDefaults(item, {
         id: `em-${buildingNumber}-${idx + 1}`,
-        light_id: `EM-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        light_id: `EM-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'exit_lights':
-      return DEFAULT_EXIT_LIGHTS.map((item, idx) => ({
-        ...item,
+      return DEFAULT_EXIT_LIGHTS.map((item, idx) => ensureDefaults(item, {
         id: `ex-${buildingNumber}-${idx + 1}`,
-        sign_id: `EX-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`,
-        building_number: buildingNumber,
-        photos: []
+        sign_id: `EX-${buildingNumber}-${String(idx + 1).padStart(2, '0')}`
       }));
     case 'voice_evacuation':
-      return DEFAULT_VOICE_EVACUATION.map((item, idx) => ({
-        ...item,
-        id: `ve-${buildingNumber}-${idx + 1}`,
-        building_number: buildingNumber,
-        photos: []
+      return DEFAULT_VOICE_EVACUATION.map((item, idx) => ensureDefaults(item, {
+        id: `ve-${buildingNumber}-${idx + 1}`
       }));
     default:
       return [];
@@ -440,6 +419,10 @@ function buildInitialBuildingChecklist(building, selectedSystems = []) {
     building_name: building.name || building.building_name || `Building ${bNumber}`,
     location: building.location || building.address || '',
     selected_systems: systems,
+    system_makes: {},
+    system_qtys: {},
+    system_make: '',
+    system_qty: '',
     checklists,
     defects: [],
     remarks: '',

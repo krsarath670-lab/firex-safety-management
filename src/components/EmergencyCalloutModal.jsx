@@ -43,7 +43,8 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
     emergency_type: call?.emergency_type || 'Main Fire Pump Controller Malfunction',
     system: call?.system || 'Fire Alarm',
     system_make: call?.system_make || '',
-    systems_detail: Array.isArray(call?.systems_detail) ? call.systems_detail : (call?.system_makes ? Object.entries(call.system_makes).map(([s, m]) => ({ system_type: s, make: m })) : []),
+    system_qty: call?.system_qty || '',
+    systems_detail: Array.isArray(call?.systems_detail) ? call.systems_detail : (call?.system_makes ? Object.entries(call.system_makes).map(([s, m]) => ({ system_type: s, make: m, quantity: (call?.system_qtys && call.system_qtys[s]) || '' })) : []),
     priority: call?.priority || 'High',
     emergency_description: call?.emergency_description || '',
     reported_problem: call?.reported_problem || '',
@@ -85,10 +86,15 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
   const [submitting, setSubmitting] = useState(false);
   const [showMultiSystemMakes, setShowMultiSystemMakes] = useState(Array.isArray(call?.systems_detail) && call.systems_detail.length > 0);
 
+  const isValidPositiveInt = (val) => {
+    if (val === '' || val === null || val === undefined) return true;
+    return /^[1-9]\d*$/.test(String(val).trim());
+  };
+
   const handleAddSystemDetail = () => {
     setFormData(p => ({
       ...p,
-      systems_detail: [...(p.systems_detail || []), { system_type: 'Fire Alarm System', make: '' }]
+      systems_detail: [...(p.systems_detail || []), { system_type: 'Fire Alarm System', make: '', quantity: '' }]
     }));
   };
 
@@ -282,14 +288,17 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
       const method = isNew ? 'POST' : 'PUT';
 
       const makesObj = {};
+      const qtysObj = {};
       (formData.systems_detail || []).forEach(item => {
-        if (item.system_type && item.make) {
-          makesObj[item.system_type] = item.make;
+        if (item.system_type) {
+          if (item.make) makesObj[item.system_type] = item.make;
+          if (item.quantity) qtysObj[item.system_type] = item.quantity;
         }
       });
       const payload = {
         ...formData,
-        system_makes: Object.keys(makesObj).length > 0 ? makesObj : (call?.system_makes || {})
+        system_makes: Object.keys(makesObj).length > 0 ? makesObj : (call?.system_makes || {}),
+        system_qtys: Object.keys(qtysObj).length > 0 ? qtysObj : (call?.system_qtys || {})
       };
 
       const res = await fetch(url, {
@@ -448,11 +457,11 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               </div>
             </div>
 
-            {/* System Make / Manufacturer & Multi-System Details */}
+            {/* System Make / Manufacturer & Quantity (QTY) */}
             <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200 space-y-2.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex-1">
-                  <label className="block font-bold text-slate-700 mb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 text-xs">
                     System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
@@ -463,34 +472,61 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                     placeholder="Enter manufacturer / brand (leave blank if unknown)"
                     className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
                   />
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    No default brand is prefilled. Leave blank if unknown or record specific system makes below.
-                  </span>
                 </div>
-                <div className="sm:self-center pt-1 sm:pt-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!showMultiSystemMakes) {
-                        setShowMultiSystemMakes(true);
-                        if (!formData.systems_detail || formData.systems_detail.length === 0) {
-                          handleAddSystemDetail();
-                        }
-                      } else {
-                        setShowMultiSystemMakes(false);
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700 text-xs">
+                      Quantity (QTY) <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    {formData.system_qty && !isValidPositiveInt(formData.system_qty) && (
+                      <span className="text-[10px] font-bold text-red-600 animate-pulse">
+                        Must be a whole number
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={isLocked}
+                    value={formData.system_qty}
+                    onChange={(e) => setFormData(p => ({ ...p, system_qty: e.target.value }))}
+                    placeholder="e.g. 1, 2, 5, 20..."
+                    className={`w-full p-2.5 border rounded-xl text-slate-900 text-xs placeholder:text-slate-400 focus:outline-none ${
+                      formData.system_qty && !isValidPositiveInt(formData.system_qty)
+                        ? 'border-red-500 bg-red-50/50'
+                        : 'bg-white border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-200/80">
+                <span className="text-[10px] text-slate-400">
+                  Blank by default. No prefilled brand or quantity.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!showMultiSystemMakes) {
+                      setShowMultiSystemMakes(true);
+                      if (!formData.systems_detail || formData.systems_detail.length === 0) {
+                        handleAddSystemDetail();
                       }
-                    }}
-                    className="w-full sm:w-auto px-3 py-2 text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-300 transition-colors shadow-sm flex items-center justify-center gap-1.5"
-                  >
-                    <span>{showMultiSystemMakes ? '▲ Hide System Types' : '▼ Separate System Types'}</span>
-                  </button>
-                </div>
+                    } else {
+                      setShowMultiSystemMakes(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-300 transition-colors shadow-sm inline-flex items-center justify-center gap-1.5 self-start sm:self-auto"
+                >
+                  <span>{showMultiSystemMakes ? '▲ Hide System Types & QTY' : '▼ Separate System Types & QTY'}</span>
+                </button>
               </div>
 
               {showMultiSystemMakes && (
                 <div className="pt-2.5 border-t border-slate-200 space-y-2 animate-in fade-in duration-150">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700">Different Manufacturers by System Type:</span>
+                    <span className="text-[11px] font-bold text-slate-700">Different Manufacturers &amp; QTY by System Type:</span>
                     <button
                       type="button"
                       onClick={handleAddSystemDetail}
@@ -523,21 +559,42 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
                         </select>
                       </div>
                       <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">System Make / Manufacturer</label>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Make / Manufacturer</label>
                         <input
                           type="text"
                           disabled={isLocked}
                           value={detail.make}
                           onChange={(e) => handleUpdateSystemDetail(idx, 'make', e.target.value)}
-                          placeholder="Type manufacturer brand manually..."
+                          placeholder="Type manufacturer manually..."
                           className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 placeholder:text-slate-400"
+                        />
+                      </div>
+                      <div className="w-full sm:w-28">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="block text-[10px] font-bold text-slate-500">QTY</label>
+                          {detail.quantity && !isValidPositiveInt(detail.quantity) && (
+                            <span className="text-[9px] font-bold text-red-600">Invalid</span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          disabled={isLocked}
+                          value={detail.quantity || ''}
+                          onChange={(e) => handleUpdateSystemDetail(idx, 'quantity', e.target.value)}
+                          placeholder="e.g. 1, 5"
+                          className={`w-full p-1.5 border rounded text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none ${
+                            detail.quantity && !isValidPositiveInt(detail.quantity)
+                              ? 'border-red-500 bg-red-50/50'
+                              : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-red-500'
+                          }`}
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveSystemDetail(idx)}
                         className="self-end sm:self-center p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
-                        title="Remove system make entry"
+                        title="Remove system entry"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -804,21 +861,50 @@ export default function EmergencyCalloutModal({ call, onClose, onSaved }) {
               <span>3. Technical Findings, Cause &amp; Rectification</span>
             </h4>
 
-            {/* System Make / Manufacturer of Inspected / Repaired System */}
+            {/* System Make / Manufacturer & Quantity (QTY) of Inspected / Repaired Equipment */}
             <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-              <label className="block font-bold text-slate-700 text-xs mb-1">
-                System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
-              </label>
-              <input
-                type="text"
-                disabled={!canEditTechnical}
-                placeholder="Enter manufacturer of system being inspected or repaired (leave blank if unknown)..."
-                value={formData.system_make}
-                onChange={(e) => setFormData(p => ({ ...p, system_make: e.target.value }))}
-                className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-red-500"
-              />
-              <span className="text-[10px] text-slate-400 mt-0.5 block">
-                Leave blank until entered. No default brand name is prefilled.
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 text-xs mb-1">
+                    System Make / Manufacturer <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    disabled={!canEditTechnical}
+                    placeholder="Enter manufacturer of system (leave blank if unknown)..."
+                    value={formData.system_make}
+                    onChange={(e) => setFormData(p => ({ ...p, system_make: e.target.value }))}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700 text-xs">
+                      Quantity (QTY) <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    {formData.system_qty && !isValidPositiveInt(formData.system_qty) && (
+                      <span className="text-[10px] font-bold text-red-600 animate-pulse">
+                        Must be a whole number
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={!canEditTechnical}
+                    placeholder="e.g. 1, 2, 5..."
+                    value={formData.system_qty}
+                    onChange={(e) => setFormData(p => ({ ...p, system_qty: e.target.value }))}
+                    className={`w-full p-2 border rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none ${
+                      formData.system_qty && !isValidPositiveInt(formData.system_qty)
+                        ? 'border-red-500 bg-red-50/50'
+                        : 'bg-slate-50 border-slate-200 focus:bg-white focus:border-red-500'
+                    }`}
+                  />
+                </div>
+              </div>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Leave blank until entered. No default brand name or quantity is prefilled.
               </span>
             </div>
 
